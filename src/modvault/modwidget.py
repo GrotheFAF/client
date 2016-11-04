@@ -1,11 +1,10 @@
 
 
-import urllib2
-
 from PyQt4 import QtCore, QtGui
 
 from util import strtodate, datetostr, now
 import util
+import client
 
 FormClass, BaseClass = util.loadUiType("modvault/mod.ui")
 
@@ -17,7 +16,7 @@ class ModWidget(FormClass, BaseClass):
         self.setupUi(self)
         self.parent = parent
         
-        self.setStyleSheet(self.parent.client.styleSheet())
+        self.setStyleSheet(client.instance.styleSheet())
         
         self.setWindowTitle(mod.name)
 
@@ -27,9 +26,8 @@ class ModWidget(FormClass, BaseClass):
         self.Description.setText(mod.description)
         modtext = ""
         if mod.isuimod: modtext = "UI mod\n"
-        self.Info.setText(modtext + "By %s\nUploaded %s" % (mod.author,
-                                    str(mod.date)))
-        if mod.thumbnail == None:
+        self.Info.setText(modtext + "By %s\nUploaded %s" % (mod.author, str(mod.date)))
+        if mod.thumbnail is None:
             self.Picture.setPixmap(util.pixmap("games/unknown_map.png"))
         else:
             self.Picture.setPixmap(mod.thumbnail.pixmap(100,100))
@@ -67,18 +65,19 @@ class ModWidget(FormClass, BaseClass):
             self.parent.downloadMod(self.mod)
             self.done(1)
         else:
-            show = QtGui.QMessageBox.question(self.parent.client, "Delete Mod", "Are you sure you want to delete this mod?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+            show = QtGui.QMessageBox.question(client.instance, "Delete Mod", "Are you sure you want to delete this mod?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
             if show == QtGui.QMessageBox.Yes:
                 self.parent.removeMod(self.mod)
                 self.done(1)
 
     @QtCore.pyqtSlot()
     def addComment(self):
-        if self.LineComment.text() == "": return
-        comment = {"author":self.parent.client.login, "text":self.LineComment.text(),
-                   "date":datetostr(now()), "uid":"%s-%s" % (self.mod.uid, str(len(self.mod.bugreports)+len(self.mod.comments)).zfill(3))}
+        if self.LineComment.text() == "":
+            return
+        comment = {"author": client.instance.login, "text": self.LineComment.text(),
+                   "date": datetostr(now()), "uid": "%s-%s" % (self.mod.uid, str(len(self.mod.bugreports) + len(self.mod.comments)).zfill(3))}
         
-        self.parent.client.lobby_connection.send(dict(command="modvault",type="addcomment",moduid=self.mod.uid,comment=comment))
+        client.instance.lobby_connection.send(dict(command="modvault", type="addcomment", moduid=self.mod.uid, comment=comment))
         c = CommentItem(self, comment["uid"])
         c.update(comment)
         self.Comments.addItem(c)
@@ -87,11 +86,12 @@ class ModWidget(FormClass, BaseClass):
 
     @QtCore.pyqtSlot()
     def addBugReport(self):
-        if self.LineBugReport.text() == "": return
-        bugreport = {"author":self.parent.client.login, "text":self.LineBugReport.text(),
-                   "date":datetostr(now()), "uid":"%s-%s" % (self.mod.uid, str(len(self.mod.bugreports) + +len(self.mod.comments)).zfill(3))}
+        if self.LineBugReport.text() == "":
+            return
+        bugreport = {"author":client.instance.login, "text": self.LineBugReport.text(),
+                     "date": datetostr(now()), "uid": "%s-%s" % (self.mod.uid, str(len(self.mod.bugreports) + len(self.mod.comments)).zfill(3))}
         
-        self.parent.client.lobby_connection.send(dict(command="modvault",type="addbugreport",moduid=self.mod.uid,bugreport=bugreport))
+        client.instance.lobby_connection.send(dict(command="modvault", type="addbugreport", moduid=self.mod.uid, bugreport=bugreport))
         c = CommentItem(self, bugreport["uid"])
         c.update(bugreport)
         self.BugReports.addItem(c)
@@ -99,13 +99,14 @@ class ModWidget(FormClass, BaseClass):
         self.LineBugReport.setText("")
 
     @QtCore.pyqtSlot()
-    def like(self): #the server should determine if the user hasn't already clicked the like button for this mod.
-        self.parent.client.lobby_connection.send(dict(command="modvault",type="like", uid=self.mod.uid))
+    def like(self):  # the server should determine if the user hasn't already clicked the like button for this mod.
+        client.instance.lobby_connection.send(dict(command="modvault", type="like", uid=self.mod.uid))
         self.likeButton.setEnabled(False)
 
 class CommentItemDelegate(QtGui.QStyledItemDelegate):
     TEXTWIDTH = 350
     TEXTHEIGHT = 60
+
     def __init__(self, *args, **kwargs):
         QtGui.QStyledItemDelegate.__init__(self, *args, **kwargs)
         
@@ -127,7 +128,6 @@ class CommentItemDelegate(QtGui.QStyledItemDelegate):
         html.drawContents(painter, clip)
   
         painter.restore()
-        
 
     def sizeHint(self, option, index, *args, **kwargs):
         self.initStyleOption(option, index)
@@ -139,10 +139,10 @@ class CommentItemDelegate(QtGui.QStyledItemDelegate):
 
 class CommentItem(QtGui.QListWidgetItem):
     FORMATTER_COMMENT = unicode(util.readfile("modvault/comment.qthtml"))
-    def __init__(self, parent, uid, *args, **kwargs):
+
+    def __init__(self, uid, *args, **kwargs):
         QtGui.QListWidgetItem.__init__(self, *args, **kwargs)
 
-        self.parent = parent
         self.uid = uid
         self.text = ""
         self.author = ""

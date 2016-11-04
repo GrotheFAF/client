@@ -1,6 +1,6 @@
 from PyQt4 import QtCore, QtGui, QtWebKit
 import util
-
+import client
 
 class TourneyItemDelegate(QtGui.QStyledItemDelegate):
     #colors = json.loads(util.readfile("client/colors.json"))
@@ -55,8 +55,7 @@ class TourneyItem(QtGui.QListWidgetItem):
 
         self.parent = parent
         
-        self.type = None    
-        self.client = None
+        self.type = None
         self.title  = None
         self.description = None
         self.state  = None
@@ -67,11 +66,10 @@ class TourneyItem(QtGui.QListWidgetItem):
         self.height = 40
         self.setHidden(True)
 
-    def update(self, message, client):
+    def update(self, message):
         '''
         Updates this item from the message dictionary supplied
         '''
-        self.client  = client
         old_state       = self.state
         self.state      = message.get('state', "close")
         
@@ -92,10 +90,10 @@ class TourneyItem(QtGui.QListWidgetItem):
         self.playersname= []
         for player in self.players :
             self.playersname.append(player["name"])
-            if old_state != self.state and self.state == "started" and player["name"] == self.client.login :
+            if old_state != self.state and self.state == "started" and player["name"] == client.instance.login :
                 channel = "#" + self.title.replace(" ", "_")
-                self.client.autoJoin.emit([channel])
-                QtGui.QMessageBox.information(self.client, "Tournament started !", "Your tournament has started !\nYou have automatically joined the tournament channel.")
+                client.instance.autoJoin.emit([channel])
+                QtGui.QMessageBox.information(client.instance, "Tournament started !", "Your tournament has started !\nYou have automatically joined the tournament channel.")
 
         playerstring = "<br/>".join(self.playersname)
 
@@ -132,10 +130,7 @@ class TourneyItem(QtGui.QListWidgetItem):
     
     def __lt__(self, other):
         ''' Comparison operator used for item list sorting '''        
-        if not self.client: return True # If not initialized...
-        if not other.client: return False;
-        
-        
+
         # Default: Alphabetical
         return self.title.lower() < other.title.lower()
     

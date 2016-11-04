@@ -1,6 +1,6 @@
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
-from fa.replay import replay
+import client
 import util
 import os
 import fa
@@ -13,18 +13,17 @@ FormClass, BaseClass = util.loadUiType("tutorials/tutorials.ui")
 
 
 class tutorialsWidget(FormClass, BaseClass):
-    def __init__(self, client, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         BaseClass.__init__(self, *args, **kwargs)        
         
         self.setupUi(self)
 
-        self.client = client
-        self.client.tutorialsTab.layout().addWidget(self)    
+        client.instance.tutorialsTab.layout().addWidget(self)
         
         self.sections = {}
         self.tutorials = {}
 
-        self.client.lobby_info.tutorialsInfo.connect(self.processTutorialInfo)
+        client.instance.lobby_info.tutorialsInfo.connect(self.processTutorialInfo)
         
         logger.info("Tutorials instantiated.")
         
@@ -76,7 +75,7 @@ class tutorialsWidget(FormClass, BaseClass):
             
             if section in self.sections :
                 self.tutorials[tutorial] = TutorialItem(tutorial)
-                self.tutorials[tutorial].update(message, self.client)
+                self.tutorials[tutorial].update(message)
                 
                 self.sections[section].addItem(self.tutorials[tutorial]) 
         

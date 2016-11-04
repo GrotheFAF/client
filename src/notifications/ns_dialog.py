@@ -1,6 +1,7 @@
 from PyQt4 import QtCore, QtGui
 import util
 import time
+import client
 from ns_settings import NotificationPosition
 
 """
@@ -11,11 +12,10 @@ FormClass, BaseClass = util.loadUiType("notification_system/dialog.ui")
 
 class NotificationDialog(FormClass, BaseClass):
 
-    def __init__(self, client, settings, *args, **kwargs):
+    def __init__(self, settings, *args, **kwargs):
         BaseClass.__init__(self, *args, **kwargs)
 
         self.setupUi(self)
-        self.client = client
 
         self.labelIcon.setPixmap(util.icon("client/tray_icon.png", pix=True).scaled(32, 32))
         self.standardIcon = util.icon("client/comment.png", pix=True)
@@ -27,7 +27,7 @@ class NotificationDialog(FormClass, BaseClass):
         self.setWindowFlags(QtCore.Qt.ToolTip)
 
         # TODO: integrate into client.css
-        # self.setStyleSheet(self.client.styleSheet())
+        # self.setStyleSheet(client.instance.styleSheet())
 
     @QtCore.pyqtSlot()
     def newEvent(self, pixmap, text, lifetime, sound):
@@ -55,7 +55,7 @@ class NotificationDialog(FormClass, BaseClass):
     def hide(self):
         super(FormClass, self).hide()
         # check for next event to show notification for
-        self.client.notificationSystem.checkEvent()
+        client.instance.notificationSystem.checkEvent()
 
     # mouseReleaseEvent sometimes not fired
     def mousePressEvent(self, event):
@@ -65,7 +65,7 @@ class NotificationDialog(FormClass, BaseClass):
     def updatePosition(self):
         screen = QtGui.QDesktopWidget().screenGeometry()
         dialog_size = self.geometry()
-        position = self.settings.popup_position  # self.client.notificationSystem.settings.popup_position
+        position = self.settings.popup_position  # client.instance.notificationSystem.settings.popup_position
 
         if position == NotificationPosition.TOP_LEFT:
             self.move(0, 0)

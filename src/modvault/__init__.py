@@ -55,7 +55,7 @@ from uimodwidget import UIModWidget
 
 import util
 import logging
-import time
+import client
 logger = logging.getLogger(__name__)
 import urllib2
 
@@ -71,13 +71,12 @@ tempmod1 = dict(uid=1,name='Mod1', comments=[],bugreports=[], date = d,
 FormClass, BaseClass = util.loadUiType("modvault/modvault.ui")
 
 class ModVault(FormClass, BaseClass):
-    def __init__(self, client, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         QtCore.QObject.__init__(self, *args, **kwargs)
 
         self.setupUi(self)
         
-        self.client = client
-        self.client.modsTab.layout().addWidget(self)
+        client.instance.modsTab.layout().addWidget(self)
 
         logger.debug("Mod Vault tab instantiating")
         self.loaded = False
@@ -92,10 +91,10 @@ class ModVault(FormClass, BaseClass):
         self.SortType.setCurrentIndex(2)
         self.SortType.currentIndexChanged.connect(self.sortChanged)
         self.ShowType.currentIndexChanged.connect(self.showChanged)
-        
-        
-        self.client.showMods.connect(self.tabOpened)
-        self.client.lobby_info.modVaultInfo.connect(self.modInfo)
+
+
+        client.instance.showMods.connect(self.tabOpened)
+        client.instance.lobby_info.modVaultInfo.connect(self.modInfo)
 
         self.sortType = "rating"
         self.showType = "all"
@@ -165,18 +164,18 @@ class ModVault(FormClass, BaseClass):
         elif index == 2:
             typemod = 0
 
-        self.client.statsServer.send(dict(command="modvault_search", typemod=typemod, search=self.searchString))
+        client.instance.statsServer.send(dict(command="modvault_search", typemod=typemod, search=self.searchString))
         
         self.updateVisibilities()
 
     @QtCore.pyqtSlot()
     def openUIModForm(self):
-        dialog = UIModWidget(self)
+        dialog = UIModWidget()
         dialog.exec_()
     
     @QtCore.pyqtSlot()
     def openUploadForm(self):
-        modDir = QtGui.QFileDialog.getExistingDirectory(self.client, "Select the mod directory to upload", MODFOLDER,  QtGui.QFileDialog.ShowDirsOnly)
+        modDir = QtGui.QFileDialog.getExistingDirectory(client.instance, "Select the mod directory to upload", MODFOLDER,  QtGui.QFileDialog.ShowDirsOnly)
         logger.debug("Uploading mod from: " + modDir)
         if modDir != "":
             if isModFolderValid(modDir):
@@ -185,10 +184,10 @@ class ModVault(FormClass, BaseClass):
                 if modinfofile.error:
                     logger.debug("There were " + str(modinfofile.errors) + " errors and " + str(modinfofile.warnings) + " warnings.")
                     logger.debug(modinfofile.errorMsg)
-                    QtGui.QMessageBox.critical(self.client, "Lua parsing error", modinfofile.errorMsg + "\nMod uploading cancelled.")
+                    QtGui.QMessageBox.critical(client.instance, "Lua parsing error", modinfofile.errorMsg + "\nMod uploading cancelled.")
                 else:
                     if modinfofile.warning:
-                        uploadmod = QtGui.QMessageBox.question(self.client, "Lua parsing warning", modinfofile.errorMsg + "\nDo you want to upload the mod?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+                        uploadmod = QtGui.QMessageBox.question(client.instance, "Lua parsing warning", modinfofile.errorMsg + "\nDo you want to upload the mod?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
                     else:
                         uploadmod = QtGui.QMessageBox.Yes
                     if uploadmod == QtGui.QMessageBox.Yes:
@@ -198,12 +197,12 @@ class ModVault(FormClass, BaseClass):
                         dialog = UploadModWidget(self, modDir, modinfo)
                         dialog.exec_()
             else :
-                QtGui.QMessageBox.information(self.client,"Mod selection",
+                QtGui.QMessageBox.information(client.instance,"Mod selection",
                         "This folder doesn't contain a mod_info.lua file")
 
     @QtCore.pyqtSlot()
     def tabOpened(self):
-        self.client.lobby_connection.send(dict(command="modvault",type="start"))
+        client.instance.lobby_connection.send(dict(command="modvault",type="start"))
 
     def updateVisibilities(self):
         logger.debug("Updating visibilities with sort '%s' and visibility '%s'" % (self.sortType, self.showType))
@@ -213,7 +212,7 @@ class ModVault(FormClass, BaseClass):
 
     def downloadMod(self, mod):
         if downloadMod(mod):
-            self.client.lobby_connection.send(dict(command="modvault",type="download", uid=mod.uid))
+            client.instance.lobby_connection.send(dict(command="modvault",type="download", uid=mod.uid))
             self.uids = [mod.uid for mod in getInstalledMods()]
             self.updateVisibilities()
             return True
@@ -327,7 +326,7 @@ class ModItem(QtGui.QListWidgetItem):
         self.isuimod = dic["ui"]
         self.link = dic["link"] #Direct link to the zip file.
         self.thumbstr = dic["thumbnail"]# direct url to the thumbnail file.
-        self.uploadedbyuser = (self.author == self.parent.client.login)
+        self.uploadedbyuser = (self.author == client.instance.login)
 
         self.thumbnail = None
         if self.thumbstr == "":
@@ -337,7 +336,7 @@ class ModItem(QtGui.QListWidgetItem):
             if img:
                 self.setIcon(util.icon(img, False))
             else:
-                self.parent.client.downloader.downloadModPreview(self.thumbstr, self)
+                client.instance.downloader.downloadModPreview(self.thumbstr, self)
         self.updateVisibility()
 
     def updateIcon(self):
@@ -357,7 +356,7 @@ class ModItem(QtGui.QListWidgetItem):
         elif p.showType == "yours":
             return self.uploadedbyuser
         elif p.showType == "installed":
-            return self.uid in self.parent.uids
+            return self.uid in p.uids
         else: #shouldn't happen
             return True
 

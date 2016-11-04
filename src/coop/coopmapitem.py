@@ -62,12 +62,11 @@ class CoopMapItem(QtGui.QTreeWidgetItem):
     FORMATTER_COOP        = unicode(util.readfile("coop/formatters/coop.qthtml"))
 
     
-    def __init__(self, uid, parent, *args, **kwargs):
+    def __init__(self, uid, *args, **kwargs):
         QtGui.QTreeWidgetItem.__init__(self, *args, **kwargs)
 
         
         self.uid            = uid
-        self.parent         = parent
 
         self.name          = None
         self.description    = None
@@ -89,7 +88,7 @@ class CoopMapItem(QtGui.QTreeWidgetItem):
       
 #        self.icon = maps.preview(self.mapname)
 #        if not self.icon:
-#            self.client.downloader.downloadMap(self.mapname, self, True)
+#            client.instance.downloader.downloadMap(self.mapname, self, True)
 #            self.icon = util.icon("games/unknown_map.png")        
         #self.setIcon(0, self.icon)
         

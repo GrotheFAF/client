@@ -7,6 +7,7 @@ from PyQt4.QtNetwork import QAbstractSocket
 
 import config
 import connectivity
+from base import Client
 from config import Settings
 import chat
 from client.player import Player
@@ -31,7 +32,6 @@ Created on Dec 1, 2011
 '''
 
 from PyQt4 import QtCore, QtGui, QtNetwork, QtWebKit
-from types import IntType, FloatType, ListType, DictType
 
 from client import ClientState, LOBBY_HOST, \
     LOBBY_PORT, LOCAL_REPLAY_PORT
@@ -48,15 +48,14 @@ import sys
 import replays
 
 import time
-import random
+import client
 import notifications as ns
 
 FormClass, BaseClass = util.loadUiType("client/client.ui")
 
 
 class mousePosition(object):
-    def __init__(self, parent):
-        self.parent = parent
+    def __init__(self):
         self.onLeftEdge = False
         self.onRightEdge = False
         self.onTopEdge = False
@@ -67,9 +66,9 @@ class mousePosition(object):
 
     def computeMousePosition(self, pos):
         self.onLeftEdge = pos.x() < 8
-        self.onRightEdge = pos.x() > self.parent.size().width() - 8
+        self.onRightEdge = pos.x() > client.instance.size().width() - 8
         self.onTopEdge = pos.y() < 8
-        self.onBottomEdge = pos.y() > self.parent.size().height() - 8
+        self.onBottomEdge = pos.y() > client.instance.size().height() - 8
 
         self.onTopLeftEdge = self.onTopEdge and self.onLeftEdge
         self.onBottomLeftEdge = self.onBottomEdge and self.onLeftEdge
@@ -215,7 +214,7 @@ class ClientWindow(FormClass, BaseClass):
 
         self.rubberBand = QtGui.QRubberBand(QtGui.QRubberBand.Rectangle)
 
-        self.mousePosition = mousePosition(self)
+        self.mousePosition = mousePosition()
         self.installEventFilter(self)
 
         self.minimize = QtGui.QToolButton(self)
@@ -538,22 +537,22 @@ class ClientWindow(FormClass, BaseClass):
         chat.CHAT_COLORS = json.loads(util.readfile("client/colors.json"))
 
         # build main window with the now active client
-        self.news = news.NewsWidget(self)
-        self.ladder = stats.Stats(self)
-        self.games = games.Games(self)
-        self.tourneys = tourneys.Tourneys(self)
-        self.vault = vault.MapVault(self)
-        self.modvault = modvault.ModVault(self)
-        self.replays = replays.Replays(self, self.lobby_dispatch)
-        self.tutorials = tutorials.Tutorials(self)
-        self.Coop = coop.Coop(self)
-        self.notificationSystem = ns.Notifications(self)
+        self.news = news.NewsWidget()
+        self.ladder = stats.Stats()
+        self.games = games.Games()
+        self.tourneys = tourneys.Tourneys()
+        self.vault = vault.MapVault()
+        self.modvault = modvault.ModVault()
+        self.replays = replays.Replays(self.lobby_dispatch)
+        self.tutorials = tutorials.Tutorials()
+        self.Coop = coop.Coop()
+        self.notificationSystem = ns.Notifications()
 
         # set menu states
         self.actionNsEnabled.setChecked(self.notificationSystem.settings.enabled)
 
         # Other windows
-        self.avatarAdmin = self.avatarSelection = avatarWidget(self, None)
+        self.avatarAdmin = self.avatarSelection = avatarWidget(None)
 
         # warning setup
         self.warning = QtGui.QHBoxLayout()

@@ -94,8 +94,10 @@ class Chatter(QtGui.QTableWidgetItem):
         firstStatus = self.getUserRank(self)
         secondStatus = self.getUserRank(other)
 
-        if self.name == self.lobby.client.login: return True
-        if other.name == self.lobby.client.login: return False
+        if self.name == client.instance.login:
+            return True
+        if other.name == client.instance.login:
+            return False
 
         # if not same rank sort
         if firstStatus != secondStatus:
@@ -109,11 +111,11 @@ class Chatter(QtGui.QTableWidgetItem):
 
         if other_chatter.elevation:
             return self.RANK_ELEVATION
-        if self.lobby.client.players.isFriend(other_chatter.id):
-            return self.RANK_FRIEND - (2 if self.lobby.client.friendsontop else 0)
-        if self.lobby.client.players.isFoe(other_chatter.id):
+        if client.instance.players.isFriend(other_chatter.id):
+            return self.RANK_FRIEND - (2 if client.instance.friendsontop else 0)
+        if client.instance.players.isFoe(other_chatter.id):
             return self.RANK_FOE
-        if self.lobby.client.players.isPlayer(other_chatter.id):
+        if client.instance.players.isPlayer(other_chatter.id):
             return self.RANK_USER
 
         return self.RANK_NONPLAYER
@@ -146,15 +148,15 @@ class Chatter(QtGui.QTableWidgetItem):
         self.setText(self.name)
 
         # First make sure we've got the correct id for ourselves
-        if self.id == -1 and self.lobby.client.players.isPlayer(self.name):
-            self.id = self.lobby.client.players.getID(self.name)
+        if self.id == -1 and client.instance.players.isPlayer(self.name):
+            self.id = client.instance.players.getID(self.name)
 
         # Color handling
         self.set_color()
 
-        player = self.lobby.client.players[self.id]
+        player = client.instance.players[self.id]
         if not player and not self.id == -1:  # We should have a player object for this
-            player = self.lobby.client.players[self.name]
+            player = client.instance.players[self.name]
 
         # Weed out IRC users and those we don't know about early.
         if self.id == -1 or player is None:
@@ -207,10 +209,10 @@ class Chatter(QtGui.QTableWidgetItem):
             self.rankItem.setIcon(util.icon("chat/rank/newplayer.png"))
 
     def set_color(self):
-        if self.lobby.client.id == self.id and self.elevation in chat.OPERATOR_COLORS.keys():
+        if client.instance.id == self.id and self.elevation in chat.OPERATOR_COLORS.keys():
             self.setTextColor(QtGui.QColor(chat.get_color("self_mod")))
             return
-        if self.lobby.client.players.isFriend(self.id) and self.elevation in chat.OPERATOR_COLORS.keys():
+        if client.instance.players.isFriend(self.id) and self.elevation in chat.OPERATOR_COLORS.keys():
             self.setTextColor(QtGui.QColor(chat.get_color("friend_mod")))
             return
         if self.elevation in chat.colors.OPERATOR_COLORS.keys():
@@ -218,7 +220,7 @@ class Chatter(QtGui.QTableWidgetItem):
             return
 
         if self.id != -1:
-            self.setTextColor(QtGui.QColor(self.lobby.client.players.getUserColor(self.id)))
+            self.setTextColor(QtGui.QColor(client.instance.players.getUserColor(self.id)))
             return
 
         self.setTextColor(QtGui.QColor(chat.get_color("default")))
@@ -227,11 +229,11 @@ class Chatter(QtGui.QTableWidgetItem):
         QtGui.QDesktopServices.openUrl(QUrl("{}?name={}".format(Settings.get("USER_ALIASES_URL"), self.name)))
 
     def selectAvatar(self):
-        avatarSelection = avatarWidget(self.lobby.client, self.name, personal=True)
+        avatarSelection = avatarWidget(self.name, personal=True)
         avatarSelection.exec_()
 
     def addAvatar(self):
-        avatarSelection = avatarWidget(self.lobby.client, self.name)
+        avatarSelection = avatarWidget(self.name)
         avatarSelection.exec_()
 
     def kick(self):
@@ -239,7 +241,7 @@ class Chatter(QtGui.QTableWidgetItem):
 
     def doubleClicked(self, item):
         # filter yourself
-        if self.lobby.client.login == self.name:
+        if client.instance.login == self.name:
             return
         # Chatter name clicked
         if item == self:
@@ -272,7 +274,7 @@ class Chatter(QtGui.QTableWidgetItem):
         actionJoin.setDisabled(True)
 
         # Don't allow self to be invited to a game, or join one
-        if self.lobby.client.login != self.name:
+        if client.instance.login != self.name:
             if self.name in client.instance.urls:
                 url = client.instance.urls[self.name]
                 if url.scheme() == "fafgame":
@@ -288,18 +290,18 @@ class Chatter(QtGui.QTableWidgetItem):
         actionJoin.triggered.connect(self.joinInGame)
 
         # only for us. Either way, it will display our avatar, not anyone avatar.
-        if self.lobby.client.login == self.name :
+        if client.instance.login == self.name :
             menu.addAction(actionSelectAvatar)
             menu.addSeparator()
 
         # power menu
-        if self.lobby.client.power > 1:
+        if client.instance.power > 1:
             # admin and mod menus
             actionAddAvatar = QtGui.QAction("Assign avatar", menu)
             menu.addAction(actionAddAvatar)
             actionAddAvatar.triggered.connect(self.addAvatar)
 
-            if self.lobby.client.power == 2:
+            if client.instance.power == 2:
                 action_inspect_in_mordor = QtGui.QAction("Send the Orcs", menu)
                 menu.addAction(action_inspect_in_mordor)
 
@@ -315,11 +317,11 @@ class Chatter(QtGui.QTableWidgetItem):
 
                 actionCloseFA = QtGui.QAction("Close Game", menu)
                 menu.addAction(actionCloseFA)
-                actionCloseFA.triggered.connect(lambda: self.lobby.client.closeFA(self.name))
+                actionCloseFA.triggered.connect(lambda: client.instance.closeFA(self.name))
 
                 actionCloseLobby = QtGui.QAction("Close FAF Client", menu)
                 menu.addAction(actionCloseLobby)
-                actionCloseLobby.triggered.connect(lambda: self.lobby.client.closeLobby(self.name))
+                actionCloseLobby.triggered.connect(lambda: client.instance.closeLobby(self.name))
 
             menu.addSeparator()
 
@@ -341,21 +343,21 @@ class Chatter(QtGui.QTableWidgetItem):
         actionRemFoe = QtGui.QAction("Remove foe", menu)
 
         # Don't allow self to be added or removed from friends or foes
-        if self.lobby.client.me.id == self.id:
+        if client.instance.me.id == self.id:
             actionAddFriend.setDisabled(1)
             actionRemFriend.setDisabled(1)
             actionAddFoe.setDisabled(1)
             actionRemFoe.setDisabled(1)
 
         # Enable / Disable actions according to friend status
-        if self.lobby.client.players.isFriend(self.id):
+        if client.instance.players.isFriend(self.id):
             actionAddFriend.setDisabled(1)
             actionRemFoe.setDisabled(1)
             actionAddFoe.setDisabled(1)
         else:
             actionRemFriend.setDisabled(1)
 
-        if self.lobby.client.players.isFoe(self.id):
+        if client.instance.players.isFoe(self.id):
             actionAddFoe.setDisabled(1)
             actionAddFriend.setDisabled(1)
             actionRemFriend.setDisabled(1)
@@ -363,10 +365,10 @@ class Chatter(QtGui.QTableWidgetItem):
             actionRemFoe.setDisabled(1)
 
         # Triggers
-        actionAddFriend.triggered.connect(lambda: self.lobby.client.addFriend(self.id))
-        actionRemFriend.triggered.connect(lambda: self.lobby.client.remFriend(self.id))
-        actionAddFoe.triggered.connect(lambda: self.lobby.client.addFoe(self.id))
-        actionRemFoe.triggered.connect(lambda: self.lobby.client.remFoe(self.id))
+        actionAddFriend.triggered.connect(lambda: client.instance.addFriend(self.id))
+        actionRemFriend.triggered.connect(lambda: client.instance.remFriend(self.id))
+        actionAddFoe.triggered.connect(lambda: client.instance.addFoe(self.id))
+        actionRemFoe.triggered.connect(lambda: client.instance.remFoe(self.id))
 
         # Adding to menu
         menu.addAction(actionAddFriend)
@@ -386,13 +388,13 @@ class Chatter(QtGui.QTableWidgetItem):
     @QtCore.pyqtSlot()
     def viewVaultReplay(self):
         """ see the player replays in the vault """
-        self.lobby.client.replays.setCurrentIndex(2)  # focus on Online Fault
-        self.lobby.client.replays.mapName.setText("")
-        self.lobby.client.replays.playerName.setText(self.name)
-        self.lobby.client.replays.modList.setCurrentIndex(0)  # "All"
-        self.lobby.client.replays.minRating.setValue(0)
-        self.lobby.client.replays.searchVault()
-        self.lobby.client.mainTabs.setCurrentIndex(self.lobby.client.mainTabs.indexOf(self.lobby.client.replaysTab))
+        client.instance.replays.setCurrentIndex(2)  # focus on Online Fault
+        client.instance.replays.mapName.setText("")
+        client.instance.replays.playerName.setText(self.name)
+        client.instance.replays.modList.setCurrentIndex(0)  # "All"
+        client.instance.replays.minRating.setValue(0)
+        client.instance.replays.searchVault()
+        client.instance.mainTabs.setCurrentIndex(client.instance.mainTabs.indexOf(client.instance.replaysTab))
 
     @QtCore.pyqtSlot()
     def joinInGame(self):

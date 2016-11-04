@@ -16,7 +16,7 @@
   <property name="currentIndex">
    <number>0</number>
   </property>
-  <widget class="QWidget" name="ladderTab">
+  <widget class="QWidget" name="ladderLRTab">
    <attribute name="title">
     <string>Ladder</string>
    </attribute>

@@ -5,6 +5,7 @@
 from PyQt4 import QtCore, QtGui
 from fa import maps
 import util
+import client
 from config import Settings
 
 class TutorialItemDelegate(QtGui.QStyledItemDelegate):
@@ -59,9 +60,6 @@ class TutorialItemDelegate(QtGui.QStyledItemDelegate):
         return QtCore.QSize(TutorialItem.ICONSIZE + TutorialItem.TEXTWIDTH + TutorialItem.PADDING, TutorialItem.ICONSIZE)  
 
 
-
-
-
 class TutorialItem(QtGui.QListWidgetItem):
     TEXTWIDTH = 230
     ICONSIZE = 110
@@ -72,22 +70,19 @@ class TutorialItem(QtGui.QListWidgetItem):
     
     
     FORMATTER_TUTORIAL = unicode(util.readfile("tutorials/formatters/tutorials.qthtml"))
-    
-    
+
     def __init__(self, uid, *args, **kwargs):
         QtGui.QListWidgetItem.__init__(self, *args, **kwargs)
 
         self.mapname = None
         self.mapdisplayname = None      
-        self.client = None
-        self.title  = None
+        self.title = None
    
-    def update(self, message, client):
+    def update(self, message):
         '''
         Updates this item from the message dictionary supplied
         '''
 
-        self.client = client
         self.tutorial      = message['tutorial']
         self.description   = message['description']
         self.url           = "{}/faf/tutorials/{}".format(Settings.get('content/host'), message['url'])
@@ -100,7 +95,7 @@ class TutorialItem(QtGui.QListWidgetItem):
             icon = maps.preview(self.mapname)
             if not icon:
                 icon = util.icon("games/unknown_map.png")
-                self.client.downloader.downloadMap(self.mapname, self)
+                client.instance.downloader.downloadMap(self.mapname, self)
                                         
             self.setIcon(icon)
 

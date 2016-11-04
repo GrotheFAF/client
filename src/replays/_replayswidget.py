@@ -48,18 +48,17 @@ class ReplaysWidget(BaseClass, FormClass):
     automatic = Settings.persisted_property("replay/automatic", default_value=False, type=bool)
     spoiler_free = Settings.persisted_property("replay/spoilerFree", default_value=True, type=bool)
 
-    def __init__(self, client, dispatcher):
+    def __init__(self, dispatcher):
         super(BaseClass, self).__init__()
 
         self.setupUi(self)
 
         # self.replayVault.setVisible(False)
-        self.client = client
         self._dispatcher = dispatcher
-        client.replaysTab.layout().addWidget(self)
-        
-        client.lobby_info.gameInfo.connect(self.processGameInfo)
-        client.lobby_info.replayVault.connect(self.replayVault)
+        client.instance.replaysTab.layout().addWidget(self)
+
+        client.instance.lobby_info.gameInfo.connect(self.processGameInfo)
+        client.instance.lobby_info.replayVault.connect(self.replayVault)
         
         self.onlineReplays = {}
         self.onlineTree.setItemDelegate(ReplayItemDelegate(self))
@@ -101,7 +100,7 @@ class ReplaysWidget(BaseClass, FormClass):
         self.replayVaultSocket.error.connect(self.handleServerError)
         self.replayVaultSocket.readyRead.connect(self.readDataFromServer)
         self.replayVaultSocket.disconnected.connect(self.disconnected)
-        self.replayVaultSocket.error.connect(self.errored) 
+        self.replayVaultSocket.error.connect(self.errored)
 
         # restore persistent checkbox settings
         self.automaticCheckbox.setChecked(self.automatic)
@@ -203,9 +202,9 @@ class ReplaysWidget(BaseClass, FormClass):
         
                 if uid not in self.onlineReplays:
                     self.onlineReplays[uid] = ReplayItem(uid, self)
-                    self.onlineReplays[uid].update(replay, self.client)
+                    self.onlineReplays[uid].update(replay)
                 else:
-                    self.onlineReplays[uid].update(replay, self.client)
+                    self.onlineReplays[uid].update(replay)
                     
             self.updateOnlineTree()
             self.replayInfos.clear()
@@ -225,10 +224,10 @@ class ReplaysWidget(BaseClass, FormClass):
 
                 if uid not in self.onlineReplays:
                     self.onlineReplays[uid] = ReplayItem(uid, self)
-                    self.onlineReplays[uid].update(replay, self.client)
+                    self.onlineReplays[uid].update(replay)
                 else:
-                    self.onlineReplays[uid].update(replay, self.client)
-                    
+                    self.onlineReplays[uid].update(replay)
+
             self.updateOnlineTree()
             self.replayInfos.clear()
             self.RefreshResetButton.setText("Reset Search to Recent")
@@ -237,7 +236,7 @@ class ReplaysWidget(BaseClass, FormClass):
         self.updatemyTree()
         self.reloadView()
         return BaseClass.focusEvent(self, event)
-    
+
     def showEvent(self, event):
         self.updatemyTree()
         self.reloadView()
@@ -249,8 +248,9 @@ class ReplaysWidget(BaseClass, FormClass):
         self.onlineTree.clear()
         buckets = {}
         for uid in self.onlineReplays:
-            bucket = buckets.setdefault(self.onlineReplays[uid].startDate, [])
-            bucket.append(self.onlineReplays[uid])
+            #if self.onlineReplays[uid].duration != "00:00:00":  # do not add corrupted/early desync replays
+                bucket = buckets.setdefault(self.onlineReplays[uid].startDate, [])
+                bucket.append(self.onlineReplays[uid])
 
         for bucket in buckets.keys():
             bucket_item = QtGui.QTreeWidgetItem()
@@ -333,7 +333,7 @@ class ReplaysWidget(BaseClass, FormClass):
                         if icon:
                             item.setIcon(0, icon)
                         else:
-                            self.client.downloader.downloadMap(item.info['mapname'], item, True)
+                            client.instance.downloader.downloadMap(item.info['mapname'], item, True)
                             item.setIcon(0, util.icon("games/unknown_map.png"))
                         item.setToolTip(0, fa.maps.getDisplayName(item.info['mapname']))
                         item.setText(0, game_hour)
@@ -443,7 +443,7 @@ class ReplaysWidget(BaseClass, FormClass):
             icon = fa.maps.preview(info['mapname'])
             item.setToolTip(0, fa.maps.getDisplayName(info['mapname']))
             if not icon:           
-                self.client.downloader.downloadMap(item.info['mapname'], item, True)
+                client.instance.downloader.downloadMap(item.info['mapname'], item, True)
                 icon = util.icon("games/unknown_map.png")
 
             item.setText(0, time.strftime("%Y-%m-%d  -  %H:%M", time.localtime(item.info.get('launched_at', time.time()))))
@@ -477,7 +477,7 @@ class ReplaysWidget(BaseClass, FormClass):
                     playeritem = QtGui.QTreeWidgetItem()
                     playeritem.setText(0, name)
 
-                    playerid = self.client.players.getID(name)
+                    playerid = client.instance.players.getID(name)
 
                     url = QtCore.QUrl()
                     url.setScheme("faflive")
@@ -592,13 +592,14 @@ class ReplaysWidget(BaseClass, FormClass):
         
         if self.liveTree.indexOfTopLevelItem(item) == -1:
             # Notify other modules that we're watching a replay
-            self.client.viewingReplay.emit(item.url)
+            client.instance.viewingReplay.emit(item.url)
             replay(item.url)
             
     def connectToReplayVault(self):
         """ connect to the replay vault server """
 
-        if self.replayVaultSocket.state() != QtNetwork.QAbstractSocket.ConnectedState and self.replayVaultSocket.state() != QtNetwork.QAbstractSocket.ConnectingState:
+        if self.replayVaultSocket.state() != QtNetwork.QAbstractSocket.ConnectedState and \
+           self.replayVaultSocket.state() != QtNetwork.QAbstractSocket.ConnectingState:
             self.replayVaultSocket.connectToHost(self.HOST, self.SOCKET)        
 
     def send(self, message):

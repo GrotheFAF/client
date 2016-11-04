@@ -6,19 +6,20 @@ from PyQt4 import QtCore, QtGui
 
 import modvault
 import util
+import client
 
 FormClass, BaseClass = util.loadUiType("modvault/uimod.ui")
 
 
 class UIModWidget(FormClass, BaseClass):
     FORMATTER_UIMOD = unicode(util.readfile("modvault/uimod.qthtml"))
-    def __init__(self, parent, *args, **kwargs):
+
+    def __init__(self, *args, **kwargs):
         BaseClass.__init__(self, *args, **kwargs)
 
         self.setupUi(self)
-        self.parent = parent
-        
-        self.setStyleSheet(self.parent.client.styleSheet())
+
+        self.setStyleSheet(client.instance.styleSheet())
         
         self.setWindowTitle("Ui Mod Manager")
 
@@ -42,8 +43,8 @@ class UIModWidget(FormClass, BaseClass):
     @QtCore.pyqtSlot()
     def doneClicked(self):
         selected_mods = [self.uimods[str(item.text())] for item in self.modList.selectedItems()]
-        succes = modvault.setActiveMods(selected_mods, False)
-        if not succes:
+        success = modvault.setActiveMods(selected_mods, False)
+        if not success:
             QtGui.QMessageBox.information(None, "Error", "Could not set the active UI mods. Maybe something is wrong with your game.prefs file. Please send your log.")
         self.done(1)
 
@@ -51,5 +52,3 @@ class UIModWidget(FormClass, BaseClass):
     def hoverOver(self, item):
         mod = self.uimods[str(item.text())]
         self.modInfo.setText(self.FORMATTER_UIMOD.format(name=mod.totalname, description=mod.description))
-        
-    

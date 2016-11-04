@@ -1,5 +1,5 @@
 from PyQt4 import QtCore, QtGui
-
+import client
 import util
 from fa import maps
 from notifications.ns_dialog import NotificationDialog
@@ -13,11 +13,10 @@ class Notifications:
     USER_ONLINE = 'user_online'
     NEW_GAME = 'new_game'
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self):
 
-        self.settings = NsSettingsDialog(self.client)
-        self.dialog = NotificationDialog(self.client,self.settings)
+        self.settings = NsSettingsDialog()
+        self.dialog = NotificationDialog(self.settings)
         self.events = []
         self.disabledStartup = True
         self.game_running = False
@@ -98,7 +97,7 @@ class Notifications:
         if eventType == self.USER_ONLINE:
             userid = data['user']
             pixmap = self.user
-            text = '<html>%s<br><font color="silver" size="-2">joined</font> %s</html>' % (self.client.players[userid].login, data['channel'])
+            text = '<html>%s<br><font color="silver" size="-2">joined</font> %s</html>' % (client.instance.players[userid].login, data['channel'])
         elif eventType == self.NEW_GAME:
 
             preview = maps.preview(data['mapname'], pixmap=True)

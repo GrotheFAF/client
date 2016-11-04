@@ -5,13 +5,12 @@ from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import Qt
 
 import util
-from config import Settings
 from games.gameitem import GameItem, GameItemDelegate
 from games.moditem import ModItem, mod_invisible, mods
 from games.hostgamewidget import HostgameWidget
 from fa.factions import Factions
 import fa
-import modvault
+import client
 import notifications as ns
 from config import Settings
 
@@ -31,13 +30,12 @@ class GamesWidget(FormClass, BaseClass):
     sub_factions = Settings.persisted_property(
         "play/subFactions", default_value=[False, False, False, False])
 
-    def __init__(self, client, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         BaseClass.__init__(self, *args, **kwargs)
 
         self.setupUi(self)
 
-        self.client = client
-        self.client.gamesTab.layout().addWidget(self)
+        client.instance.gamesTab.layout().addWidget(self)
 
         self.mods = {}
 
@@ -68,12 +66,12 @@ class GamesWidget(FormClass, BaseClass):
 
         self.generateSelectSubset()
 
-        self.client.lobby_info.modInfo.connect(self.processModInfo)
-        self.client.lobby_info.gameInfo.connect(self.processGameInfo)
-        self.client.lobby_connection.disconnected.connect(self.clear_games)
+        client.instance.lobby_info.modInfo.connect(self.processModInfo)
+        client.instance.lobby_info.gameInfo.connect(self.processGameInfo)
+        client.instance.lobby_connection.disconnected.connect(self.clear_games)
 
-        self.client.gameEnter.connect(self.stopSearchRanked)
-        self.client.viewingReplay.connect(self.stopSearchRanked)
+        client.instance.gameEnter.connect(self.stopSearchRanked)
+        client.instance.viewingReplay.connect(self.stopSearchRanked)
 
         self.gameList.setItemDelegate(GameItemDelegate(self))
         self.gameList.itemDoubleClicked.connect(self.gameDoubleClicked)
@@ -113,7 +111,7 @@ class GamesWidget(FormClass, BaseClass):
         else:
             mod_invisible[mod] = self.mods[mod]
 
-        self.client.replays.modList.addItem(message["name"])
+        client.instance.replays.modList.addItem(message["name"])
 
     @QtCore.pyqtSlot(int)
     def togglePrivateGames(self, state):
@@ -199,7 +197,7 @@ class GamesWidget(FormClass, BaseClass):
             self.games[uid].update(message)
 
             if message['state'] == 'open' and not message['password_protected']:
-                self.client.notificationSystem.on_event(ns.Notifications.NEW_GAME, message)
+                client.instance.notificationSystem.on_event(ns.Notifications.NEW_GAME, message)
         else:
             self.games[uid].update(message)
 
@@ -243,27 +241,27 @@ class GamesWidget(FormClass, BaseClass):
         if self.searching:
             logger.info("Switching Ranked Search to Race " + str(race))
             self.race = race
-            self.client.lobby_connection.send(dict(command="game_matchmaking", mod="ladder1v1", state="settings",
+            client.instance.lobby_connection.send(dict(command="game_matchmaking", mod="ladder1v1", state="settings",
                                   faction=self.race.value))
         else:
             # Experimental UPnP Mapper - mappings are removed on app exit
-            if self.client.useUPnP:
-                self.client.lobby_connection.set_upnp(self.client.gamePort)
+            if client.instance.useUPnP:
+                client.instance.lobby_connection.set_upnp(self.client.gamePort)
 
             logger.info("Starting Ranked Search as " + str(race) +
-                        ", port: " + str(self.client.gamePort))
+                        ", port: " + str(client.instance.gamePort))
             self.searching = True
             self.race = race
             self.searchProgress.setVisible(True)
             self.labelAutomatch.setText("Searching...")
             self.updatePlayButton();
-            self.client.search_ranked(faction=self.race.value)
+            client.instance.search_ranked(faction=self.race.value)
 
     @QtCore.pyqtSlot()
     def stopSearchRanked(self, *args):
         if self.searching:
             logger.debug("Stopping Ranked Search")
-            self.client.lobby_connection.send(dict(command="game_matchmaking", mod="ladder1v1", state="stop"))
+            client.instance.lobby_connection.send(dict(command="game_matchmaking", mod="ladder1v1", state="stop"))
             self.searching = False
 
         self.updatePlayButton()
@@ -294,17 +292,17 @@ class GamesWidget(FormClass, BaseClass):
 
         self.stopSearchRanked()  # Actually a workaround
 
-        if not fa.check.game(self.client):
+        if not fa.check.game(client.instance):
             return
 
         if fa.check.check(item.mod, mapname=item.mapname, version=None, sim_mods=item.mods):
             if item.password_protected:
                 passw, ok = QtGui.QInputDialog.getText(
-                    self.client, "Passworded game", "Enter password :", QtGui.QLineEdit.Normal, "")
+                    client.instance, "Passworded game", "Enter password :", QtGui.QLineEdit.Normal, "")
                 if ok:
-                    self.client.join_game(uid=item.uid, password=passw)
+                    client.instance.join_game(uid=item.uid, password=passw)
             else:
-                self.client.join_game(uid=item.uid)
+                client.instance.join_game(uid=item.uid)
 
     @QtCore.pyqtSlot(QtGui.QListWidgetItem)
     def hostGameClicked(self, item):

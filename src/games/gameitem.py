@@ -176,10 +176,10 @@ class GameItem(QtGui.QListWidgetItem):
             self.password_protected = message.get('password_protected', False)
             self.mod = message['featured_mod']
 
-            if 'host_id' in message:
-                self.hostid = message['host_id']
-            else:
-                self.hostid = client.instance.players.getID(self.host)
+        if 'host_id' in message:
+            self.hostid = message['host_id']
+        else:
+            self.hostid = client.instance.players.getID(self.host)
 
         # Maps integral team numbers (from 2, with 1 "none") to lists of names.
         teams_map = dict.copy(message['teams'])
@@ -269,7 +269,10 @@ class GameItem(QtGui.QListWidgetItem):
         else:
             playerstring = "players"
 
-        color = client.instance.players.getUserColor(self.hostid)
+        if self.hostid == -1:  # user offline (?)
+            color = "black"
+        else:
+            color = client.instance.players.getUserColor(self.hostid)
 
         self.editTooltip(teams)
 
@@ -376,8 +379,18 @@ class GameItem(QtGui.QListWidgetItem):
         if not client.instance: return True  # If not initialized...
 
         # Friend games are on top
-        if client.instance.players.isFriend(self.hostid) and not client.instance.players.isFriend(other.hostid): return True
-        if not client.instance.players.isFriend(self.hostid) and client.instance.players.isFriend(other.hostid): return False
+        if self.hostid == -1:
+            self_isFriend = False
+        else:
+            self_isFriend = client.instance.players.isFriend(self.hostid)
+        if other.hostid == -1:
+            other_isFriend = False
+        else:
+            other_isFriend = client.instance.players.isFriend(self.hostid)
+        if self_isFriend and not other_isFriend:
+            return True
+        if not self_isFriend and other_isFriend:
+            return False
 
         # Sort Games
         # 0: By Player Count

@@ -16,7 +16,6 @@ class downloadManager(QtCore.QObject):
 
     def __init__(self, parent = None):
         QtCore.QObject.__init__(self, parent)
-        self.client = parent
         self.nam = QNetworkAccessManager(self)
 
         self.nam.finished.connect(self.finishedDownload)

@@ -127,9 +127,8 @@ class WizardSC(QtGui.QWizard):
     The actual Wizard which walks the user through the install.
     """
 
-    def __init__(self, client, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         QtGui.QWizard.__init__(self, *args, **kwargs)
-        self.client = client
         self.upgrade = UpgradePageSC()
         self.addPage(self.upgrade)
 
@@ -150,9 +149,8 @@ class Wizard(QtGui.QWizard):
     The actual Wizard which walks the user through the install.
     """
 
-    def __init__(self, client, *args, **kwargs):
-        QtGui.QWizard.__init__(self, client, *args, **kwargs)
-        self.client = client
+    def __init__(self, *args, **kwargs):
+        QtGui.QWizard.__init__(self, *args, **kwargs)
         self.upgrade = UpgradePage()
         self.addPage(self.upgrade)
 

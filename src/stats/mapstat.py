@@ -2,7 +2,7 @@
 
 import util
 from PyQt4 import QtGui, QtCore
-import json
+import client
 import datetime
 from fa import maps
 
@@ -13,15 +13,14 @@ class LadderMapStat(FormClass, BaseClass):
     """
     This class list all the maps given by the server, and ask for more details when selected.
     """
-    def __init__(self, client, parent, *args, **kwargs):
-        FormClass.__init__(self, client, *args, **kwargs)
-        BaseClass.__init__(self, client, *args, **kwargs)
+    def __init__(self, parent, *args, **kwargs):
+        FormClass.__init__(self, *args, **kwargs)
+        BaseClass.__init__(self, *args, **kwargs)
 
         self.setupUi(self)
         
         self.parent = parent
-        self.client = client
-        
+
         self.mapid = 0
 
         # adding ourself to the stat tab
@@ -158,7 +157,7 @@ class LadderMapStat(FormClass, BaseClass):
         self.mapstats.document().addResource(QtGui.QTextDocument.ImageResource,  QtCore.QUrl("map.png"), maps.preview(realmap, True, force=True))
 
         self.mapstats.insertHtml("<img src=\"map.png\" /><br><font size='+5'>" + item.text() + "</font><br><br>")
-        self.client.statsServer.send(dict(command="stats", type="ladder_map_stat", mapid=self.mapid))
+        client.instance.statsServer.send(dict(command="stats", type="ladder_map_stat", mapid=self.mapid))
 
     @QtCore.pyqtSlot(dict)
     def updatemaps(self, message):

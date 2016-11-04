@@ -6,6 +6,7 @@ import modvault
 
 from fa import maps
 import util
+import client
 import fa.check
 
 import logging
@@ -22,12 +23,12 @@ class HostgameWidget(FormClass, BaseClass):
         self.iscoop = iscoop
         self.featured_mod = item.mod
 
-        self.setStyleSheet(self.parent.client.styleSheet())
+        self.setStyleSheet(client.instance.styleSheet())
         # load settings
         util.settings.beginGroup("fa.games")
         # Default of "password"
         self.password = util.settings.value("password", "password")
-        self.title = util.settings.value("gamename", (self.parent.client.login or "") + "'s game")
+        self.title = util.settings.value("gamename", (client.instance.login or "") + "'s game")
         self.friends_only = util.settings.value("friends_only", False, type=bool)
         if self.iscoop:
             self.mapname = fa.maps.link2name(item.mapUrl)
@@ -44,8 +45,8 @@ class HostgameWidget(FormClass, BaseClass):
         
         self.message = {
             "title": self.title,
-            "host": self.parent.client.login, # We will want to send our ID here at some point
-            "teams": {1:[self.parent.client.id]},
+            "host": client.instance.login,  # We will want to send our ID here at some point
+            "teams": {1: [client.instance.id]},
             "featured_mod": self.featured_mod,
             "mapname": self.mapname,
             "state": "open",
@@ -111,7 +112,7 @@ class HostgameWidget(FormClass, BaseClass):
         self.save_last_hosted_settings()
 
         # Make sure the binaries are all up to date, and abort if the update fails or is cancelled.
-        if not fa.check.game(self.parent.client):
+        if not fa.check.game(client.instance):
             return
 
         # Ensure all mods are up-to-date, and abort if the update process fails.
@@ -124,7 +125,7 @@ class HostgameWidget(FormClass, BaseClass):
         mods = [self.mods[modstr] for modstr in modnames]
         modvault.setActiveMods(mods, True, False)
 
-        self.parent.client.host_game(title=self.title,
+        client.instance.host_game(title=self.title,
                                  mod=self.featured_mod,
                                  visibility="friends" if self.friends_only else "public",
                                  mapname=self.mapname,

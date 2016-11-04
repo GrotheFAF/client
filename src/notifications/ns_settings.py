@@ -2,6 +2,7 @@ from PyQt4 import QtCore, QtGui
 from enum import Enum
 from config import Settings
 import util
+import client
 import notifications as ns
 from notifications.hook_useronline import NsHookUserOnline
 from notifications.hook_newgame import NsHookNewGame
@@ -36,12 +37,10 @@ class NotificationPosition(Enum):
 # TODO: how to register hooks?
 FormClass2, BaseClass2 = util.loadUiType("notification_system/ns_settings.ui")
 class NsSettingsDialog(FormClass2, BaseClass2):
-    def __init__(self, client):
+    def __init__(self):
         BaseClass2.__init__(self)
-        #BaseClass2.__init__(self, client)
 
         self.setupUi(self)
-        self.client = client
 
         # remove help button
         self.setWindowFlags(self.windowFlags() & (~QtCore.Qt.WindowContextHelpButtonHint))
@@ -80,7 +79,7 @@ class NsSettingsDialog(FormClass2, BaseClass2):
         Settings.set('notifications/popup_position', self.popup_position.value)
         Settings.set('notifications/ingame', self.ingame_notifications.value)
 
-        self.client.actionNsEnabled.setChecked(self.enabled)
+        client.instance.actionNsEnabled.setChecked(self.enabled)
 
     @QtCore.pyqtSlot()
     def on_btnSave_clicked(self):

@@ -9,7 +9,7 @@ from fa import maps
 from vault import luaparser
 import urllib2
 import re
-import json
+import client
 from config import Settings
 
 logger = logging.getLogger(__name__)
@@ -24,9 +24,8 @@ class FAFPage(QtWebKit.QWebPage):
 
 
 class MapVault(QtCore.QObject):
-    def __init__(self, client, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         QtCore.QObject.__init__(self, *args, **kwargs)
-        self.client = client
 
         logger.debug("Map Vault tab instantiating")
 
@@ -37,10 +36,10 @@ class MapVault(QtCore.QObject):
         self.ui.page().mainFrame().javaScriptWindowObjectCleared. \
             connect(self.addScript)
 
-        self.client.mapsTab.layout().addWidget(self.ui)
+        client.instance.mapsTab.layout().addWidget(self.ui)
 
         self.loaded = False
-        self.client.showMaps.connect(self.reloadView)
+        client.instance.showMaps.connect(self.reloadView)
         self.ui.loadFinished.connect(self.ui.show)
         self.reloadView()
 
@@ -61,8 +60,8 @@ class MapVault(QtCore.QObject):
 
         url = QtCore.QUrl(ROOT)
         url.setPath("/faf/vault/maps.php")
-        url.addQueryItem('username', self.client.login)
-        url.addQueryItem('pwdhash', self.client.password)
+        url.addQueryItem('username', client.instance.login)
+        url.addQueryItem('pwdhash', client.instance.password)
 
         self.ui.setUrl(url)
 
@@ -99,7 +98,7 @@ class MapVault(QtCore.QObject):
     @QtCore.pyqtSlot()
     def uploadMap(self):
         mapDir = QtGui.QFileDialog.getExistingDirectory(
-            self.client,
+            client.instance,
             "Select the map directory to upload",
             maps.getUserMapsFolder(),
             QtGui.QFileDialog.ShowDirsOnly)
@@ -129,14 +128,14 @@ class MapVault(QtCore.QObject):
                         ))
                     logger.debug(scenariolua.errorMsg)
                     QtGui.QMessageBox.critical(
-                        self.client,
+                        client.instance,
                         "Lua parsing error",
                         "{}\nMap uploading cancelled.".format(
                             scenariolua.errorMsg))
                 else:
                     if scenariolua.warning:
                         uploadmap = QtGui.QMessageBox.question(
-                            self.client,
+                            client.instance,
                             "Lua parsing warning",
                             "{}\nDo you want to upload the map?".format(
                                 scenariolua.errorMsg),
@@ -169,20 +168,20 @@ class MapVault(QtCore.QObject):
                             saveInfos)
                         if not tmpFile:
                             QtGui.QMessageBox.critical(
-                                self.client,
+                                client.instance,
                                 "Map uploading error",
                                 "Couldn't make previews for {}\n"
                                 "Map uploading cancelled.".format(mapName))
                             return None
 
                         qfile = QtCore.QFile(tmpFile.name)
-                        self.client.lobby_connection.writeToServer("UPLOAD_MAP", zipName, scenarioInfos, qfile)
+                        client.instance.lobby_connection.writeToServer("UPLOAD_MAP", zipName, scenarioInfos, qfile)
 
                         #removing temporary files
                         qfile.remove()
             else:
                 QtGui.QMessageBox.information(
-                    self.client,
+                    client.instance,
                     "Map selection",
                     "This folder doesn't contain valid map data.")
 
@@ -195,7 +194,7 @@ class MapVault(QtCore.QObject):
             maps.existMaps(True)
         else:
             show = QtGui.QMessageBox.question(
-                self.client,
+                client.instance,
                 "Already got the Map",
                 "Seems like you already have that map!<br/><b>Would you like to see it?</b>",
                 QtGui.QMessageBox.Yes,

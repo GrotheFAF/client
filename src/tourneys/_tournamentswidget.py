@@ -2,7 +2,7 @@
 from PyQt4 import QtCore, QtGui
 import util
 import secondaryServer
-
+import client
 from tourneys.tourneyitem import TourneyItem, TourneyItemDelegate
 
 
@@ -12,13 +12,12 @@ FormClass, BaseClass = util.loadUiType("tournaments/tournaments.ui")
 class TournamentsWidget(FormClass, BaseClass):
     ''' list and manage the main tournament lister '''
     
-    def __init__(self, client, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         BaseClass.__init__(self, *args, **kwargs)        
         
         self.setupUi(self)
 
-        self.client = client
-        self.client.tourneyTab.layout().addWidget(self)
+        client.instance.tourneyTab.layout().addWidget(self)
         
         #tournament server
         self.tourneyServer = secondaryServer.SecondaryServer("Tournament", 11001, self)
@@ -54,19 +53,19 @@ class TournamentsWidget(FormClass, BaseClass):
         '''
         Slot that attempts to join or leave a tournament.
         ''' 
-        if not self.client.login in item.playersname :
-            reply = QtGui.QMessageBox.question(self.client, "Register",
+        if not client.instance.login in item.playersname :
+            reply = QtGui.QMessageBox.question(client.instance, "Register",
                 "Do you want to register to this tournament ?",
                 QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
             if reply == QtGui.QMessageBox.Yes:
-                self.tourneyServer.send(dict(command="add_participant", uid=item.uid, login=self.client.login))
+                self.tourneyServer.send(dict(command="add_participant", uid=item.uid, login=client.instance.login))
 
         else :
-            reply = QtGui.QMessageBox.question(self.client, "Register",
+            reply = QtGui.QMessageBox.question(client.instance, "Register",
                 "Do you want to leave this tournament ?",
                 QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
             if reply == QtGui.QMessageBox.Yes:   
-                self.tourneyServer.send(dict(command="remove_participant", uid=item.uid, login=self.client.login)) 
+                self.tourneyServer.send(dict(command="remove_participant", uid=item.uid, login=client.instance.login))
     
                 
     def handle_tournaments_info(self, message):
@@ -76,6 +75,6 @@ class TournamentsWidget(FormClass, BaseClass):
             if not uid in self.tourneys :
                 self.tourneys[uid] = TourneyItem(self, uid)
                 self.tourneyList.addItem(self.tourneys[uid])
-                self.tourneys[uid].update(tournaments[uid], self.client)
+                self.tourneys[uid].update(tournaments[uid])
             else :
-                self.tourneys[uid].update(tournaments[uid], self.client)
+                self.tourneys[uid].update(tournaments[uid])

@@ -21,24 +21,21 @@ class StatsWidget(BaseClass, FormClass):
     laddermaplist = QtCore.pyqtSignal(dict)
     laddermapstat = QtCore.pyqtSignal(dict)
 
-    def __init__(self, client):
+    def __init__(self):
         super(BaseClass, self).__init__()
 
         self.setupUi(self)
 
-        self.client = client
-        client.ladderTab.layout().addWidget(self)
+        client.instance.ladderTab.layout().addWidget(self)
         
-        self.client.lobby_info.statsInfo.connect(self.processStatsInfos)
-
-        self.client = client
+        client.instance.lobby_info.statsInfo.connect(self.processStatsInfos)
 
         self.webview = QtWebKit.QWebView()
         
         self.LadderRatings.layout().addWidget(self.webview)
         
         self.loaded = False
-        self.client.showLadder.connect(self.updating)
+        client.instance.showLadder.connect(self.updating)
         self.webview.loadFinished.connect(self.webview.show)
         self.leagues.currentChanged.connect(self.leagueUpdate)
         self.pagesDivisions = {}
@@ -49,14 +46,14 @@ class StatsWidget(BaseClass, FormClass):
         
         self.currentLeague = 0
         self.currentDivision = 0
-        
+
         self.FORMATTER_LADDER        = unicode(util.readfile("stats/formatters/ladder.qthtml"))
         self.FORMATTER_LADDER_HEADER = unicode(util.readfile("stats/formatters/ladder_header.qthtml"))
 
         util.setStyleSheet(self.leagues, "stats/formatters/style.css")
     
         # setup other tabs
-        self.mapstat = mapstat.LadderMapStat(self.client, self)
+        self.mapstat = mapstat.LadderMapStat(self)
 
     @QtCore.pyqtSlot(int)
     def leagueUpdate(self, index):
@@ -66,32 +63,32 @@ class StatsWidget(BaseClass, FormClass):
             if leagueTab.currentIndex() == 0:
                 if time.time() - self.floodtimer > ANTIFLOOD:
                     self.floodtimer = time.time() 
-                    self.client.statsServer.send(dict(command="stats", type="league_table", league=self.currentLeague))
+                    client.instance.statsServer.send(dict(command="stats", type="league_table", league=self.currentLeague))
 
     @QtCore.pyqtSlot(int)
     def divisionsUpdate(self, index):
         if index == 0:
             if time.time() - self.floodtimer > ANTIFLOOD:
                 self.floodtimer = time.time()
-                self.client.statsServer.send(dict(command="stats", type="league_table", league=self.currentLeague))
+                client.instance.statsServer.send(dict(command="stats", type="league_table", league=self.currentLeague))
         
         elif index == 1:
             tab = self.currentLeague - 1
             if tab not in self.pagesDivisions:
-                    self.client.statsServer.send(dict(command="stats", type="divisions", league=self.currentLeague))
+                    client.instance.statsServer.send(dict(command="stats", type="divisions", league=self.currentLeague))
         
     @QtCore.pyqtSlot(int)
     def divisionUpdate(self, index):
         if time.time() - self.floodtimer > ANTIFLOOD:
             self.floodtimer = time.time()
-            self.client.statsServer.send(dict(command="stats", type="division_table", league=self.currentLeague, division=index))           
+            client.instance.statsServer.send(dict(command="stats", type="division_table", league=self.currentLeague, division=index))
         
     def createDivisionsTabs(self, divisions):
         userDivision = ""
-        me = self.client.me
+        me = client.instance.me
         if me.league is not None:  # was me.division, but no there there
             userDivision = me.league[1]  # ? [0]=league and [1]=division
-       
+
         pages = QtGui.QTabWidget()
 
         foundDivision = False
@@ -112,28 +109,30 @@ class StatsWidget(BaseClass, FormClass):
             if name == userDivision:
                 foundDivision = True
                 pages.setCurrentIndex(index)
-                self.client.statsServer.send(dict(command="stats", type="division_table", league=league, division=index))
+                client.instance.statsServer.send(dict(command="stats", type="division_table", league=league, division=index))
         
         if not foundDivision:
-            self.client.statsServer.send(dict(command="stats", type="division_table", league=league, division=0))
+            client.instance.statsServer.send(dict(command="stats", type="division_table", league=league, division=0))
         
         pages.currentChanged.connect(self.divisionUpdate)
         return pages
 
     def createResults(self, values, table):
-        
+
         formatter = self.FORMATTER_LADDER
         formatter_header = self.FORMATTER_LADDER_HEADER
         glist = []
         append = glist.append
-        append("<table style='color:#3D3D3D' cellspacing='0' cellpadding='4' width='100%' height='100%'><tbody>")
+        #append("<table style='color:#3D3D3D' cellspacing='0' cellpadding='4' width='100%' height='100%'><tbody>")
+        append("<style> .maintbl { color: #3D3D3D; }</style>")  # style option
+        append("<table class='maintbl' cellspacing='0' cellpadding='4'><tbody>")  # style option
         append(formatter_header.format(rank="rank", name="name", score="score", color="#92C1E4"))
 
         for val in values:
             rank = val["rank"]
             name = val["name"]
             score = str(val["score"])
-            if self.client.login == name:
+            if client.instance.login == name:
                 append(formatter.format(rank=str(rank), name=name, score=score, color="#6CF"))
             elif rank % 2 == 0:
                 append(formatter.format(rank=str(rank), name=name, score=str(val["score"]), color="#F1F1F1"))
@@ -179,6 +178,9 @@ class StatsWidget(BaseClass, FormClass):
                 leagueTab.currentChanged.connect(self.divisionsUpdate)
                 leagueTab.widget(0).layout().addWidget(self.pagesAllLeagues[tab])
 
+        elif type == "ladder_maps":  # from old HardlySofly commit
+            self.laddermaplist.emit(message)
+
         elif typeStat == "ladder_map_stat":
             self.laddermapstat.emit(message)
 
@@ -189,7 +191,9 @@ class StatsWidget(BaseClass, FormClass):
         if self.client.state != client.ClientState.LOGGED_IN:
             return
 
-        me = self.client.players[self.client.login]
+        client.instance.statsServer.send(dict(command="stats", type="ladder_maps", mapid=0))  # from old HardlySofly commit +.statsServer
+
+        me = client.instance.players[client.instance.login]
         if me.league is not None:
             self.leagues.setCurrentIndex(me.league - 1)
         else:

@@ -1,5 +1,4 @@
 from PyQt4 import QtCore, QtGui
-import fa
 from fa.replay import replay
 from fa.wizards import WizardSC
 import util
@@ -9,10 +8,8 @@ from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from games.gameitem import GameItem, GameItemDelegate
 from coop.coopmapitem import CoopMapItem, CoopMapItemDelegate
 from games.hostgamewidget import HostgameWidget
-from fa import factions
-import random
 import fa
-import modvault
+import client
 import os
 
 import logging
@@ -23,14 +20,13 @@ FormClass, BaseClass = util.loadUiType("coop/coop.ui")
 
 
 class CoopWidget(FormClass, BaseClass):
-    def __init__(self, client, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         
         BaseClass.__init__(self, *args, **kwargs)        
         
         self.setupUi(self)
 
-        self.client = client
-        self.client.coopTab.layout().addWidget(self)
+        client.instance.coopTab.layout().addWidget(self)
         
         #Dictionary containing our actual games.
         self.games = {}
@@ -44,9 +40,9 @@ class CoopWidget(FormClass, BaseClass):
         
         self.options = []
         
-        self.client.showCoop.connect(self.coopChanged)
-        self.client.lobby_info.coopInfo.connect(self.processCoopInfo)
-        self.client.lobby_info.gameInfo.connect(self.processGameInfo)
+        client.instance.showCoop.connect(self.coopChanged)
+        client.instance.lobby_info.coopInfo.connect(self.processCoopInfo)
+        client.instance.lobby_info.gameInfo.connect(self.processGameInfo)
         self.coopList.header().setResizeMode(0, QtGui.QHeaderView.ResizeToContents)
         self.coopList.setItemDelegate(CoopMapItemDelegate(self))
 
@@ -56,7 +52,7 @@ class CoopWidget(FormClass, BaseClass):
         self.coopList.itemDoubleClicked.connect(self.coopListDoubleClicked)
         self.coopList.itemClicked.connect(self.coopListClicked)
         
-        self.client.lobby_info.coopLeaderBoard.connect(self.processLeaderBoardInfos)
+        client.instance.lobby_info.coopLeaderBoard.connect(self.processLeaderBoardInfos)
         self.tabLeaderWidget.currentChanged.connect(self.askLeaderBoard)
         
         self.linkButton.clicked.connect(self.linkVanilla)
@@ -155,7 +151,7 @@ class CoopWidget(FormClass, BaseClass):
 
     def coopChanged(self):
         if not self.loaded:
-            self.client.lobby_connection.send(dict(command="coop_list"))
+            client.instance.lobby_connection.send(dict(command="coop_list"))
             self.loaded = True
 
     def askLeaderBoard(self):
@@ -163,7 +159,7 @@ class CoopWidget(FormClass, BaseClass):
         ask the server for stats
         '''
         if self.selectedItem:
-            self.client.statsServer.send(dict(command="coop_stats", mission=self.selectedItem.uid, type=self.tabLeaderWidget.currentIndex()))
+            client.instance.statsServer.send(dict(command="coop_stats", mission=self.selectedItem.uid, type=self.tabLeaderWidget.currentIndex()))
 
     def coopListClicked(self, item):
         '''
@@ -178,7 +174,7 @@ class CoopWidget(FormClass, BaseClass):
 
         if item != self.selectedItem: 
             self.selectedItem = item
-            self.client.statsServer.send(dict(command="coop_stats", mission=item.uid, type=self.tabLeaderWidget.currentIndex()))
+            client.instance.statsServer.send(dict(command="coop_stats", mission=item.uid, type=self.tabLeaderWidget.currentIndex()))
 
     def coopListDoubleClicked(self, item):
         '''
@@ -190,7 +186,7 @@ class CoopWidget(FormClass, BaseClass):
         if not fa.instance.available():
             return
             
-        self.client.games.stopSearchRanked()
+        client.instance.games.stopSearchRanked()
         
         # A simple Hosting dialog.
         if fa.check.check("coop"):
@@ -218,7 +214,7 @@ class CoopWidget(FormClass, BaseClass):
             else:
                 root_item = self.cooptypes[typeCoop] 
             
-            itemCoop = CoopMapItem(uid, self)
+            itemCoop = CoopMapItem(uid)
             itemCoop.update(message)
             
             root_item.addChild(itemCoop)
@@ -266,10 +262,10 @@ class CoopWidget(FormClass, BaseClass):
             return
 
         if item.password_protected:
-            passw, ok = QtGui.QInputDialog.getText(self.client, "Passworded game" , "Enter password :", QtGui.QLineEdit.Normal, "")
+            passw, ok = QtGui.QInputDialog.getText(client.instance, "Passworded game" , "Enter password :", QtGui.QLineEdit.Normal, "")
             if ok:
-                self.client.join_game(uid=item.uid, password=passw)
-        else :
-            self.client.join_game(uid=item.uid)
+                client.instance.join_game(uid=item.uid, password=passw)
+        else:
+            client.instance.join_game(uid=item.uid)
 
 

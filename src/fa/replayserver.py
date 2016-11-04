@@ -151,10 +151,9 @@ class ReplayServer(QtNetwork.QTcpServer):
     """
     __logger = logging.getLogger(__name__)
 
-    def __init__(self, client, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         QtNetwork.QTcpServer.__init__(self, *args, **kwargs)
         self.recorders = []
-        self.client = client                
         self.__logger.debug("initializing...")
         self.newConnection.connect(self.acceptConnection)
         

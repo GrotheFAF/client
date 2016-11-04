@@ -8,6 +8,7 @@ import chat
 from chat import logger
 from chat.chatter import Chatter
 import re
+import client
 import json
 
 from client import Player
@@ -91,7 +92,7 @@ class Channel(FormClass, BaseClass):
 
             self.nickFilter.textChanged.connect(self.filterNicks)
 
-            self.lobby.client.usersUpdated.connect(self.update_users)
+            client.instance.usersUpdated.connect(self.update_users)
         else:
             self.nickFrame.hide()
             self.announceLine.hide()
@@ -163,11 +164,11 @@ class Channel(FormClass, BaseClass):
 
     @QtCore.pyqtSlot()
     def pingWindow(self):
-        QtGui.QApplication.alert(self.lobby.client)
+        QtGui.QApplication.alert(client.instance)
 
-        if not self.isVisible() or QtGui.QApplication.activeWindow() != self.lobby.client:
+        if not self.isVisible() or QtGui.QApplication.activeWindow() != client.instance:
             if self.oneMinuteOrOlder():
-                if self.lobby.client.soundeffects:
+                if client.instance.soundeffects:
                     util.sound("chat/sfx/query.wav")
 
         if not self.isVisible():
@@ -180,7 +181,7 @@ class Channel(FormClass, BaseClass):
         if url.scheme() == "faflive":
             replay(url)
         elif url.scheme() == "fafgame":
-            self.lobby.client.joinGameFromURL(url)
+            client.instance.joinGameFromURL(url)
         else:
             QtGui.QDesktopServices.openUrl(url)
 
@@ -211,8 +212,8 @@ class Channel(FormClass, BaseClass):
             cursor.removeSelectedText()
             self.lines = self.lines - CHAT_REMOVEBLOCK
 
-        if self.lobby.client.players.isPlayer(name):
-            player = self.lobby.client.players[name]
+        if client.instance.players.isPlayer(name):
+            player = client.instance.players[name]
         else:
             player = IRCPlayer(name)
 
@@ -221,7 +222,7 @@ class Channel(FormClass, BaseClass):
             displayName = "<b>[%s]</b>%s" % (player.clan, name)
 
         # Play a ping sound and flash the title under certain circumstances
-        mentioned = text.find(self.lobby.client.login) != -1
+        mentioned = text.find(client.instance.login) != -1
         if mentioned or (self.private and not (formatter is Formatters.FORMATTER_RAW and text == "quit.")):
             self.pingWindow()
 
@@ -235,10 +236,10 @@ class Channel(FormClass, BaseClass):
 
         else:
             # Fallback and ask the client. We have no Idea who this is.
-            color = self.lobby.client.players.getUserColor(player.id)
+            color = client.instance.players.getUserColor(player.id)
 
         if mentioned:
-            color = self.lobby.client.getColor("you")
+            color = client.instance.getColor("you")
 
         # scroll if close to the last line of the log
         scroll_current = self.chatArea.verticalScrollBar().value()
@@ -294,12 +295,12 @@ class Channel(FormClass, BaseClass):
         """
         Print an raw message in the chatArea of the channel
         """
-        id = self.lobby.client.players.getID(name)
+        id = client.instance.players.getID(name)
 
-        color = self.lobby.client.players.getUserColor(id)
+        color = client.instance.players.getUserColor(id)
 
         # Play a ping sound
-        if self.private and name != self.lobby.client.login:
+        if self.private and name != client.instance.login:
             self.pingWindow()
 
         # scroll if close to the last line of the log
@@ -347,8 +348,8 @@ class Channel(FormClass, BaseClass):
     @QtCore.pyqtSlot(list)
     def update_users(self, updated_users):
         for id in updated_users:
-            if id in self.lobby.client.players:
-                name = self.lobby.client.players[id].login
+            if id in client.instance.players:
+                name = client.instance.players[id].login
             else:
                 name = id
             if name in self.chatters:
@@ -399,7 +400,7 @@ class Channel(FormClass, BaseClass):
 
         self.updateUserCount()
 
-        if join and self.lobby.client.joinsparts:
+        if join and client.instance.joinsparts:
             self.printAction(name, "joined the channel.", server_action=True)
 
     def renameChatter(self, oldname, newname):
@@ -415,7 +416,7 @@ class Channel(FormClass, BaseClass):
             self.nickList.removeRow(self.chatters[name].row())
             del self.chatters[name]
 
-            if server_action and (self.lobby.client.joinsparts or self.private):
+            if server_action and (client.instance.joinsparts or self.private):
                 self.printAction(name, server_action, server_action=True)
                 self.stopBlink()
 
@@ -456,7 +457,7 @@ class Channel(FormClass, BaseClass):
                     self.lobby.sendMsg(blobs[1], " ".join(blobs[2:]))
                 elif text.startswith("/me "):
                     if self.lobby.sendAction(target, text[4:]):
-                        self.printAction(self.lobby.client.login, text[4:], True)
+                        self.printAction(client.instance.login, text[4:], True)
                     else:
                         self.printAction("IRC", "action not supported", True)
                 elif text.startswith("/seen "):
@@ -466,5 +467,5 @@ class Channel(FormClass, BaseClass):
                         self.printAction("IRC", "not connected", True)
             else:
                 if self.lobby.sendMsg(target, text):
-                    self.printMsg(self.lobby.client.login, text, True)
+                    self.printMsg(client.instance.login, text, True)
         self.chatEdit.clear()

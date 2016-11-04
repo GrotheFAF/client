@@ -1,4 +1,5 @@
 
+
 """
 Created on Dec 8, 2011
 
@@ -102,7 +103,7 @@ class ChatLineEdit(QtGui.QLineEdit):
                 self.currentHistoryIndex -= 1
             self.historyShown = True
             self.setText(self.history[self.currentHistoryIndex])
-    
+
     def nextHistory(self):
         if self.currentHistoryIndex is not None:
             if self.currentHistoryIndex < len(self.history)-1 and self.historyShown:  # check for boundaries and only change index is hostory is alrady shown
