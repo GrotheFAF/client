@@ -176,19 +176,16 @@ class GameItem(QtGui.QListWidgetItem):
             self.password_protected = message.get('password_protected', False)
             self.mod = message['featured_mod']
 
+        if self.host is None:  # fresh game
+            self.host = message['host']
+        elif self.host != message['host']:  # somethings funny (offline)
+            self.host = message['host']
+
         if 'host_id' in message:
             self.hostid = message['host_id']
         else:
             self.hostid = client.instance.players.getID(self.host)
 
-        # Maps integral team numbers (from 2, with 1 "none") to lists of names.
-        teams_map = dict.copy(message['teams'])
-        self.modVersion = message.get('featured_mod_versions', [])
-        self.mods = message.get('sim_mods', {})
-        self.options = message.get('options', [])
-        num_players = message.get('num_players', 0)
-        self.slots = message.get('max_players', 12)
-        
         oldstate = self.state
         self.state = message['state']
 
@@ -204,13 +201,8 @@ class GameItem(QtGui.QListWidgetItem):
             client.instance.usersUpdated.emit(self.players)
             return
 
-        # Map preview code
-        if self.mapname != message['mapname']:
-            self.mapname = message['mapname']
-            self.mapdisplayname = maps.getDisplayName(self.mapname)
-            refresh_icon = True
-        else:
-            refresh_icon = False
+        # Maps integral team numbers (from 2, with 1 "none") to lists of names.
+        teams_map = dict.copy(message['teams'])
 
         # Used to differentiate between newly added / removed and previously present players
         oldplayers = set(map(lambda p: p.login, self.players))
@@ -234,56 +226,73 @@ class GameItem(QtGui.QListWidgetItem):
                         real_team.append(client.instance.players[name])
                 teams.append(real_team)
 
-        self.nTeams = len(teams)
+        if self.state == "open":  # things only needed while hosting
 
-        # Tuples for feeding into trueskill.
-        rating_tuples = []
-        for team in teams:
-            ratings_for_team = map(lambda player: Rating(player.rating_mean, player.rating_deviation), team)
-            rating_tuples.append(tuple(ratings_for_team))
+            # self.modVersion = message.get('featured_mod_versions', [])  # in message but not used
+            self.mods = message.get('sim_mods', {})  # -> editTooltip
+            # self.options = message.get('options', [])  # not in message and not used
+            num_players = message.get('num_players', 0)
+            slots = message.get('max_players', 12)
 
-        try:
-            self.gamequality = 100*round(trueskill.quality(rating_tuples), 2)
-        except ValueError:
-            self.gamequality = 0
-
-        # Alternate icon: If private game, use game_locked icon. Otherwise, use preview icon from map library.
-        if refresh_icon:
-            if self.password_protected:
-                icon = util.icon("games/private_game.png")
+            # Map preview code
+            if self.mapname != message['mapname']:
+                self.mapname = message['mapname']
+                self.mapdisplayname = maps.getDisplayName(self.mapname)
+                refresh_icon = True
             else:
-                icon = maps.preview(self.mapname)
-                if not icon:
-                    client.instance.downloader.downloadMap(self.mapname, self)
-                    icon = util.icon("games/unknown_map.png")
+                refresh_icon = False
 
-            self.setIcon(icon)
+            self.nTeams = len(teams)
 
-        if self.gamequality == 0:
-            strQuality = "? %"
-        else:
-            strQuality = str(self.gamequality)+" %"
+            # Tuples for feeding into trueskill.
+            rating_tuples = []
+            for team in teams:
+                ratings_for_team = map(lambda player: Rating(player.rating_mean, player.rating_deviation), team)
+                rating_tuples.append(tuple(ratings_for_team))
 
-        if num_players == 1:
-            playerstring = "player"
-        else:
-            playerstring = "players"
+            try:
+                self.gamequality = 100*round(trueskill.quality(rating_tuples), 2)
+            except ValueError:
+                self.gamequality = 0
 
-        if self.hostid == -1:  # user offline (?)
-            color = "black"
-        else:
+            # Alternate icon: If private game, use game_locked icon. Otherwise, use preview icon from map library.
+            if refresh_icon:
+                if self.password_protected:
+                    icon = util.icon("games/private_game.png")
+                else:
+                    icon = maps.preview(self.mapname)
+                    if not icon:
+                        client.instance.downloader.downloadMap(self.mapname, self)
+                        icon = util.icon("games/unknown_map.png")
+
+                self.setIcon(icon)
+
+            if self.gamequality == 0:
+                strQuality = "? %"
+            else:
+                strQuality = str(self.gamequality)+" %"
+
+            if num_players == 1:
+                playerstring = "player"
+            else:
+                playerstring = "players"
+
+            if self.hostid == -1:  # user offline (?)
+                self.host += " <font color='darkred'>(offline)</font>"
             color = client.instance.players.getUserColor(self.hostid)
 
-        self.editTooltip(teams)
+            self.editTooltip(teams)
 
-        if self.mod == "faf" or self.mod == "coop":
-            self.setText(self.FORMATTER_FAF.format(color=color, mapslots=self.slots, mapdisplayname=self.mapdisplayname,
-                                               title=self.title, host=self.host, players=num_players,
-                                               playerstring=playerstring, gamequality=strQuality))
-        else:
-            self.setText(self.FORMATTER_MOD.format(color=color, mapslots=self.slots, mapdisplayname=self.mapdisplayname,
-                                               title=self.title, host=self.host, players=num_players, mod=self.mod,
-                                               playerstring=playerstring, gamequality=strQuality))
+            if self.mod == "faf" or self.mod == "coop":
+                self.setText(self.FORMATTER_FAF.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
+                                                   title=self.title, host=self.host, players=num_players,
+                                                   playerstring=playerstring, gamequality=strQuality))
+            else:
+                self.setText(self.FORMATTER_MOD.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
+                                                   title=self.title, host=self.host, players=num_players, mod=self.mod,
+                                                   playerstring=playerstring, gamequality=strQuality))
+        elif self.state != "playing":
+            self.state = "funky"
 
         # Spawn announcers: IF we had a gamestate change, show replay and hosting announcements
         if oldstate != self.state:
