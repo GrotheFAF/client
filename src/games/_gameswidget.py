@@ -263,24 +263,11 @@ class GamesWidget(FormClass, BaseClass):
             logger.debug("Stopping Ranked Search")
             client.instance.lobby_connection.send(dict(command="game_matchmaking", mod="ladder1v1", state="stop"))
             self.searching = False
+            client.instance.game_session.stop_listen()
 
         self.updatePlayButton()
         self.searchProgress.setVisible(False)
         self.labelAutomatch.setText("1 vs 1 Automatch")
-
-
-    @QtCore.pyqtSlot(bool)
-    def toggle_search(self, enabled, race=None):
-        """
-        Handler called when a ladder search button is pressed. They're really checkboxes, and the
-        state flag is used to decide whether to start or stop the search.
-        :param state: The checkedness state of the search checkbox that was pushed
-        :param player_faction: The faction corresponding to that checkbox
-        """
-        if enabled and not self.searching:
-            self.startSearchRanked(race)
-        else:
-            self.stopSearchRanked()
 
     @QtCore.pyqtSlot(QtGui.QListWidgetItem)
     def gameDoubleClicked(self, item):

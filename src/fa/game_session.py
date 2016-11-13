@@ -96,6 +96,10 @@ class GameSession(QObject):
         else:
             self.connectivity.prepare()
 
+    def stop_listen(self):
+        self.state = GameSessionState.OFF
+        client.instance.stateLabel.setText(str(self.state))
+
     def _needs_game_connection(fn):
         def wrap(self, *args, **kwargs):
             if self._game_connection is None:
