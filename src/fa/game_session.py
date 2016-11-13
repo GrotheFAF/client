@@ -63,6 +63,7 @@ class GameSession(QObject):
 
         # We only allow one game connection at a time
         self._game_connection = None
+        client.stateLabel.setText(str(self.state))
 
         self._process = game_process_instance  # type: GameProcess
         self._process.started.connect(self._launched)
@@ -87,8 +88,9 @@ class GameSession(QObject):
         Call this in good time before hosting a game,
         e.g. when the host game dialog is being shown.
         """
-        assert self.state == GameSessionState.OFF
+        #assert self.state == GameSessionState.OFF
         self.state = GameSessionState.LISTENING
+        client.instance.stateLabel.setText(str(self.state))
         if self.connectivity.is_ready:
             self.ready.emit()
         else:
@@ -149,6 +151,8 @@ class GameSession(QObject):
         self._game_connection = GPGNetConnection(self._game_listener.nextPendingConnection())
         self._game_connection.messageReceived.connect(self._on_game_message)
         self.state = GameSessionState.RUNNING
+        self.ready.emit()
+        client.instance.stateLabel.setText(str(self.state))
 
     @_needs_game_connection
     def _on_game_message(self, command, args):
@@ -180,6 +184,7 @@ class GameSession(QObject):
     def _exited(self, status):
         self._game_connection = None
         self.state = GameSessionState.OFF
+        client.instance.stateLabel.setText(str(self.state))
         self._logger.info("Game has exited with status code: {}".format(status))
         self.send('GameState', ['Ended'])
 
