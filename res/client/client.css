@@ -495,7 +495,16 @@ QComboBox, QComboBox:selected
     background-color: #575656;
     selection-background-color: #575656;
 }
-
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 14px;
+    border-top-right-radius: 5px; /* same radius as the QComboBox */
+    border-bottom-right-radius: 5px;
+}
+QComboBox::down-arrow {
+    image: url('%THEMEPATH%/dropDown.png');
+}
 QComboBox QAbstractItemView {
     border: 1px solid darkgray;
     padding: 2px;
