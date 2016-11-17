@@ -2,10 +2,12 @@ from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.QtNetwork import QTcpServer, QHostAddress
 from enum import IntEnum
 
+from base import Client
 from connectivity.turn import TURNState
 from decorators import with_logger
 from fa.game_connection import GPGNetConnection
 from fa.game_process import GameProcess, instance as game_process_instance
+import client
 
 
 class GameSessionState(IntEnum):
@@ -25,7 +27,7 @@ class GameSessionState(IntEnum):
 class GameSession(QObject):
     ready = pyqtSignal()
 
-    def __init__(self, client, connectivity):
+    def __init__(self, connectivity):
         QObject.__init__(self)
         self._state = GameSessionState.OFF
         self._rehost = False
@@ -37,7 +39,7 @@ class GameSession(QObject):
         self.game_password = None
 
         # Subscribe to messages targeted at 'game' from the server
-        client.lobby_dispatch.subscribe_to('game', self.handle_message)
+        client.instance.lobby_dispatch.subscribe_to('game', self.handle_message)
 
         # Connectivity helper
         self.connectivity = connectivity
@@ -46,11 +48,10 @@ class GameSession(QObject):
 
         # Keep a parent pointer so we can use it to send
         # relay messages about the game state
-        self._client = client  # type: Client
-        self.me = client.me
+        self.me = client.instance.me
 
-        self.game_port = client.gamePort
-        self.player = client.me
+        self.game_port = client.instance.gamePort
+        self.player = client.instance.me
 
         # Use the normal lobby by default
         self.init_mode = 0
@@ -63,7 +64,7 @@ class GameSession(QObject):
 
         # We only allow one game connection at a time
         self._game_connection = None
-        client.stateLabel.setText(str(self.state))
+        client.instance.stateLabel.setText(str(self.state))
 
         self._process = game_process_instance  # type: GameProcess
         self._process.started.connect(self._launched)
@@ -133,7 +134,7 @@ class GameSession(QObject):
 
     def send(self, command_id, args):
         self._logger.info("Outgoing relay message {} {}".format(command_id, args))
-        self._client.lobby_connection.send({
+        client.instance.lobby_connection.send({
             'command': command_id,
             'target': 'game',
             'args': args or []
@@ -193,12 +194,12 @@ class GameSession(QObject):
         self.send('GameState', ['Ended'])
 
         if self._rehost:
-            self._client.host_game(title=self.game_name,
-                                   mod=self.game_mod,
-                                   visibility=self.game_visibility,
-                                   mapname=self.game_map,
-                                   password=self.game_password,
-                                   is_rehost=True)
+            client.instance.host_game(title=self.game_name,
+                                  mod=self.game_mod,
+                                  visibility=self.game_visibility,
+                                  mapname=self.game_map,
+                                  password=self.game_password,
+                                  is_rehost=True)
 
         self._rehost = False
         self.game_uid = None

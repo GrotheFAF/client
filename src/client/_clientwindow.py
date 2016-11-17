@@ -1140,7 +1140,7 @@ class ClientWindow(FormClass, BaseClass):
         self.connectivity.start_test()
 
     def initialize_game_session(self):
-        self.game_session = GameSession(self, self.connectivity)
+        self.game_session = GameSession(self.connectivity)
 
     def handle_registration_response(self, message):
         if message["result"] == "SUCCESS":
