@@ -110,7 +110,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
     def update(self, message):
         """ Updates this item from the message dictionary supplied """
         
-        self.name    = message["name"]
+        self.title = message["name"]
         self.mapname = message["map"]
         if message['end'] == 4294967295:  # = FFFF FFFF (year 2106) aka still playing
             seconds = time.time()-message['start']
@@ -125,7 +125,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
                 self.duration = time.strftime('%H:%M:%S', time.gmtime(seconds)) + "<br />&nbsp;playing"
         else:
             self.duration = time.strftime('%H:%M:%S', time.gmtime(message["duration"]))
-        self.startHour = time.strftime("%H:%M", time.localtime(message['start']))
+        starthour = time.strftime("%H:%M", time.localtime(message['start']))
         self.startDate = time.strftime("%Y-%m-%d", time.localtime(message['start']))
         self.mod       = message["mod"]
 
@@ -142,16 +142,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
         else:
             self.moddisplayname = self.mod
 
-#        self.title      = message['title']
-#        self.teams      = message['teams']
-#        self.access     = message.get('access', 'public')
-#        self.mod        = message['featured_mod']
-#        self.host       = message["host"]
-#        self.options    = message.get('options', [])
-#        self.numplayers = message.get('num_players', 0) 
-#        self.slots      = message.get('max_players',12)
-
-        self.viewtext = self.FORMATTER_REPLAY.format(time=self.startHour, name=self.name, map=self.mapdisplayname,
+        self.viewtext = self.FORMATTER_REPLAY.format(time=starthour, name=self.title, map=self.mapdisplayname,
                                                      duration=self.duration, mod=self.moddisplayname)
 
     def infoPlayers(self, players):
