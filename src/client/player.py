@@ -66,7 +66,7 @@ class Player:
         """
         Get the conservative estimate of the players ladder trueskill rating
         """
-        return int(max(0, (self.ladder_rating[0] - 3 * self.ladder_rating[1])))
+        return int(round((self.ladder_rating[0] - 3 * self.ladder_rating[1])))
 
     @property
     def rating_mean(self):

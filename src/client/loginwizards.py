@@ -3,7 +3,7 @@ import util
 
 
 class gameSettingsWizard(QtGui.QWizard):
-    def __init__(self, client, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         QtGui.QWizard.__init__(self, *args, **kwargs)
 
         self.settings = GameSettings()
@@ -59,5 +59,5 @@ class GameSettings(QtGui.QWizardPage):
         self.setLayout(layout)
 
 
-    def validatePage(self):        
+    def validatePage(self):
         return 1
