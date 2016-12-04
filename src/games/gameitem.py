@@ -186,6 +186,14 @@ class GameItem(QtGui.QListWidgetItem):
         else:
             self.hostid = client.instance.players.getID(self.host)
 
+        # Map preview code
+        if self.mapname != message['mapname']:
+            self.mapname = message['mapname']
+            self.mapdisplayname = maps.getDisplayName(self.mapname)
+            refresh_icon = True
+        else:
+            refresh_icon = False
+
         oldstate = self.state
         self.state = message['state']
 
@@ -233,14 +241,6 @@ class GameItem(QtGui.QListWidgetItem):
             # self.options = message.get('options', [])  # not in message and not used
             num_players = message.get('num_players', 0)
             slots = message.get('max_players', 12)
-
-            # Map preview code
-            if self.mapname != message['mapname']:
-                self.mapname = message['mapname']
-                self.mapdisplayname = maps.getDisplayName(self.mapname)
-                refresh_icon = True
-            else:
-                refresh_icon = False
 
             self.nTeams = len(teams)
 
