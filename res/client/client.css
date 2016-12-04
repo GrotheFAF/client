@@ -387,6 +387,17 @@ QLabel#labelSortGames,#labelJoinGame,#labelHostGame,#labelAutomatch,#labelMyRepl
     color:white;
 }
 
+QLabel#serverS,#RserverS
+{
+    color:red;
+    font-weight:bold;
+}
+
+QLabel#serverR,#RserverR
+{
+    color:yellow;
+    font-weight:bold;
+}
 QLabel
 {
     color:silver;
@@ -462,18 +473,23 @@ QToolButton#rankedPlay
 	border: 1px solid grey;
 }
 
+/* Menu - Min, Max, Close */
 QToolButton::pressed
 {
     border: none;
     color: black;
+    padding:5px;
     background-color:#383838;
+    border-radius : 5px;
 }
 
 QToolButton::hover
 {
     border: none;
     color: silver;
+    padding:5px;
     background-color:#808080;
+    border-radius : 5px;
 }
 
 QToolButton::checked

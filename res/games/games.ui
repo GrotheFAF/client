@@ -572,6 +572,12 @@
          </item>
          <item>
           <widget class="QCheckBox" name="hideGamesWithPw">
+           <property name="maximumSize">
+            <size>
+             <width>115</width>
+             <height>16777215</height>
+            </size>
+           </property>
            <property name="text">
             <string>Hide Private Games</string>
            </property>

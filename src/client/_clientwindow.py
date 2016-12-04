@@ -328,6 +328,7 @@ class ClientWindow(FormClass, BaseClass):
     @state.setter
     def state(self, value):
         self._state = value
+        client.instance.stateLabel.setText(str(self.state))  # TESTING-IO Grothe
         self.state_changed.emit(value)
 
     def on_connection_state_changed(self, state):
@@ -1097,7 +1098,6 @@ class ClientWindow(FormClass, BaseClass):
             self.players.foes.remove(foe_id)
             self.lobby_connection.send(dict(command="social_remove", foe=foe_id))
             self.usersUpdated.emit([foe_id])
-
 
     def handle_session(self, message):
         # Getting here means our client is not outdated

@@ -605,13 +605,17 @@ class ReplaysWidget(BaseClass, FormClass):
             self.replayVaultSocket.connectToHost(self.HOST, self.SOCKET)        
 
     def send(self, message):
+        client.instance.RserverS.setText("S")  # TESTING-IO Grothe
         data = json.dumps(message)
         logger.debug("Outgoing JSON Message: " + data)
         self.writeToServer(data)
+        client.instance.RserverS.setText("s")  # TESTING-IO Grothe
 
     @QtCore.pyqtSlot()
     def readDataFromServer(self):
-        ins = QtCore.QDataStream(self.replayVaultSocket)        
+        client.instance.RserverS.setText("-")  # TESTING-IO Grothe
+        client.instance.RserverR.setText("R")  # TESTING-IO Grothe
+        ins = QtCore.QDataStream(self.replayVaultSocket)
         ins.setVersion(QtCore.QDataStream.Qt_4_2)
         
         while not ins.atEnd():
@@ -625,6 +629,7 @@ class ReplaysWidget(BaseClass, FormClass):
             action = ins.readQString()
             self.process(action, ins)
             self.blockSize = 0
+        client.instance.RserverR.setText("-")  # TESTING-IO Grothe
 
     def process(self, action, stream):
         logger.debug("Replay Vault Server: " + action)
