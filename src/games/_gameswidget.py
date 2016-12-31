@@ -44,15 +44,17 @@ class GamesWidget(FormClass, BaseClass):
 
         # Ranked search UI
         self._ranked_icons = {
-            Factions.AEON: self.rankedAeon,
-            Factions.CYBRAN: self.rankedCybran,
-            Factions.SERAPHIM: self.rankedSeraphim,
             Factions.UEF: self.rankedUEF,
+            Factions.CYBRAN: self.rankedCybran,
+            Factions.AEON: self.rankedAeon,
+            Factions.SERAPHIM: self.rankedSeraphim
         }
-        self.rankedAeon.setIcon(util.icon("games/automatch/aeon.png"))
-        self.rankedCybran.setIcon(util.icon("games/automatch/cybran.png"))
-        self.rankedSeraphim.setIcon(util.icon("games/automatch/seraphim.png"))
         self.rankedUEF.setIcon(util.icon("games/automatch/uef.png"))
+        self.rankedCybran.setIcon(util.icon("games/automatch/cybran.png"))
+        self.rankedAeon.setIcon(util.icon("games/automatch/aeon.png"))
+        self.rankedSeraphim.setIcon(util.icon("games/automatch/seraphim.png"))
+
+        Settings.set("play/subFactions", self.sub_factions)  # needs one write before self.sub_factions... work
 
         # Fixup ini file type loss
         self.sub_factions = [True if x=='true' else False for x in self.sub_factions]
@@ -121,16 +123,13 @@ class GamesWidget(FormClass, BaseClass):
             game.setHidden(state == Qt.Checked)
 
     def selectFaction(self, enabled, factionID=0):
-        logger.debug('selectFaction: enabled={}, factionID={}'.format(enabled, factionID))
         if len(self.sub_factions) < factionID:
-            logger.warn('selectFaction: len(self.sub_factions) < factionID, aborting')
             return
 
         logger.debug('selectFaction: selected was {}'.format(self.sub_factions))
         self.sub_factions[factionID-1] = enabled
 
         Settings.set("play/subFactions", self.sub_factions)
-        logger.debug('selectFaction: selected is {}'.format(self.sub_factions))
 
         if self.searching:
             self.stopSearchRanked()
