@@ -82,7 +82,6 @@ class GameItem(QtGui.QListWidgetItem):
         self.title          = None
         self.host           = ""
         self.hostid         = -1
-        self.teams          = []
         self.password_protected = False
         self.mod            = None
         self.mods           = None
@@ -183,7 +182,9 @@ class GameItem(QtGui.QListWidgetItem):
 
         if 'host_id' in message:
             self.hostid = message['host_id']
-        else:
+        elif self.hostid == -1:  # fresh game
+            self.hostid = client.instance.players.getID(self.host)
+        elif self.hostid != client.instance.players.getID(self.host):  # somethings funny (offline)
             self.hostid = client.instance.players.getID(self.host)
 
         # Map preview code
@@ -218,15 +219,14 @@ class GameItem(QtGui.QListWidgetItem):
         # Following the convention used by the game, a team value of 1 represents "No team". Let's
         # desugar those into "real" teams now (and convert the dict to a list)
         # Also, turn the lists of names into lists of players, and build a player name list.
-        self.players = []
-        teams = []
+        self.players = []  # list of all players in all teams (without observers)
+        teams = []  # list of teams of list of players in team (without observers)
+        observers = []  # list of observers
         for team_index, team in teams_map.iteritems():
-            if team_index == 1:
-                for ffa_player in team:
-                    if ffa_player in client.instance.players:
-                        self.players.append(client.instance.players[ffa_player])
-                        teams.append([client.instance.players[ffa_player]])
-            else:
+            if team_index == u'-1' or team_index == u'null':  # observers (we hope)
+                for name in team:
+                    observers.append(name)
+            else:  # everything else - faf, ffa and other mods
                 real_team = []
                 for name in team:
                     if name in client.instance.players:
@@ -245,10 +245,12 @@ class GameItem(QtGui.QListWidgetItem):
             self.nTeams = len(teams)
 
             # Tuples for feeding into trueskill.
+            team_list = []
             rating_tuples = []
             for team in teams:
                 ratings_for_team = map(lambda player: Rating(player.rating_mean, player.rating_deviation), team)
                 rating_tuples.append(tuple(ratings_for_team))
+                team_list.append(str(len(team)))
 
             try:
                 self.gamequality = 100*round(trueskill.quality(rating_tuples), 2)
@@ -268,29 +270,29 @@ class GameItem(QtGui.QListWidgetItem):
                 self.setIcon(icon)
 
             if self.gamequality == 0:
-                strQuality = "? %"
+                Quality_str = "? %"
             else:
-                strQuality = str(self.gamequality)+" %"
+                Quality_str = str(self.gamequality)+" %"
 
-            if num_players == 1:
-                playerstring = "player"
+            if len(team_list) > 1:
+                team_str = "<font size='-1'> in </font>" + " vs ".join(team_list)
             else:
-                playerstring = "players"
+                team_str = ""
 
             if self.hostid == -1:  # user offline (?)
                 self.host += " <font color='darkred'>(offline)</font>"
             color = client.instance.players.getUserColor(self.hostid)
 
-            self.editTooltip(teams)
+            self.editTooltip(teams, observers)
 
             if self.mod == "faf" or self.mod == "coop":
                 self.setText(self.FORMATTER_FAF.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
-                                                   title=self.title, host=self.host, players=num_players,
-                                                   playerstring=playerstring, gamequality=strQuality))
+                                                       title=self.title, host=self.host, players=num_players,
+                                                       teams=team_str, gamequality=Quality_str))
             else:
                 self.setText(self.FORMATTER_MOD.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
-                                                   title=self.title, host=self.host, players=num_players, mod=self.mod,
-                                                   playerstring=playerstring, gamequality=strQuality))
+                                                       title=self.title, host=self.host, players=num_players,
+                                                       teams=team_str, mod=self.mod, gamequality=Quality_str))
         elif self.state != "playing":
             self.state = "funky"
 
@@ -310,65 +312,61 @@ class GameItem(QtGui.QListWidgetItem):
         affectedplayers = oldplayers | newplayers
         client.instance.usersUpdated.emit(list(affectedplayers))
 
-    def editTooltip(self, teams):
+    def editTooltip(self, teams, observers):
         
-        observerlist = []
-        teamlist     = []
-
-        teams_string = ""
+        teamlist = []
 
         i = 0
         for team in teams:
             
-            if team != "-1":
-                i += 1
+            i += 1
 
-                teamplayer = []
-                teamplayer.append("<td><table>")
-                for player in team:
+            teamplayer = []
+            teamplayer.append("<td><table>")
+            for player in team:
 
-                    if player == client.instance.me:
-                        playerStr = "<b><i>%s</b></i>" % player.login
-                    else:
-                        playerStr = player.login
+                if player == client.instance.me:
+                    playerStr = "<b><i>%s</b></i>" % player.login
+                else:
+                    playerStr = player.login
 
-                    if player.rating_deviation < 200:
-                        playerStr += " (%s)" % str(player.rating_estimate())
+                if player.rating_deviation < 200:
+                    playerStr += " (%s)" % str(player.rating_estimate())
 
-                    country = os.path.join(util.COMMON_DIR, "chat/countries/%s.png" % (player.country or '').lower())
+                country = os.path.join(util.COMMON_DIR, "chat/countries/%s.png" % (player.country or '').lower())
 
-                    if i == 1:
-                        player_tr = "<tr><td><img src='%s'></td>" \
-                                        "<td align='left' valign='middle' width='135'>%s</td></tr>" % (country, playerStr)
-                    elif i == self.nTeams:
-                        player_tr = "<tr><td align='right' valign='middle' width='135'>%s</td>" \
-                                        "<td><img src='%s'></td></tr>" % (playerStr, country)
-                    else:
-                        player_tr = "<tr><td><img src='%s'></td>" \
-                                        "<td align='center' valign='middle' width='135'>%s</td></tr>" % (country, playerStr)
+                if i == 1:
+                    player_tr = "<tr><td><img src='%s'></td>" \
+                                    "<td align='left' valign='middle' width='135'>%s</td></tr>" % (country, playerStr)
+                elif i == self.nTeams:
+                    player_tr = "<tr><td align='right' valign='middle' width='135'>%s</td>" \
+                                    "<td><img src='%s'></td></tr>" % (playerStr, country)
+                else:
+                    player_tr = "<tr><td><img src='%s'></td>" \
+                                    "<td align='center' valign='middle' width='135'>%s</td></tr>" % (country, playerStr)
 
-                    teamplayer.append(player_tr)
+                teamplayer.append(player_tr)
 
-                teamplayer.append("</table></td>")
-                members = "".join(teamplayer)
+            teamplayer.append("</table></td>")
+            members = "".join(teamplayer)
 
-                teamlist.append(members)
-            else:
-                observerlist.append(",".join(self.teams[team]))
+            teamlist.append(members)
 
-        teams_string += "<td valign='middle' height='100%'><font color='black' size='+5'>VS</font></td>".join(teamlist)
+        teams_string = "<td valign='middle' height='100%'><font color='black' size='+5'>VS</font></td>".join(teamlist)
 
-        observers = ""
-        if len(observerlist) != 0:
-            observers = "Observers : "
-            observers += ",".join(observerlist)
+        if len(observers) != 0:
+            observers_str = "Observers : "
+            observers_str += ", ".join(observers)
+            observers_str += "<br />"
+        else:
+            observers_str = ""
 
         if self.mods:
             mods = "<br />With: " + "<br />".join(self.mods.values())
         else:
             mods = ""
 
-        self.setToolTip(self.FORMATTER_TOOL.format(teams=teams_string, observers=observers, mods=mods))
+        self.setToolTip(self.FORMATTER_TOOL.format(teams=teams_string, observers=observers_str, mods=mods))
 
     def permutations(self, items):
         """ Yields all permutations of the items. """
@@ -395,7 +393,7 @@ class GameItem(QtGui.QListWidgetItem):
         if other.hostid == -1:
             other_isFriend = False
         else:
-            other_isFriend = client.instance.players.isFriend(self.hostid)
+            other_isFriend = client.instance.players.isFriend(other.hostid)
         if self_isFriend and not other_isFriend:
             return True
         if not self_isFriend and other_isFriend:

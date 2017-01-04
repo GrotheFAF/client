@@ -420,6 +420,8 @@ class ReplaysWidget(BaseClass, FormClass):
                 
                 item.takeChildren()  # Clear the children of this item before we're updating it
             else:
+                if time.time() - info.get('launched_at', time.time()) > 14400:  # game is more than 4 hours old
+                    return
                 # Creating a fresh item
                 item = LiveReplayItem(info.get('launched_at', time.time()))
                 self.games[info['uid']] = item
@@ -596,7 +598,7 @@ class ReplaysWidget(BaseClass, FormClass):
             # Notify other modules that we're watching a replay
             client.instance.viewingReplay.emit(item.url)
             replay(item.url)
-            
+
     def connectToReplayVault(self):
         """ connect to the replay vault server """
 
