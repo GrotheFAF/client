@@ -47,6 +47,7 @@ class ReplaysWidget(BaseClass, FormClass):
     # connect to save/restore persistence settings for checkboxes & search parameters
     automatic = Settings.persisted_property("replay/automatic", default_value=False, type=bool)
     spoiler_free = Settings.persisted_property("replay/spoilerFree", default_value=True, type=bool)
+    no_zero_duration = Settings.persisted_property("replay/noZeroDuration", default_value=False, type=bool)
 
     def __init__(self, dispatcher):
         super(BaseClass, self).__init__()
@@ -71,6 +72,7 @@ class ReplaysWidget(BaseClass, FormClass):
         self.mapName.returnPressed.connect(self.searchVault)
         self.automaticCheckbox.stateChanged.connect(self.automaticCheckboxchange)
         self.spoilerCheckbox.stateChanged.connect(self.spoilerCheckboxchange)
+        self.zeroCheckbox.stateChanged.connect(self.zeroCheckboxchange)
         self.RefreshResetButton.pressed.connect(self.ResetRefreshpressed)
 
         self.myTree.itemDoubleClicked.connect(self.myTreeDoubleClicked)
@@ -96,7 +98,6 @@ class ReplaysWidget(BaseClass, FormClass):
 
         # replay vault connection to server
         self.searching = False
-        self.searchInfo = "<font color='gold'><b>Searching...</b></font>"
         self.blockSize = 0
         self.replayVaultSocket = QtNetwork.QTcpSocket()
         self.replayVaultSocket.error.connect(self.handleServerError)
@@ -107,12 +108,13 @@ class ReplaysWidget(BaseClass, FormClass):
         # restore persistent checkbox settings
         self.automaticCheckbox.setChecked(self.automatic)
         self.spoilerCheckbox.setChecked(self.spoiler_free)
+        self.zeroCheckbox.setChecked(self.no_zero_duration)
 
         logger.info("Replays Widget instantiated.")
 
     def searchVault(self):
         """ search for some replays """
-        self.searchInfoLabel.setText(self.searchInfo)
+        self.searchInfoLabel.setText("Searching...")
         self.searching = True
         self.connectToReplayVault()
         self.send(dict(command="search", rating=self.minRating.value(), map=self.mapName.text(),
@@ -122,7 +124,7 @@ class ReplaysWidget(BaseClass, FormClass):
     def reloadView(self):
         if not self.searching:  # something else is already in the pipe from SearchVault
             if self.automatic or self.onlineReplays == {}:  # refresh on Tap change or only the first time
-                self.searchInfoLabel.setText(self.searchInfo)
+                self.searchInfoLabel.setText("Searching...")
                 self.connectToReplayVault()
                 self.send(dict(command="list"))
 
@@ -186,8 +188,11 @@ class ReplaysWidget(BaseClass, FormClass):
             if type(self.selectedReplay) == ReplayItem:  # and if it is a game
                 self.selectedReplay.generateInfoPlayersHtml()  # then we redo it
 
+    def zeroCheckboxchange(self, state):
+        self.no_zero_duration = state  # save state .. no magic
+
     def ResetRefreshpressed(self):  # reset search parameter and reload recent Replays List
-        self.searchInfoLabel.setText(self.searchInfo)
+        self.searchInfoLabel.setText("Searching...")
         self.connectToReplayVault()
         self.send(dict(command="list"))
         self.minRating.setValue(0)
@@ -252,7 +257,8 @@ class ReplaysWidget(BaseClass, FormClass):
         self.onlineTree.clear()
         buckets = {}
         for uid in self.onlineReplays:
-            #if self.onlineReplays[uid].duration != "00:00:00":  # do not add corrupted/early desync replays
+            # on zeroCheckBox do not add corrupted/early desync or other zero time replays
+            if not (self.no_zero_duration and self.onlineReplays[uid].duration == "00:00:00"):
                 bucket = buckets.setdefault(self.onlineReplays[uid].startDate, [])
                 bucket.append(self.onlineReplays[uid])
 
