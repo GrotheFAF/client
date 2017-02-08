@@ -232,8 +232,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
                             teams += "<tr><td colspan='3' align='center' valign='middle'><font size='+2'>Playing</font></td></tr>%s%s" % (winnerHTML, players)
                         else:
                             teams += "<tr><td colspan='3' align='center' valign='middle'><font size='+2'>Win</font></td></tr>%s" \
-                                     "<tr><td colspan=3 align='center' valign='middle'><font size='+2'>Lose</font></td></tr>%s" % (
-                                     winnerHTML, players)
+                                     "<tr><td colspan=3 align='center' valign='middle'><font size='+2'>Lose</font></td></tr>%s" % (winnerHTML, players)
                     else:
                         if "playing" in self.duration:
                             team_title = "Playing"

@@ -130,7 +130,7 @@ class ReplaysWidget(BaseClass, FormClass):
 
     def finishRequest(self, reply):
         if reply.error() != QNetworkReply.NoError:
-            QtGui.QMessageBox.warning(self, "Network Error", reply.errorString())
+            QtGui.QMessageBox.warning(self, "Network Error", reply.errorString(), "")
         else:
             faf_replay = QtCore.QFile(os.path.join(util.CACHE_DIR, "temp.fafreplay"))
             faf_replay.open(QtCore.QIODevice.WriteOnly | QtCore.QIODevice.Truncate)                
@@ -464,9 +464,6 @@ class ReplaysWidget(BaseClass, FormClass):
             if item.isHidden():
                 if time.time() - item.launched_at > LIVEREPLAY_DELAY_TIME:
                     item.setHidden(False)
-            else:  # maybe some cleanup
-                if time.time() - item.launched_at > 14400:  # game is more than 4 hours old
-                    self.liveTree.takeTopLevelItem(self.liveTree.indexOfTopLevelItem(item))
 
     @QtCore.pyqtSlot(dict)
     def processGameInfo(self, info):
@@ -477,25 +474,23 @@ class ReplaysWidget(BaseClass, FormClass):
                 
                 item.takeChildren()  # Clear the children of this item before we're updating it
             else:
-                if time.time() - info.get('launched_at', time.time()) > 14400:  # game is more than 4 hours old
-                    return  # let's not have that
                 # Creating a fresh item
                 item = LiveReplayItem(info.get('launched_at', time.time()))
+                item.launched_at = info.get('launched_at', time.time())
                 self.games[info['uid']] = item
                 
                 self.liveTree.insertTopLevelItem(0, item)
                 
-                if time.time() - info.get('launched_at', time.time()) < LIVEREPLAY_DELAY_TIME:
+                if time.time() - item.launched_at < LIVEREPLAY_DELAY_TIME:
                     item.setHidden(True)
                     # to get the delay right on client start, subtract the already passed game time
-                    delay_time = LIVEREPLAY_DELAY_QTIMER - int(1000*(time.time() - info.get('launched_at', time.time())))
+                    delay_time = LIVEREPLAY_DELAY_QTIMER - int(1000*(time.time() - item.launched_at))
                     QtCore.QTimer.singleShot(delay_time, self.displayReplay)
                     # The delay is there because we have a delay in the livereplay server
 
             # For debugging purposes, format our tooltip for the top level items
             # so it contains a human-readable representation of the info dictionary
-            item.launched_at = info.get('launched_at', time.time())
-            tip = ""            
+            tip = ""
             for key in info.keys():
                 tip += "'" + unicode(key) + "' : '" + unicode(info[key]) + "'<br/>"
 
@@ -508,7 +503,7 @@ class ReplaysWidget(BaseClass, FormClass):
                 client.instance.downloader.downloadMap(info['mapname'], item, True)
                 icon = util.icon("games/unknown_map.png")
 
-            item.setText(0, time.strftime("%Y-%m-%d  -  %H:%M", time.localtime(item.info.get('launched_at', time.time()))))
+            item.setText(0, str(info['uid']) + time.strftime("  -  %Y-%m-%d  -  %H:%M", time.localtime(item.launched_at)))
             item.setTextColor(0, QtGui.QColor(client.instance.getColor("default")))
                                     
             if info['featured_mod'] == "coop":  # no map icons for coop
@@ -534,7 +529,7 @@ class ReplaysWidget(BaseClass, FormClass):
             for team in info['teams']:
                 if team == "-1":  # skip observers, they don't seem to stream livereplays
                     continue
-                
+
                 for name in info['teams'][team]:
                     playeritem = QtGui.QTreeWidgetItem()
                     playeritem.setText(0, name)
@@ -562,7 +557,7 @@ class ReplaysWidget(BaseClass, FormClass):
                         playeritem.setToolTip(0, url.toString())
                         playeritem.setIcon(0, util.icon("replays/replay.png"))                        
                     elif client.instance.players.isPlayer(playerid):
-                        playeritem.setTextColor(0, QtGui.QColor(client.instance.getColor("player")))                        
+                        playeritem.setTextColor(0, QtGui.QColor(client.instance.getColor("player")))
                         playeritem.setToolTip(0, url.toString())
                         playeritem.setIcon(0, util.icon("replays/replay.png"))                        
                     else:
@@ -635,7 +630,6 @@ class ReplaysWidget(BaseClass, FormClass):
 
         # Finally: Show the popup
         menu.popup(QtGui.QCursor.pos())
-
 
     @QtCore.pyqtSlot(QtGui.QTreeWidgetItem, int)
     def myTreeDoubleClicked(self, item, column):

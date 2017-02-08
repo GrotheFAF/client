@@ -201,7 +201,7 @@ QSplitter::handle:vertical
 
 QSpinBox#minRating, QLineEdit#mapName, QLineEdit#playerName, QComboBox#modList
 {
-    background-color: #353535;
+    background-color: #575656;
     color: orange;
 }
 
@@ -216,13 +216,6 @@ QTextEdit, QPlainTextEdit, QSpinBox, QLineEdit, QComboBox, QListWidget, QTableWi
     background-color:#202025;
     border-radius : 5px;
 }
-
-/* ladder in Games */
-QFrame#rankedFrame
-{
-    background-color:#303038;
-}
-
 
 /* Nicklist controls */
 
