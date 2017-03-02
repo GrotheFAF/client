@@ -2,7 +2,6 @@ from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.QtNetwork import QTcpServer, QHostAddress
 from enum import IntEnum
 
-from base import Client
 from connectivity.turn import TURNState
 from decorators import with_logger
 from fa.game_connection import GPGNetConnection
@@ -191,11 +190,11 @@ class GameSession(QObject):
 
         if self._rehost:
             client.instance.host_game(title=self.game_name,
-                                  mod=self.game_mod,
-                                  visibility=self.game_visibility,
-                                  mapname=self.game_map,
-                                  password=self.game_password,
-                                  is_rehost=True)
+                                      mod=self.game_mod,
+                                      visibility=self.game_visibility,
+                                      mapname=self.game_map,
+                                      password=self.game_password,
+                                      is_rehost=True)
 
         self._rehost = False
         self.game_uid = None

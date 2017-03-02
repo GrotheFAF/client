@@ -1,13 +1,11 @@
 from functools import partial
 
-from PyQt4 import Qt
 from PyQt4.QtCore import QUrl
 from PyQt4.QtGui import QLabel, QStyle, QAction
 from PyQt4.QtNetwork import QAbstractSocket
 
 import config
 import connectivity
-from base import Client
 from config import Settings
 import chat
 from client.player import Player
@@ -693,13 +691,13 @@ class ClientWindow(FormClass, BaseClass):
         self.saveWindow()
 
         if fa.instance.running():
-            if QtGui.QMessageBox.question(self, "Are you sure?",
+            if QtGui.QMessageBox.question(client.instance, "Are you sure?",
                                           "Seems like you still have Forged Alliance running!<br/><b>Close anyway?</b>",
                                           QtGui.QMessageBox.Yes, QtGui.QMessageBox.No) == QtGui.QMessageBox.No:
                 event.ignore()
                 return
 
-        return QtGui.QMainWindow.closeEvent(self, event)
+        return QtGui.QMainWindow.closeEvent(client.instance, event)
 
     def initMenus(self):
         self.actionLink_account_to_Steam.triggered.connect(partial(self.open_url, Settings.get("STEAMLINK_URL")))
@@ -777,13 +775,13 @@ class ClientWindow(FormClass, BaseClass):
 
     @QtCore.pyqtSlot()
     def clearSettings(self):
-        result = QtGui.QMessageBox.question(None, "Clear Settings",
+        result = QtGui.QMessageBox.question(client.instance, "Clear Settings",
                                             "Are you sure you wish to clear all settings, login info, etc. used by this program?",
                                             QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
         if (result == QtGui.QMessageBox.Yes):
             util.settings.clear()
             util.settings.sync()
-            QtGui.QMessageBox.information(None, "Restart Needed", "FAF will quit now.")
+            QtGui.QMessageBox.information(client.instance, "Restart Needed", "FAF will quit now.")
             QtGui.QApplication.quit()
 
     @QtCore.pyqtSlot()
@@ -795,7 +793,7 @@ class ClientWindow(FormClass, BaseClass):
     def clearCache(self):
         changed = util.clearDirectory(util.CACHE_DIR)
         if changed:
-            QtGui.QMessageBox.information(None, "Restart Needed", "FAF will quit now.")
+            QtGui.QMessageBox.information(client.instance, "Restart Needed", "FAF will quit now.")
             QtGui.QApplication.quit()
 
     # Clear the online users lists
@@ -961,13 +959,13 @@ class ClientWindow(FormClass, BaseClass):
         logger.error("FA has died with error: " + fa.instance.errorString())
         if error_code == 0:
             logger.error("FA has failed to start")
-            QtGui.QMessageBox.critical(self, "Error from FA", "FA has failed to start.")
+            QtGui.QMessageBox.critical(client.instance, "Error from FA", "FA has failed to start.")
         elif error_code == 1:
             logger.error("FA has crashed or killed after starting")
         else:
             text = "FA has failed to start with error code: " + str(error_code)
             logger.error(text)
-            QtGui.QMessageBox.critical(self, "Error from FA", text)
+            QtGui.QMessageBox.critical(client.instance, "Error from FA", text)
         self.gameExit.emit()
 
     @QtCore.pyqtSlot(int)
@@ -1337,7 +1335,7 @@ class ClientWindow(FormClass, BaseClass):
         self.avatarSelection.show()
 
     def handle_authentication_failed(self, message):
-        QtGui.QMessageBox.warning(self, "Authentication failed", message["text"])
+        QtGui.QMessageBox.warning(client.instance, "Authentication failed", message["text"])
         self._autorelogin = False
         self.get_creds_and_login()
 
@@ -1345,14 +1343,14 @@ class ClientWindow(FormClass, BaseClass):
         if "text" in message:
             style = message.get('style', None)
             if style == "error":
-                QtGui.QMessageBox.critical(self, "Error from Server", message["text"])
+                QtGui.QMessageBox.critical(client.instance, "Error from Server", message["text"])
             elif style == "warning":
-                QtGui.QMessageBox.warning(self, "Warning from Server", message["text"])
+                QtGui.QMessageBox.warning(client.instance, "Warning from Server", message["text"])
             elif style == "scores":
                 self.tray.showMessage("Scores", message["text"], QtGui.QSystemTrayIcon.Information, 3500)
                 self.localBroadcast.emit("Scores", message["text"])
             else:
-                QtGui.QMessageBox.information(self, "Notice from Server", message["text"])
+                QtGui.QMessageBox.information(client.instance, "Notice from Server", message["text"])
 
         if message["style"] == "kill":
             logger.info("Server has killed your Forged Alliance Process.")

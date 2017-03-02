@@ -6,7 +6,7 @@ from PyQt4.QtCore import Qt
 
 import util
 from games.gameitem import GameItem, GameItemDelegate
-from games.moditem import ModItem, mod_invisible, mods
+from games.moditem import ModItem, mod_invisible
 from games.hostgamewidget import HostgameWidget
 from fa.factions import Factions
 import fa
@@ -57,7 +57,7 @@ class GamesWidget(FormClass, BaseClass):
         Settings.set("play/subFactions", self.sub_factions)  # needs one write before self.sub_factions... work
 
         # Fixup ini file type loss
-        self.sub_factions = [True if x=='true' else False for x in self.sub_factions]
+        self.sub_factions = [True if x == 'true' else False for x in self.sub_factions]
 
         self.searchProgress.hide()
 
@@ -89,7 +89,6 @@ class GamesWidget(FormClass, BaseClass):
         self.modList.itemDoubleClicked.connect(self.hostGameClicked)
 
         self.updatePlayButton()
-
 
     @QtCore.pyqtSlot(dict)
     def processModInfo(self, message):
@@ -215,7 +214,7 @@ class GamesWidget(FormClass, BaseClass):
             s = "Stop search"
         else:
             c = self.sub_factions.count(True)
-            if c in [0, 4]: # all or none selected
+            if c in [0, 4]:  # all or none selected
                 s = "Play as random!"
             else:
                 s = "Play!"
@@ -227,8 +226,7 @@ class GamesWidget(FormClass, BaseClass):
             race = Factions.get_random_faction()
 
         if fa.instance.running():
-            QtGui.QMessageBox.information(
-                None, "ForgedAllianceForever.exe", "FA is already running.")
+            QtGui.QMessageBox.information(client.instance, "ForgedAllianceForever.exe", "FA is already running.")
             self.stopSearchRanked()
             return
 
@@ -247,8 +245,7 @@ class GamesWidget(FormClass, BaseClass):
             if client.instance.useUPnP:
                 client.instance.lobby_connection.set_upnp(self.client.gamePort)
 
-            logger.info("Starting Ranked Search as " + str(race) +
-                        ", port: " + str(client.instance.gamePort))
+            logger.info("Starting Ranked Search as " + str(race) + ", port: " + str(client.instance.gamePort))
             self.searching = True
             self.race = race
             self.searchProgress.setVisible(True)
