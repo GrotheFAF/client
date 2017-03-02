@@ -135,7 +135,7 @@ class ReplaysWidget(BaseClass, FormClass):
 
     def finish_request(self, reply):
         if reply.error() != QNetworkReply.NoError:
-            QtGui.QMessageBox.warning(self, "Network Error", reply.errorString(), "")
+            QtGui.QMessageBox.warning(client.instance, "Network Error", reply.errorString(), "")
         else:
             faf_replay = QtCore.QFile(os.path.join(util.CACHE_DIR, "temp.fafreplay"))
             faf_replay.open(QtCore.QIODevice.WriteOnly | QtCore.QIODevice.Truncate)
@@ -263,19 +263,19 @@ class ReplaysWidget(BaseClass, FormClass):
                 bucket.append(self.online_replays[uid])
 
         for bucket in buckets.keys():
-            bucket_item = QtGui.QTreeWidgetItem()
-            self.onlineTree.addTopLevelItem(bucket_item)
+            item = QtGui.QTreeWidgetItem()
+            self.onlineTree.addTopLevelItem(item)
 
-            bucket_item.setIcon(0, util.icon("replays/bucket.png"))
-            bucket_item.setText(0, "<font color='white'>" + bucket+"</font>")
-            bucket_item.setText(1, "<font color='white'>" + str(len(buckets[bucket])) + " replays</font>")
+            item.setIcon(0, util.icon("replays/bucket.png"))
+            item.setText(0, "<font color='white'>" + bucket+"</font>")
+            item.setText(1, "<font color='white'>" + str(len(buckets[bucket])) + " replays</font>")
 
             for online_replay in buckets[bucket]:
-                bucket_item.addChild(online_replay)
+                item.addChild(online_replay)
                 online_replay.setFirstColumnSpanned(True)
                 online_replay.setIcon(0, online_replay.icon)
 
-            bucket_item.setExpanded(True)
+            item.setExpanded(True)
 
     def load_local_cache(self):
         cache_fname = os.path.join(util.CACHE_DIR, "local_replays_metadata")
@@ -307,6 +307,17 @@ class ReplaysWidget(BaseClass, FormClass):
 
         self.setCursor(QtCore.Qt.WaitCursor)  # this might take longer ...
         self.myTree.clear()
+
+        if replay_dir != util.REPLAY_DIR:  # option to go up again
+            item = QtGui.QTreeWidgetItem()
+            item.setIcon(0, util.icon("replays/folder_up.png"))
+            item.setText(0, "directory up")  # sorting trick
+            item.setTextColor(0, QtGui.QColor(client.instance.getColor("default")))
+            item.setText(1, "..")
+            item.filename = os.path.split(replay_dir)[0]  # save path with item
+            item.setText(2, str(item.filename))
+            item.setTextColor(2, QtGui.QColor(client.instance.getColor("default")))
+            self.myTree.addTopLevelItem(item)
 
         # We put the replays into buckets by day first, then we add them to the treewidget.
         buckets = {}
@@ -412,59 +423,52 @@ class ReplaysWidget(BaseClass, FormClass):
 
             elif os.path.isdir(os.path.join(replay_dir, infile)):  # we found a directory ...
 
-                bucket = buckets.setdefault("directories", [])
-
                 item = QtGui.QTreeWidgetItem()
-                item.setText(1, infile)
-                item.filename = os.path.join(replay_dir, infile)
-                item.setText(3, "(" + str(len(os.listdir(item.filename))) + " files)")  # Nr. of items in subdir
-                item.setIcon(0, util.icon("replays/bucket.png"))
+                item.setIcon(0, util.icon("replays/folder.png"))
+                item.setText(0, "directory :")  # sorting trick
                 item.setTextColor(0, QtGui.QColor(client.instance.getColor("default")))
-
-                bucket.append(item)
+                item.setText(1, infile)
+                item.filename = os.path.join(replay_dir, infile)  # save path with item
+                i = len(os.listdir(item.filename))  # get number of files
+                if i == 1:
+                    item.setText(3, "(1 file)")
+                else:
+                    item.setText(3, "(" + str(i) + " files)")
+                self.myTree.addTopLevelItem(item)
 
         if len(cache_add) > 10 or len(cache) - len(cache_hit) > 10:
             self.save_local_cache(cache_hit, cache_add)
         # Now, create a top level TreeWidgetItem for every bucket, and put the bucket's contents into them
-        for bucket in buckets.keys():
-            bucket_item = QtGui.QTreeWidgetItem()
+        for bucket_key in buckets.keys():
+            item = QtGui.QTreeWidgetItem()
 
-            if bucket == "broken":
-                bucket_item.setTextColor(0, QtGui.QColor("red"))
-                bucket_item.setText(1, "(not watchable)")
-                bucket_item.setTextColor(1, QtGui.QColor(client.instance.getColor("default")))
-            elif bucket == "incomplete":
-                bucket_item.setTextColor(0, QtGui.QColor("yellow"))
-                bucket_item.setText(1, "(watchable)")
-                bucket_item.setTextColor(1, QtGui.QColor(client.instance.getColor("default")))
-            elif bucket == "legacy":
-                bucket_item.setTextColor(0, QtGui.QColor(client.instance.getColor("default")))
-                bucket_item.setTextColor(1, QtGui.QColor(client.instance.getColor("default")))
-                bucket_item.setText(1, "(old replay system)")
+            if bucket_key == "broken":
+                item.setTextColor(0, QtGui.QColor("red"))
+                item.setText(1, "(not watchable)")
+                item.setTextColor(1, QtGui.QColor(client.instance.getColor("default")))
+            elif bucket_key == "incomplete":
+                item.setTextColor(0, QtGui.QColor("yellow"))
+                item.setText(1, "(watchable)")
+                item.setTextColor(1, QtGui.QColor(client.instance.getColor("default")))
+            elif bucket_key == "legacy":
+                item.setTextColor(0, QtGui.QColor(client.instance.getColor("default")))
+                item.setTextColor(1, QtGui.QColor(client.instance.getColor("default")))
+                item.setText(1, "(old replay system)")
             else:
-                bucket_item.setTextColor(0, QtGui.QColor(client.instance.getColor("player")))
+                item.setTextColor(0, QtGui.QColor(client.instance.getColor("player")))
 
-            bucket_item.setIcon(0, util.icon("replays/bucket.png"))
-            bucket_item.setText(0, bucket)
-            if bucket == "directories":
-                if len(buckets[bucket]) == 1:
-                    bucket_item.setText(3, "1 folder")
-                else:
-                    bucket_item.setText(3, str(len(buckets[bucket])) + " folders")
+            item.setIcon(0, util.icon("replays/bucket.png"))
+            if len(buckets[bucket_key]) == 1:
+                item.setText(3, "1 replay")
             else:
-                if len(buckets[bucket]) == 1:
-                    bucket_item.setText(3, "1 replay")
-                else:
-                    bucket_item.setText(3, str(len(buckets[bucket])) + " replays")
-            bucket_item.setTextColor(3, QtGui.QColor(client.instance.getColor("default")))
+                item.setText(3, str(len(buckets[bucket_key])) + " replays")
+            item.setText(0, bucket_key)
+            item.setTextColor(3, QtGui.QColor(client.instance.getColor("default")))
 
-            self.myTree.addTopLevelItem(bucket_item)
-            # self.myTree.setFirstItemColumnSpanned(bucket_item, True)
+            self.myTree.addTopLevelItem(item)  # add replay bucket
 
-            for my_replay in buckets[bucket]:
-                bucket_item.addChild(my_replay)
-            if bucket == "directories":  # no expand without the children ... precious
-                bucket_item.setExpanded(True)  # expand by default to show directories
+            for my_replay in buckets[bucket_key]:  # add replays into bucket
+                item.addChild(my_replay)
 
         self.unsetCursor()  # undo the WaitCursor
 
@@ -646,11 +650,12 @@ class ReplaysWidget(BaseClass, FormClass):
         if item.isDisabled():
             return
 
-        if self.myTree.indexOfTopLevelItem(item) == -1:
-            if os.path.isdir(item.filename):  # is directory
-                self.update_mytree(item.filename)  # show content of that directory
-            else:
-                replay(item.filename)
+        if self.myTree.indexOfTopLevelItem(item) != -1:  # [TopLevel]Bucket
+            if hasattr(item, "filename"):  # is directory
+                if os.path.isdir(item.filename):
+                    self.update_mytree(item.filename)  # show content of that directory
+        else:  # inside a [TopLevel]Bucket
+            replay(item.filename)
 
     @QtCore.pyqtSlot(QtGui.QTreeWidgetItem, int)
     def livetree_doubleclicked(self, item):
@@ -759,5 +764,5 @@ class ReplaysWidget(BaseClass, FormClass):
         logger.debug("Disconnected from server")
 
     @QtCore.pyqtSlot(QtNetwork.QAbstractSocket.SocketError)
-    def errored(self, error):
+    def errored(self):
         logger.error("TCP Error " + self.replayVaultSocket.errorString())
