@@ -305,6 +305,7 @@ class ReplaysWidget(BaseClass, FormClass):
         else:  # changed folder - so make it new
             self.myTree_current_path = replay_dir
 
+        self.setCursor(QtCore.Qt.WaitCursor)  # this might take longer ...
         self.myTree.clear()
         
         # We put the replays into buckets by day first, then we add them to the treewidget.
@@ -355,10 +356,14 @@ class ReplaysWidget(BaseClass, FormClass):
 
                     # Parse replayinfo into data
                     if item.info.get('complete', False):
-                        t = time.localtime(item.info.get('launched_at', item.info.get('game_time',
-                                           item.info.get('game_end', os.path.getmtime(item.filename)))))
-                        game_date = time.strftime("%Y-%m-%d", t)
-                        game_hour = time.strftime("%H:%M", t)
+                        # 'game_time' is 'launched_at' for older replays (if that fails maybe 'game_end' is there)
+                        t = item.info.get('launched_at', item.info.get('game_time', item.info.get('game_end')))
+                        if t is None:
+                            game_date = 'date missing'
+                            game_hour = '--:--'
+                        else:
+                            game_date = time.strftime("%Y-%m-%d", time.localtime(t))
+                            game_hour = time.strftime("%H:%M", time.localtime(t))
                         
                         bucket = buckets.setdefault(game_date, [])                    
                         
@@ -404,14 +409,14 @@ class ReplaysWidget(BaseClass, FormClass):
 
                 bucket.append(item)
 
-            elif os.path.isdir(os.path.join(replay_dir, infile)):
+            elif os.path.isdir(os.path.join(replay_dir, infile)):  # we found a directory ...
 
                 bucket = buckets.setdefault("directories", [])
 
                 item = QtGui.QTreeWidgetItem()
                 item.setText(1, infile)
                 item.filename = os.path.join(replay_dir, infile)
-                # item.setText(3, "(" + str(len(os.walk(item.filename).next()[2])) + " files)")  # takes time
+                item.setText(3, "(" + str(len(os.walk(item.filename).next()[2])) + " files)")  # takes time on first run
                 item.setIcon(0, util.icon("replays/bucket.png"))
                 item.setTextColor(0, QtGui.QColor(client.instance.getColor("default")))
 
@@ -419,7 +424,7 @@ class ReplaysWidget(BaseClass, FormClass):
 
         if len(cache_add) > 10 or len(cache) - len(cache_hit) > 10:
             self.saveLocalCache(cache_hit, cache_add)
-        # Now, create a top level treewidgetitem for every bucket, and put the bucket's contents into them         
+        # Now, create a top level TreeWidgetItem for every bucket, and put the bucket's contents into them
         for bucket in buckets.keys():
             bucket_item = QtGui.QTreeWidgetItem()
             
@@ -457,6 +462,10 @@ class ReplaysWidget(BaseClass, FormClass):
                 
             for replay in buckets[bucket]:
                 bucket_item.addChild(replay)
+            if bucket == "directories":  # no expand without the children ... precious
+                bucket_item.setExpanded(True)  # expand by default to show directories
+
+        self.unsetCursor()  # undo the WaitCursor
 
     def displayReplay(self):
         for uid in self.games:
