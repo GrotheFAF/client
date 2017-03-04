@@ -55,7 +55,7 @@ class NotificationDialog(FormClass, BaseClass):
     def hide(self):
         super(FormClass, self).hide()
         # check for next event to show notification for
-        client.instance.notificationSystem.checkEvent()
+        client.instance.notificationSystem.check_event()
 
     # mouseReleaseEvent sometimes not fired
     def mousePressEvent(self, event):

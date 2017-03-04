@@ -4,10 +4,7 @@ from trueskill import Rating
 from fa import maps
 import util
 import os
-from games.moditem import mod_invisible, mods
-
-import traceback
-
+from games.moditem import mod_invisible
 import client
 
 import logging
@@ -15,35 +12,35 @@ logger = logging.getLogger(__name__)
 
 
 class GameItemDelegate(QtGui.QStyledItemDelegate):
-    
+
     def __init__(self, *args, **kwargs):
         QtGui.QStyledItemDelegate.__init__(self, *args, **kwargs)
-        
+
     def paint(self, painter, option, index, *args, **kwargs):
         self.initStyleOption(option, index)
-                
+
         painter.save()
-        
+
         html = QtGui.QTextDocument()
         html.setHtml(option.text)
-        
+
         icon = QtGui.QIcon(option.icon)
 
         # clear icon and text before letting the control draw itself because we're rendering these parts ourselves
         option.icon = QtGui.QIcon()        
         option.text = ""  
         option.widget.style().drawControl(QtGui.QStyle.CE_ItemViewItem, option, painter, option.widget)
-        
+
         # Shadow (100x100 shifted 8 right and 8 down)
         painter.fillRect(option.rect.left()+8, option.rect.top()+8, 100, 100, QtGui.QColor("#202020"))
 
         # Icon  (110x110 adjusted: shifts top,left 3 and bottom,right -7 -> makes/clips it to 100x100)
-        icon.paint(painter, option.rect.adjusted(3, 3, -7, -7), QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
-        
+        icon.paint(painter, option.rect.adjusted(3, 3, -7, -7), QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+
         # Frame around the icon (100x100 shifted 3 right and 3 down)
         pen = QtGui.QPen()
         pen.setWidth(1)
-        pen.setBrush(QtGui.QColor("#303030"))  # FIXME: This needs to come from theme.
+        pen.setBrush(QtGui.QColor("#303030"))
         pen.setCapStyle(QtCore.Qt.RoundCap)
         painter.setPen(pen)
         painter.drawRect(option.rect.left() + 3, option.rect.top() + 3, 100, 100)
@@ -52,12 +49,12 @@ class GameItemDelegate(QtGui.QStyledItemDelegate):
         painter.translate(option.rect.left() + 100 + 10, option.rect.top()+10)
         clip = QtCore.QRectF(0, 0, option.rect.width() - 100 - 10 - 5, option.rect.height())
         html.drawContents(painter, clip)
-  
+
         painter.restore()
 
     def sizeHint(self, option, index, *args, **kwargs):
         self.initStyleOption(option, index)
-        
+
         html = QtGui.QTextDocument()
         html.setHtml(option.text)
         html.setTextWidth(GameItem.TEXTWIDTH)
@@ -69,31 +66,31 @@ class GameItem(QtGui.QListWidgetItem):
     ICONSIZE = 110
     PADDING = 10
 
-    FORMATTER_FAF  = unicode(util.readfile("games/formatters/faf.qthtml"))
-    FORMATTER_MOD  = unicode(util.readfile("games/formatters/mod.qthtml"))
+    FORMATTER_FAF = unicode(util.readfile("games/formatters/faf.qthtml"))
+    FORMATTER_MOD = unicode(util.readfile("games/formatters/mod.qthtml"))
     FORMATTER_TOOL = unicode(util.readfile("games/formatters/tool.qthtml"))
-    
-    def __init__(self, uid, *args, **kwargs):
-        QtGui.QListWidgetItem.__init__(self, *args, **kwargs)
 
-        self.uid            = uid
-        self.mapname        = None
+    def __init__(self, uid, *args):
+        QtGui.QListWidgetItem.__init__(self, *args)
+
+        self.uid = uid
+        self.mapname = None
         self.mapdisplayname = ""
-        self.title          = None
-        self.host           = ""
-        self.hostid         = -1
+        self.title = None
+        self.host = ""
+        self.hostid = -1
         self.password_protected = False
-        self.mod            = None
-        self.mods           = None
+        self.mod = None
+        self.mods = None
         self.moddisplayname = None
-        self.state          = None
-        self.gamequality    = 0
-        self.nTeams         = 0
-        self.options        = []
-        self.players        = []
+        self.state = None
+        self.gamequality = 0
+        self.nTeams = 0
+        self.options = []
+        self.players = []
 
         self.setHidden(True)
-        
+
     def url(self, player_id=None):
         if not player_id:
             player_id = self.host
@@ -116,29 +113,28 @@ class GameItem(QtGui.QListWidgetItem):
             url.addQueryItem("uid", str(self.uid))
             return url
         return None 
-        
+
     @QtCore.pyqtSlot()
-    def announceReplay(self):
+    def announce_replay(self):
         if not client.instance.players.isFriend(self.hostid):
             return
 
         if not self.state == "playing":
             return
-                
-        # User doesnt want to see this in chat   
+
+        # User does not want to see this in chat
         if not client.instance.livereplays:
             return
 
-        url = self.url()
-        istr = client.instance.getColor("url") + '" href="' + url.toString() + '">' + self.title + '</a> (on "' + self.mapdisplayname + '")'
+        in_str = ' in <a style="color:' + client.instance.getColor("url") + '" href="' + self.url().toString() + '">'\
+                 + self.title + '</a> (on "' + self.mapdisplayname + '")'
         if self.mod == "faf":
-            client.instance.forwardLocalBroadcast(self.host, 'is playing live in <a style="color:' + istr)
+            client.instance.forwardLocalBroadcast(self.host, 'is playing live' + in_str)
         else:
-            client.instance.forwardLocalBroadcast(self.host, 'is playing ' + self.mod + ' in <a style="color:' + istr)
-        
-    
+            client.instance.forwardLocalBroadcast(self.host, 'is playing ' + self.mod + in_str)
+
     @QtCore.pyqtSlot()
-    def announceHosting(self):
+    def announce_hosting(self):
         if not client.instance.players.isFriend(self.hostid) or self.isHidden():
             return
 
@@ -153,11 +149,15 @@ class GameItem(QtGui.QListWidgetItem):
         # No visible message if not requested   
         if not client.instance.opengames:
             return
-                         
+
         if self.mod == "faf":
-            client.instance.forwardLocalBroadcast(self.host, 'is hosting <a style="color:' + client.instance.getColor("url") + '" href="' + url.toString() + '">' + self.title + '</a> (on "' + self.mapdisplayname + '")')
+            client.instance.forwardLocalBroadcast(self.host, 'is hosting <a style="color:' +
+                                                  client.instance.getColor("url") + '" href="' + url.toString() + '">' +
+                                                  self.title + '</a> (on "' + self.mapdisplayname + '")')
         else:
-            client.instance.forwardLocalBroadcast(self.host, 'is hosting ' + self.mod + ' <a style="color:' + client.instance.getColor("url") + '" href="' + url.toString() + '">' + self.title + '</a> (on "' + self.mapdisplayname + '")')
+            client.instance.forwardLocalBroadcast(self.host, 'is hosting ' + self.mod + ' <a style="color:' +
+                                                  client.instance.getColor("url") + '" href="' + url.toString() + '">' +
+                                                  self.title + '</a> (on "' + self.mapdisplayname + '")')
 
     def update(self, message, old_client=None):
         """
@@ -174,9 +174,6 @@ class GameItem(QtGui.QListWidgetItem):
             self.host = message['host']
             self.password_protected = message.get('password_protected', False)
             self.mod = message['featured_mod']
-
-        if self.host is None:  # fresh game
-            self.host = message['host']
         elif self.host != message['host']:  # somethings funny (offline)
             self.host = message['host']
 
@@ -191,11 +188,11 @@ class GameItem(QtGui.QListWidgetItem):
         if self.mapname != message['mapname']:
             self.mapname = message['mapname']
             self.mapdisplayname = maps.getDisplayName(self.mapname)
-            refresh_icon = True
+            refresh_map_icon = True
         else:
-            refresh_icon = False
+            refresh_map_icon = False
 
-        oldstate = self.state
+        old_state = self.state
         self.state = message['state']
 
         self.setHidden((self.state != 'open') or (self.mod in mod_invisible))
@@ -214,7 +211,7 @@ class GameItem(QtGui.QListWidgetItem):
         teams_map = dict.copy(message['teams'])
 
         # Used to differentiate between newly added / removed and previously present players
-        oldplayers = set(map(lambda p: p.login, self.players))
+        old_players = set(map(lambda p: p.login, self.players))
 
         # Following the convention used by the game, a team value of 1 represents "No team". Let's
         # desugar those into "real" teams now (and convert the dict to a list)
@@ -258,7 +255,7 @@ class GameItem(QtGui.QListWidgetItem):
                 self.gamequality = 0
 
             # Alternate icon: If private game, use game_locked icon. Otherwise, use preview icon from map library.
-            if refresh_icon:
+            if refresh_map_icon:
                 if self.password_protected:
                     icon = util.icon("games/private_game.png")
                 else:
@@ -270,9 +267,9 @@ class GameItem(QtGui.QListWidgetItem):
                 self.setIcon(icon)
 
             if self.gamequality == 0:
-                Quality_str = "? %"
+                quality_str = "? %"
             else:
-                Quality_str = str(self.gamequality)+" %"
+                quality_str = str(self.gamequality)+" %"
 
             if len(team_list) > 1:
                 team_str = "<font size='-1'> in </font>" + " vs ".join(team_list)
@@ -283,99 +280,85 @@ class GameItem(QtGui.QListWidgetItem):
                 self.host += " <font color='darkred'>(offline)</font>"
             color = client.instance.players.getUserColor(self.hostid)
 
-            self.editTooltip(teams, observers)
+            self.edit_tooltip(teams, observers)
 
             if self.mod == "faf" or self.mod == "coop":
                 self.setText(self.FORMATTER_FAF.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
                                                        title=self.title, host=self.host, players=num_players,
-                                                       teams=team_str, gamequality=Quality_str))
+                                                       teams=team_str, gamequality=quality_str))
             else:
                 self.setText(self.FORMATTER_MOD.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
                                                        title=self.title, host=self.host, players=num_players,
-                                                       teams=team_str, mod=self.mod, gamequality=Quality_str))
+                                                       teams=team_str, mod=self.mod, gamequality=quality_str))
         elif self.state != "playing":
             self.state = "funky"
 
         # Spawn announcers: IF we had a gamestate change, show replay and hosting announcements
-        if oldstate != self.state:
+        if old_state != self.state:
             if self.state == "playing":  # The delay is there because we have a 5 minutes delay in the livereplay server
-                QtCore.QTimer.singleShot(5*60000, self.announceReplay)
+                QtCore.QTimer().singleShot(5*60000, self.announce_replay)
             elif self.state == "open":  # The 3.5s delay is there because the host needs time to choose a map
-                QtCore.QTimer.singleShot(35000, self.announceHosting)
+                QtCore.QTimer().singleShot(35000, self.announce_hosting)
 
         # Update player URLs
         for player in self.players:
             client.instance.urls[player.login] = self.url(player.id)
 
         # Determine which players are affected by this game's state change            
-        newplayers = set(map(lambda p: p.login, self.players))
-        affectedplayers = oldplayers | newplayers
-        client.instance.usersUpdated.emit(list(affectedplayers))
+        new_players = set(map(lambda p: p.login, self.players))
+        affected_players = old_players | new_players
+        client.instance.usersUpdated.emit(list(affected_players))
 
-    def editTooltip(self, teams, observers):
-        
-        teamlist = []
+    def edit_tooltip(self, teams, observers):
 
+        teams_list = []
         i = 0
         for team in teams:
-            
-            i += 1
 
-            teamplayer = []
-            teamplayer.append("<td><table>")
+            i += 1
+            players_list = ["<td><table>"]
             for player in team:
 
                 if player == client.instance.me:
-                    playerStr = "<b><i>%s</b></i>" % player.login
+                    player_str = "<b><i>%s</b></i>" % player.login
                 else:
-                    playerStr = player.login
+                    player_str = player.login
 
                 if player.rating_deviation < 200:
-                    playerStr += " (%s)" % str(player.rating_estimate())
+                    player_str += " (%s)" % str(player.rating_estimate())
 
                 country = os.path.join(util.COMMON_DIR, "chat/countries/%s.png" % (player.country or '').lower())
 
                 if i == 1:
-                    player_tr = "<tr><td><img src='%s'></td>" \
-                                    "<td align='left' valign='middle' width='135'>%s</td></tr>" % (country, playerStr)
+                    player_html = "<tr><td><img src='%s'></td><td align='left' " \
+                                    "valign='middle' width='135'>%s</td></tr>" % (country, player_str)
                 elif i == self.nTeams:
-                    player_tr = "<tr><td align='right' valign='middle' width='135'>%s</td>" \
-                                    "<td><img src='%s'></td></tr>" % (playerStr, country)
+                    player_html = "<tr><td align='right' valign='middle' width='135'>%s</td>" \
+                                    "<td><img src='%s'></td></tr>" % (player_str, country)
                 else:
-                    player_tr = "<tr><td><img src='%s'></td>" \
-                                    "<td align='center' valign='middle' width='135'>%s</td></tr>" % (country, playerStr)
+                    player_html = "<tr><td><img src='%s'></td><td align='center' " \
+                                    "valign='middle' width='135'>%s</td></tr>" % (country, player_str)
 
-                teamplayer.append(player_tr)
+                players_list.append(player_html)
 
-            teamplayer.append("</table></td>")
-            members = "".join(teamplayer)
+            players_list.append("</table></td>")
+            team_html = "".join(players_list)
 
-            teamlist.append(members)
+            teams_list.append(team_html)
 
-        teams_string = "<td valign='middle' height='100%'><font color='black' size='+5'>VS</font></td>".join(teamlist)
+        teams_str = "<td valign='middle' height='100%'><font color='black' size='+5'>VS</font></td>".join(teams_list)
 
         if len(observers) != 0:
-            observers_str = "Observers : "
-            observers_str += ", ".join(observers)
-            observers_str += "<br />"
+            observers_str = "Observers : " + ", ".join(observers) + "<br />"
         else:
             observers_str = ""
 
         if self.mods:
-            mods = "<br />With: " + "<br />".join(self.mods.values())
+            mods_str = "<br />With: " + "<br />".join(self.mods.values())
         else:
-            mods = ""
+            mods_str = ""
 
-        self.setToolTip(self.FORMATTER_TOOL.format(teams=teams_string, observers=observers_str, mods=mods))
-
-    def permutations(self, items):
-        """ Yields all permutations of the items. """
-        if items == []:
-            yield []
-        else:
-            for i in range(len(items)):
-                for j in self.permutations(items[:i] + items[i+1:]):
-                    yield [items[i]] + j
+        self.setToolTip(self.FORMATTER_TOOL.format(teams=teams_str, observers=observers_str, mods=mods_str))
 
     def __ge__(self, other):
         """ Comparison operator used for item list sorting """
@@ -387,16 +370,16 @@ class GameItem(QtGui.QListWidgetItem):
 
         # Friend games are on top
         if self.hostid == -1:
-            self_isFriend = False
+            self_is_friend = False
         else:
-            self_isFriend = client.instance.players.isFriend(self.hostid)
+            self_is_friend = client.instance.players.isFriend(self.hostid)
         if other.hostid == -1:
-            other_isFriend = False
+            other_is_friend = False
         else:
-            other_isFriend = client.instance.players.isFriend(other.hostid)
-        if self_isFriend and not other_isFriend:
+            other_is_friend = client.instance.players.isFriend(other.hostid)
+        if self_is_friend and not other_is_friend:
             return True
-        if not self_isFriend and other_isFriend:
+        if not self_is_friend and other_is_friend:
             return False
 
         # Sort Games
@@ -406,16 +389,16 @@ class GameItem(QtGui.QListWidgetItem):
         # 3: By Host
         # 4+: By age = uid
         try:
-            sortby = self.listWidget().sortBy
+            sort_by = self.listWidget().sortBy
         except AttributeError:
-            sortby = 99
-        if sortby == 0:
+            sort_by = 99  # coopWidget has no .sortBy
+        if sort_by == 0:
             return len(self.players) > len(other.players)
-        elif sortby == 1:
+        elif sort_by == 1:
             return self.average_rating > other.average_rating
-        elif sortby == 2:
+        elif sort_by == 2:
             return self.mapdisplayname.lower() < other.mapdisplayname.lower()
-        elif sortby == 3:
+        elif sort_by == 3:
             return self.host.lower() < other.host.lower()
         else:
             # Default: by UID.

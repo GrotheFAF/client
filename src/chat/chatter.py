@@ -393,7 +393,7 @@ class Chatter(QtGui.QTableWidgetItem):
         client.instance.replays.playerName.setText(self.name)
         client.instance.replays.modList.setCurrentIndex(0)  # "All"
         client.instance.replays.minRating.setValue(0)
-        client.instance.replays.searchVault()
+        client.instance.replays.search_vault()
         client.instance.mainTabs.setCurrentIndex(client.instance.mainTabs.indexOf(client.instance.replaysTab))
 
     @QtCore.pyqtSlot()

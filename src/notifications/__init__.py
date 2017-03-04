@@ -1,4 +1,4 @@
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore
 import client
 import util
 from fa import maps
@@ -23,63 +23,64 @@ class Notifications:
         self.disabledStartup = True
         self.game_running = False
 
-        client.instance.gameEnter.connect(self.gameEnter)
-        client.instance.gameExit.connect(self.gameExit)
+        client.instance.gameEnter.connect(self.game_enter)
+        client.instance.gameExit.connect(self.game_exit)
 
         self.user = util.icon("client/user.png", pix=True)
 
-    def gameEnter(self):
+    def game_enter(self):
         self.game_running = True
 
-    def gameExit(self):
+    def game_exit(self):
         self.game_running = False
         # kick the queue
         if self.settings.ingame_notifications == IngameNotification.QUEUE:
-            self.checkEvent()
+            self.check_event()
 
-    def isDisabled(self):
+    def is_disabled(self):
         return (
             self.disabledStartup
             or self.game_running and self.settings.ingame_notifications == IngameNotification.DISABLE
             or not self.settings.enabled
         )
 
-    def setNotificationEnabled(self, enabled):
+    def set_notification_enabled(self, enabled):
         self.settings.enabled = enabled
         self.settings.saveSettings()
 
     @QtCore.pyqtSlot()
-    def on_event(self, eventType, data):
+    def on_event(self, event_type, data):
         """
         Puts an event in a queue, can trigger a popup.
         Keyword arguments:
-        eventType -- Type of the event
+        event_type -- Type of the event
         data -- Custom data that is used by the system to show a detailed popup
         """
-        if self.isDisabled() or not self.settings.popupEnabled(eventType):
+        if self.is_disabled() or not self.settings.popupEnabled(event_type):
             return
 
-        doAdd = False
+        do_add = False
 
-        if eventType == self.USER_ONLINE:
-            userid = data['user']
-            if self.settings.getCustomSetting(eventType, 'mode') == 'all' or self.client.players.isFriend(userid):
-                doAdd = True
-        elif eventType == self.NEW_GAME:
-            if self.settings.getCustomSetting(eventType, 'mode') == 'all' or ('host' in data and self.client.players.isFriend(data['host'])):
-                doAdd = True
+        if event_type == self.USER_ONLINE:
+            if self.settings.getCustomSetting(event_type, 'mode') == 'all' or \
+                    client.instance.players.isFriend(data['user']):
+                do_add = True
+        elif event_type == self.NEW_GAME:
+            if self.settings.getCustomSetting(event_type, 'mode') == 'all' or \
+                    ('host' in data and client.instance.players.isFriend(data['host'])):
+                do_add = True
 
-        if doAdd:
-            self.events.append((eventType, data))
+        if do_add:
+            self.events.append((event_type, data))
 
-        self.checkEvent()
+        self.check_event()
 
     @QtCore.pyqtSlot()
-    def on_showSettings(self):
-        """ Shows a Settings Dialg with all registered notifications modules  """
+    def on_show_settings(self):
+        """ Shows a Settings Dialog with all registered notifications modules  """
         self.settings.show()
 
-    def showEvent(self):
+    def show_event(self):
         """
         Display the next event in the queue as popup
 
@@ -91,38 +92,44 @@ class Notifications:
 
         event = self.events.pop(0)
 
-        eventType = event[0]
+        event_type = event[0]
         data = event[1]
-        pixmap = None
+        pix_map = None
         text = str(data)
-        if eventType == self.USER_ONLINE:
+        if event_type == self.USER_ONLINE:
             userid = data['user']
-            pixmap = self.user
+            pix_map = self.user
             text = '<html>%s<br><font color="silver" size="-2">joined</font> %s</html>' % (client.instance.players[userid].login, data['channel'])
-        elif eventType == self.NEW_GAME:
+        elif event_type == self.NEW_GAME:
 
             preview = maps.preview(data['mapname'], pixmap=True)
             if preview:
-                pixmap = preview.scaled(80, 80)
+                pix_map = preview.scaled(80, 80)
 
-            #TODO: outsource as function?
+            # TODO: outsource as function?
             mod = data.get('featured_mod')
             mods = data.get('sim_mods')
 
-            modstr = ''
-            if (mod != 'faf' or mods):
-                modstr = mod
+            mod_str = ''
+            if mod != 'faf' or mods:
+                mod_str = mod
                 if mods:
-                    if mod == 'faf':modstr = ", ".join(mods.values())
-                    else: modstr = mod + " & " + ", ".join(mods.values())
-                    if len(modstr) > 20: modstr = modstr[:15] + "..."
+                    if mod == 'faf':
+                        mod_str = ", ".join(mods.values())
+                    else:
+                        mod_str = mod + " & " + ", ".join(mods.values())
+                    if len(mod_str) > 20:
+                        mod_str = mod_str[:15] + "..."
 
-            modhtml = '' if (modstr == '') else '<br><font size="-4"><font color="red">mods</font> %s</font>' % modstr
-            text = '<html>%s<br><font color="silver" size="-2">on</font> %s%s</html>' % (data['title'], maps.getDisplayName(data['mapname']), modhtml)
+            if mod_str == '':
+                mod_html = ''
+            else:
+                mod_html = '<br><font size="-4"><font color="red">mods</font> %s</font>' % mod_str
+            text = '<html>%s<br><font color="silver" size="-2">on</font> %s%s</html>' % (data['title'], maps.getDisplayName(data['mapname']), mod_html)
 
-        self.dialog.newEvent(pixmap, text, self.settings.popup_lifetime, self.settings.soundEnabled(eventType))
+        self.dialog.newEvent(pix_map, text, self.settings.popup_lifetime, self.settings.soundEnabled(event_type))
 
-    def checkEvent(self):
+    def check_event(self):
         """
         Checks that we are in correct state to show next notification popup
 
@@ -130,12 +137,7 @@ class Notifications:
             * There need to be events pending
             * There must be no notification showing right now (i.e. notification dialog hidden)
             * Game isn't running, or ingame notifications are enabled
-
         """
-        if (len(self.events) > 0 and self.dialog.isHidden()
-            and (
-                not self.game_running
-                or self.settings.ingame_notifications == IngameNotification.ENABLE
-                )
-            ):
-            self.showEvent()
+        if len(self.events) > 0 and self.dialog.isHidden() and \
+                (not self.game_running or self.settings.ingame_notifications == IngameNotification.ENABLE):
+            self.show_event()

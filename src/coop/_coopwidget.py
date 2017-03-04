@@ -186,7 +186,7 @@ class CoopWidget(FormClass, BaseClass):
         if not fa.instance.available():
             return
             
-        client.instance.games.stopSearchRanked()
+        client.instance.games.stop_search_ranked()
         
         # A simple Hosting dialog.
         if fa.check.check("coop"):

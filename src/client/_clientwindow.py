@@ -31,8 +31,7 @@ Created on Dec 1, 2011
 
 from PyQt4 import QtCore, QtGui, QtNetwork, QtWebKit
 
-from client import ClientState, LOBBY_HOST, \
-    LOBBY_PORT, LOCAL_REPLAY_PORT
+from client import ClientState, LOBBY_HOST, LOBBY_PORT, LOCAL_REPLAY_PORT
 
 import logging
 
@@ -52,15 +51,22 @@ import notifications as ns
 FormClass, BaseClass = util.loadUiType("client/client.ui")
 
 
-class mousePosition(object):
+class MousePosition(object):
     def __init__(self):
         self.onLeftEdge = False
         self.onRightEdge = False
         self.onTopEdge = False
         self.onBottomEdge = False
+
+        self.onTopLeftEdge = False
+        self.onBottomLeftEdge = False
+        self.onTopRightEdge = False
+        self.onBottomRightEdge = False
+
+        self.onEdges = False
+
         self.cursorShapeChange = False
         self.warning_buttons = dict()
-        self.onEdges = False
 
     def computeMousePosition(self, pos):
         self.onLeftEdge = pos.x() < 8
@@ -212,7 +218,7 @@ class ClientWindow(FormClass, BaseClass):
 
         self.rubberBand = QtGui.QRubberBand(QtGui.QRubberBand.Rectangle)
 
-        self.mousePosition = mousePosition()
+        self.MousePosition = MousePosition()
         self.installEventFilter(self)
 
         self.minimize = QtGui.QToolButton(self)
@@ -367,42 +373,42 @@ class ClientWindow(FormClass, BaseClass):
         Settings.set('maps/autodownload', value is True)
 
     def eventFilter(self, obj, event):
-        if (event.type() == QtCore.QEvent.HoverMove):
+        if event.type() == QtCore.QEvent.HoverMove:
             self.draggingHover = self.dragging
             if self.dragging:
                 self.resizeWidget(self.mapToGlobal(event.pos()))
             else:
-                if self.maxNormal == False:
-                    self.mousePosition.computeMousePosition(event.pos())
+                if not self.maxNormal:
+                    self.MousePosition.computeMousePosition(event.pos())
                 else:
-                    self.mousePosition.resetToFalse()
+                    self.MousePosition.resetToFalse()
             self.updateCursorShape(event.pos())
 
         return False
 
     def updateCursorShape(self, pos):
-        if self.mousePosition.onTopLeftEdge or self.mousePosition.onBottomRightEdge:
-            self.mousePosition.cursorShapeChange = True
+        if self.MousePosition.onTopLeftEdge or self.MousePosition.onBottomRightEdge:
+            self.MousePosition.cursorShapeChange = True
             self.setCursor(QtCore.Qt.SizeFDiagCursor)
-        elif self.mousePosition.onTopRightEdge or self.mousePosition.onBottomLeftEdge:
+        elif self.MousePosition.onTopRightEdge or self.MousePosition.onBottomLeftEdge:
             self.setCursor(QtCore.Qt.SizeBDiagCursor)
-            self.mousePosition.cursorShapeChange = True
-        elif self.mousePosition.onLeftEdge or self.mousePosition.onRightEdge:
+            self.MousePosition.cursorShapeChange = True
+        elif self.MousePosition.onLeftEdge or self.MousePosition.onRightEdge:
             self.setCursor(QtCore.Qt.SizeHorCursor)
-            self.mousePosition.cursorShapeChange = True
-        elif self.mousePosition.onTopEdge or self.mousePosition.onBottomEdge:
+            self.MousePosition.cursorShapeChange = True
+        elif self.MousePosition.onTopEdge or self.MousePosition.onBottomEdge:
             self.setCursor(QtCore.Qt.SizeVerCursor)
-            self.mousePosition.cursorShapeChange = True
+            self.MousePosition.cursorShapeChange = True
         else:
-            if self.mousePosition.cursorShapeChange == True:
+            if self.MousePosition.cursorShapeChange:
                 self.unsetCursor()
-                self.mousePosition.cursorShapeChange = False
+                self.MousePosition.cursorShapeChange = False
 
     def showSmall(self):
         self.showMinimized()
 
     def showMaxRestore(self):
-        if (self.maxNormal):
+        if self.maxNormal:
             self.maxNormal = False
             if self.curSize:
                 self.setGeometry(self.curSize)
@@ -427,7 +433,7 @@ class ClientWindow(FormClass, BaseClass):
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            if self.mousePosition.isOnEdge() and self.maxNormal == False:
+            if self.MousePosition.isOnEdge() and self.maxNormal == False:
                 self.dragging = True
                 return
             else:
@@ -440,7 +446,7 @@ class ClientWindow(FormClass, BaseClass):
         if self.dragging and self.draggingHover == False:
             self.resizeWidget(event.globalPos())
 
-        elif self.moving and self.offset != None:
+        elif self.moving and self.offset is not None:
             desktop = QtGui.QDesktopWidget().availableGeometry(self)
             if event.globalPos().y() == 0:
                 self.rubberBand.setGeometry(desktop)
@@ -457,7 +463,7 @@ class ClientWindow(FormClass, BaseClass):
 
             else:
                 self.rubberBand.hide()
-                if self.maxNormal == True:
+                if self.maxNormal:
                     self.showMaxRestore()
 
             self.move(event.globalPos() - self.offset)
@@ -474,26 +480,26 @@ class ClientWindow(FormClass, BaseClass):
         left, top, right, bottom = origRect.getCoords()
         minWidth = self.minimumWidth()
         minHeight = self.minimumHeight()
-        if self.mousePosition.onTopLeftEdge:
+        if self.MousePosition.onTopLeftEdge:
             left = globalMousePos.x()
             top = globalMousePos.y()
 
-        elif self.mousePosition.onBottomLeftEdge:
+        elif self.MousePosition.onBottomLeftEdge:
             left = globalMousePos.x()
             bottom = globalMousePos.y()
-        elif self.mousePosition.onTopRightEdge:
+        elif self.MousePosition.onTopRightEdge:
             right = globalMousePos.x()
             top = globalMousePos.y()
-        elif self.mousePosition.onBottomRightEdge:
+        elif self.MousePosition.onBottomRightEdge:
             right = globalMousePos.x()
             bottom = globalMousePos.y()
-        elif self.mousePosition.onLeftEdge:
+        elif self.MousePosition.onLeftEdge:
             left = globalMousePos.x()
-        elif self.mousePosition.onRightEdge:
+        elif self.MousePosition.onRightEdge:
             right = globalMousePos.x()
-        elif self.mousePosition.onTopEdge:
+        elif self.MousePosition.onTopEdge:
             top = globalMousePos.y()
-        elif self.mousePosition.onBottomEdge:
+        elif self.MousePosition.onBottomEdge:
             bottom = globalMousePos.y()
 
         newRect = QtCore.QRect(QtCore.QPoint(left, top), QtCore.QPoint(right, bottom))
@@ -575,7 +581,7 @@ class ClientWindow(FormClass, BaseClass):
             button = QtGui.QToolButton(self)
             button.setMaximumSize(25, 25)
             button.setIcon(util.icon("games/automatch/%s.png" % faction.to_name()))
-            button.clicked.connect(partial(self.games.startSearchRanked, faction))
+            button.clicked.connect(partial(self.games.start_search_ranked, faction))
             self.warning.addWidget(button)
             return button
 
@@ -707,8 +713,8 @@ class ClientWindow(FormClass, BaseClass):
         self.actionLinkUnitDB.triggered.connect(partial(self.open_url, Settings.get("UNITDB_URL")))
         self.actionLinkGitHub.triggered.connect(partial(self.open_url, Settings.get("GITHUB_URL")))
 
-        self.actionNsSettings.triggered.connect(lambda: self.notificationSystem.on_showSettings())
-        self.actionNsEnabled.triggered.connect(lambda enabled: self.notificationSystem.setNotificationEnabled(enabled))
+        self.actionNsSettings.triggered.connect(lambda: self.notificationSystem.on_show_settings())
+        self.actionNsEnabled.triggered.connect(lambda enabled: self.notificationSystem.set_notification_enabled(enabled))
 
         self.actionWiki.triggered.connect(partial(self.open_url, Settings.get("WIKI_URL")))
         self.actionReportBug.triggered.connect(partial(self.open_url, Settings.get("TICKET_URL")))
@@ -778,7 +784,7 @@ class ClientWindow(FormClass, BaseClass):
         result = QtGui.QMessageBox.question(client.instance, "Clear Settings",
                                             "Are you sure you wish to clear all settings, login info, etc. used by this program?",
                                             QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-        if (result == QtGui.QMessageBox.Yes):
+        if result == QtGui.QMessageBox.Yes:
             util.settings.clear()
             util.settings.sync()
             QtGui.QMessageBox.information(client.instance, "Restart Needed", "FAF will quit now.")

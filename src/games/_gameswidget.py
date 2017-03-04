@@ -23,12 +23,9 @@ FormClass, BaseClass = util.loadUiType("games/games.ui")
 
 class GamesWidget(FormClass, BaseClass):
 
-    hide_private_games = Settings.persisted_property(
-        "play/hidePrivateGames", default_value=False, type=bool)
-    sort_games_index = Settings.persisted_property(
-        "play/sortGames", default_value=0, type=int)  # Default is by player count
-    sub_factions = Settings.persisted_property(
-        "play/subFactions", default_value=[False, False, False, False])
+    hide_private_games = Settings.persisted_property("play/hidePrivateGames", default_value=False, type=bool)
+    sort_games_index = Settings.persisted_property("play/sortGames", default_value=0, type=int)  # by player count
+    sub_factions = Settings.persisted_property("play/subFactions", default_value=[False, False, False, False])
 
     def __init__(self, *args, **kwargs):
         BaseClass.__init__(self, *args, **kwargs)
@@ -66,32 +63,32 @@ class GamesWidget(FormClass, BaseClass):
         self.race = None
         self.ispassworded = False
 
-        self.generateSelectSubset()
+        self.generate_select_subset()
 
-        client.instance.lobby_info.modInfo.connect(self.processModInfo)
-        client.instance.lobby_info.gameInfo.connect(self.processGameInfo)
+        client.instance.lobby_info.modInfo.connect(self.process_modinfo)
+        client.instance.lobby_info.gameInfo.connect(self.process_gameinfo)
         client.instance.lobby_connection.disconnected.connect(self.clear_games)
 
-        client.instance.gameEnter.connect(self.stopSearchRanked)
-        client.instance.viewingReplay.connect(self.stopSearchRanked)
+        client.instance.gameEnter.connect(self.stop_search_ranked)
+        client.instance.viewingReplay.connect(self.stop_search_ranked)
 
         self.gameList.setItemDelegate(GameItemDelegate(self))
-        self.gameList.itemDoubleClicked.connect(self.gameDoubleClicked)
+        self.gameList.itemDoubleClicked.connect(self.game_doubleclicked)
         self.gameList.sortBy = self.sort_games_index  # Default Sorting is By Players count
 
         self.sortGamesComboBox.addItems(['By Players', 'By avg. Player Rating', 'By Map', 'By Host', 'By Age'])
-        self.sortGamesComboBox.currentIndexChanged.connect(self.sortGamesComboChanged)
+        self.sortGamesComboBox.currentIndexChanged.connect(self.sortgamescombo_changed)
         self.sortGamesComboBox.setCurrentIndex(self.sort_games_index)
 
-        self.hideGamesWithPw.stateChanged.connect(self.togglePrivateGames)
+        self.hideGamesWithPw.stateChanged.connect(self.toggle_private_games)
         self.hideGamesWithPw.setChecked(self.hide_private_games)
 
-        self.modList.itemDoubleClicked.connect(self.hostGameClicked)
+        self.modList.itemDoubleClicked.connect(self.hostgame_clicked)
 
-        self.updatePlayButton()
+        self.update_playbutton()
 
     @QtCore.pyqtSlot(dict)
-    def processModInfo(self, message):
+    def process_modinfo(self, message):
         """
         Slot that interprets and propagates mod_info messages into the mod list
         """
@@ -115,57 +112,57 @@ class GamesWidget(FormClass, BaseClass):
         client.instance.replays.modList.addItem(message["name"])
 
     @QtCore.pyqtSlot(int)
-    def togglePrivateGames(self, state):
+    def toggle_private_games(self, state):
         self.hide_private_games = state
 
-        for game in [self.games[game] for game in self.games if self.games[game].state == 'open' and self.games[game].password_protected]:
+        for game in [self.games[game] for game in self.games
+                     if self.games[game].state == 'open' and self.games[game].password_protected]:
             game.setHidden(state == Qt.Checked)
 
-    def selectFaction(self, enabled, factionID=0):
-        if len(self.sub_factions) < factionID:
+    def select_faction(self, enabled, faction=0):
+        if len(self.sub_factions) < faction:
             return
 
-        logger.debug('selectFaction: selected was {}'.format(self.sub_factions))
-        self.sub_factions[factionID-1] = enabled
+        logger.debug('select_faction: selected was {}'.format(self.sub_factions))
+        self.sub_factions[faction-1] = enabled
 
         Settings.set("play/subFactions", self.sub_factions)
 
         if self.searching:
-            self.stopSearchRanked()
+            self.stop_search_ranked()
 
-        self.updatePlayButton()
+        self.update_playbutton()
 
-    def startSubRandomRankedSearch(self):
+    def start_subrandom_ranked_search(self):
         """
         This is a wrapper around startRankedSearch where a faction will be chosen based on the selected checkboxes
         """
         if self.searching:
-            self.stopSearchRanked()
+            self.stop_search_ranked()
         else:
-            factionSubset = []
+            faction_subset = []
 
             if self.rankedUEF.isChecked():
-                factionSubset.append("uef")
+                faction_subset.append("uef")
             if self.rankedCybran.isChecked():
-                factionSubset.append("cybran")
+                faction_subset.append("cybran")
             if self.rankedAeon.isChecked():
-                factionSubset.append("aeon")
+                faction_subset.append("aeon")
             if self.rankedSeraphim.isChecked():
-                factionSubset.append("seraphim")
+                faction_subset.append("seraphim")
 
-            l = len(factionSubset)
+            l = len(faction_subset)
             if l in [0, 4]:
-                self.startSearchRanked(Factions.RANDOM)
+                self.start_search_ranked(Factions.RANDOM)
             else:
-                # chooses a random factionstring from factionsubset and converts it to a Faction
-                self.startSearchRanked(Factions.from_name(
-                    factionSubset[random.randint(0, l - 1)]))
+                # chooses a random factionstring from faction_subset and converts it to a Faction
+                self.start_search_ranked(Factions.from_name(faction_subset[random.randint(0, l - 1)]))
 
-    def generateSelectSubset(self):
+    def generate_select_subset(self):
         if self.searching:  # you cannot search for a match while changing/creating the UI
-            self.stopSearchRanked()
+            self.stop_search_ranked()
 
-        self.rankedPlay.clicked.connect(self.startSubRandomRankedSearch)
+        self.rankedPlay.clicked.connect(self.start_subrandom_ranked_search)
         self.rankedPlay.show()
         self.labelRankedHint.show()
         for faction, icon in self._ranked_icons.items():
@@ -175,7 +172,7 @@ class GamesWidget(FormClass, BaseClass):
                 pass
 
             icon.setChecked(self.sub_factions[faction.value-1])
-            icon.clicked.connect(partial(self.selectFaction, factionID=faction.value))
+            icon.clicked.connect(partial(self.select_faction, factionID=faction.value))
 
     @QtCore.pyqtSlot()
     def clear_games(self):
@@ -183,7 +180,7 @@ class GamesWidget(FormClass, BaseClass):
         self.gameList.clear()
 
     @QtCore.pyqtSlot(dict)
-    def processGameInfo(self, message):
+    def process_gameinfo(self, message):
         """
         Slot that interprets and propagates game_info messages into GameItems
         """
@@ -209,7 +206,7 @@ class GamesWidget(FormClass, BaseClass):
                 self.gameList.takeItem(self.gameList.row(self.games[uid]))
                 del self.games[uid]
 
-    def updatePlayButton(self):
+    def update_playbutton(self):
         if self.searching:
             s = "Stop search"
         else:
@@ -221,17 +218,17 @@ class GamesWidget(FormClass, BaseClass):
 
         self.rankedPlay.setText(s)
 
-    def startSearchRanked(self, race):
+    def start_search_ranked(self, race):
         if race == Factions.RANDOM:
             race = Factions.get_random_faction()
 
         if fa.instance.running():
-            QtGui.QMessageBox.information(client.instance, "ForgedAllianceForever.exe", "FA is already running.")
-            self.stopSearchRanked()
+            QtGui.QMessageBox.information(client.instance, "ForgedAllianceForever.exe", "FA is already running.", "")
+            self.stop_search_ranked()
             return
 
         if not fa.check.check("ladder1v1"):
-            self.stopSearchRanked()
+            self.stop_search_ranked()
             logger.error("Can't play ranked without successfully updating Forged Alliance.")
             return
 
@@ -250,30 +247,30 @@ class GamesWidget(FormClass, BaseClass):
             self.race = race
             self.searchProgress.setVisible(True)
             self.labelAutomatch.setText("Searching...")
-            self.updatePlayButton()
+            self.update_playbutton()
             client.instance.search_ranked(faction=self.race.value)
 
     @QtCore.pyqtSlot()
-    def stopSearchRanked(self, *args):
+    def stop_search_ranked(self):
         if self.searching:
             logger.debug("Stopping Ranked Search")
             client.instance.lobby_connection.send(dict(command="game_matchmaking", mod="ladder1v1", state="stop"))
             self.searching = False
             client.instance.game_session.stop_listen()
 
-        self.updatePlayButton()
+        self.update_playbutton()
         self.searchProgress.setVisible(False)
         self.labelAutomatch.setText("1 vs 1 Automatch")
 
     @QtCore.pyqtSlot(QtGui.QListWidgetItem)
-    def gameDoubleClicked(self, item):
+    def game_doubleclicked(self, item):
         """
         Slot that attempts to join a game.
         """
         if not fa.instance.available():
             return
 
-        self.stopSearchRanked()  # Actually a workaround
+        self.stop_search_ranked()  # Actually a workaround
 
         if not fa.check.game(client.instance):
             return
@@ -288,21 +285,21 @@ class GamesWidget(FormClass, BaseClass):
                 client.instance.join_game(uid=item.uid)
 
     @QtCore.pyqtSlot(QtGui.QListWidgetItem)
-    def hostGameClicked(self, item):
+    def hostgame_clicked(self, item):
         """
         Hosting a game event
         """
         if not fa.instance.available():
             return
 
-        self.stopSearchRanked()
+        self.stop_search_ranked()
 
         hostgamewidget = HostgameWidget(self, item)
         # Abort if the client cancelled the host game dialogue.
         if hostgamewidget.exec_() != 1:
             return
 
-    def sortGamesComboChanged(self, index):
+    def sortgamescombo_changed(self, index):
         self.sort_games_index = index
         self.gameList.sortBy = index
         self.gameList.sortItems()
