@@ -1,9 +1,10 @@
 from PyQt4 import QtCore, QtNetwork
 
 import logging
-import fa
+import time
 import json
 import sys
+import client  # TESTING-IO Grothe
 
 from enum import IntEnum
 
@@ -52,6 +53,7 @@ class ServerReconnecter(QtCore.QObject):
     @property
     def keepalive(self):
         return self._keepalive
+
     @keepalive.setter
     def keepalive(self, value):
         self._keepalive = value
@@ -129,7 +131,7 @@ class ServerReconnecter(QtCore.QObject):
 
         else:
             self._waiting_for_pong = True
-            self._connection.writeToServer("PING")
+            self._connection.write_to_server("PING")
 
     def _receive_pong(self):
         self._waiting_for_pong = False
@@ -146,7 +148,7 @@ class ServerConnection(QtCore.QObject):
     def __init__(self, host, port, dispatch):
         QtCore.QObject.__init__(self)
         self.socket = QtNetwork.QTcpSocket()
-        self.socket.readyRead.connect(self.readFromServer)
+        self.socket.readyRead.connect(self.read_from_server)
         self.socket.error.connect(self.socketError)
         self.socket.setSocketOption(QtNetwork.QTcpSocket.KeepAliveOption, 1)
         self.socket.stateChanged.connect(self.on_socket_state_change)
@@ -210,7 +212,9 @@ class ServerConnection(QtCore.QObject):
         fa.upnp.createPortMapping(self.socket.localAddress().toString(), port, "UDP")
 
     @QtCore.pyqtSlot()
-    def readFromServer(self):
+    def read_from_server(self):
+        client.instance.serverS.setText("-")  # TESTING-IO Grothe
+        client.instance.serverR.setText("R")  # TESTING-IO Grothe
         ins = QtCore.QDataStream(self.socket)
         ins.setVersion(QtCore.QDataStream.Qt_4_2)
 
@@ -226,7 +230,7 @@ class ServerConnection(QtCore.QObject):
             logger.debug("Server: '%s'" % action)
 
             if action == "PING":
-                self.writeToServer("PONG")
+                self.write_to_server("PONG")
                 self.blockSize = 0
                 return
             elif action == "PONG":
@@ -240,10 +244,14 @@ class ServerConnection(QtCore.QObject):
 
             self.blockSize = 0
 
-    def writeToServer(self, action, *args, **kw):
+        client.instance.serverR.setText("-")  # TESTING-IO Grothe
+        client.instance.serverR_Time.setText(time.strftime("%H:%M:%S", time.localtime(time.time())))  # TEST-IO Grothe
+
+    def write_to_server(self, action):
         """
         Writes data to the deprecated stream API. Do not use.
         """
+        client.instance.serverS.setText("S")  # TESTING-IO Grothe
         logger.debug("Client: " + action)
 
         block = QtCore.QByteArray()
@@ -254,17 +262,16 @@ class ServerConnection(QtCore.QObject):
         out.writeQString(action)
 
         self.socket.write(block)
+        client.instance.serverS.setText("s")  # TESTING-IO Grothe
 
     def send(self, message):
         data = json.dumps(message)
         if message.get('command') == 'hello':
-            logger.info('Logging in with {}'.format({
-                                                        k: v for k, v in message.items() if k != 'password'
-                                                        }))
+            logger.info('Logging in with {}'.format({k: v for k, v in message.items() if k != 'password'}))
         else:
             logger.info("Outgoing JSON Message: " + data)
 
-        self.writeToServer(data)
+        self.write_to_server(data)
 
     def on_disconnect(self):
         logger.warn("Disconnected from lobby server.")
@@ -285,7 +292,7 @@ class ServerConnection(QtCore.QObject):
             logger.error("Fatal TCP Socket Error: " + self.socket.errorString())
 
 
-class Dispatcher():
+class Dispatcher:
     def __init__(self):
         self._receivers = {}
         self._dispatchees = {}
@@ -296,10 +303,10 @@ class Dispatcher():
     def __delitem__(self, key):
         del self._dispatchees[key]
 
-    def subscribe_to(self, target, fn, msg = None):
+    def subscribe_to(self, target, fn, msg=None):
         self._receivers[(target, msg)] = fn
 
-    def unsubscribe(self, target, msg = None):
+    def unsubscribe(self, target, msg=None):
         del self._receivers[(target, msg)]
 
     def dispatch(self, message):
@@ -378,8 +385,8 @@ class LobbyInfo(QtCore.QObject):
             self.gameInfo.emit(message)
 
     def handle_modvault_list_info(self, message):
-        modList = message["modList"]
-        for mod in modList:
+        mod_list = message["modList"]
+        for mod in mod_list:
             self.handle_modvault_info(mod)
 
     def handle_modvault_info(self, message):
