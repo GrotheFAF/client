@@ -35,11 +35,11 @@ If there is default value for a search entry, error will not be generated. Defau
     destination - you can specify a dictionary for matched items in the resulting array
 """
 import re
-import zipfile
 import os
 
-class luaParser:
-    
+
+class LuaParser:
+
     def __init__(self, luaPath):
         self.iszip = False
         self.zip = None
@@ -62,8 +62,8 @@ class luaParser:
         self.warning = False
         self.errorMsg = ""
         self.loweringKeys = True
-    
-    def __checkUninterruptibleStr(self, char):
+
+    def __check_uninterruptible_str(self, char):
         if char == "\"" or char == "'":
             if not self.__inString:
                 self.__stringChar = char
@@ -73,199 +73,195 @@ class luaParser:
         elif not self.__inString and char == "(":
             self.__inString = True
             self.__stringChar = ")"
-    
-    def __processLine(self, parent=""):
-        #initialize item counter
+
+    def __process_line(self, parent=""):
+        # initialize item counter
         counter = 0
-        #initialize empty array
+        # initialize empty array
         lua = dict()
-        #initialize value
-        value = ""
-        #start cycle
+        # start cycle
         while len(self.__stream):
-            #get a line from the list or read next line from the file
+            # get a line from the list or read next line from the file
             if len(self.__lines) == 0:
                 line = self.__stream.pop(0)
-                #cut commentary section (either start whit '#' or is a '--[[  ]]--' section
+                # cut commentary section (either start whit '#' or is a '--[[  ]]--' section
                 comment = re.compile("((#.*))$|((--\[\[).*(\]\]--)$)")
                 line = comment.sub("", line)
-                #process line to see if it one command or a stack of them
-                newLine = 0
+                # process line to see if it one command or a stack of them
+                new_line = 0
                 pos = 0
                 self.__inString = False
                 while len(line) > pos:
                     char = line[pos]
-                    self.__checkUninterruptibleStr(char)
+                    self.__check_uninterruptible_str(char)
                     if char == "{":
                         pos = pos + 1
                         char = line[pos]
-                        self.__checkUninterruptibleStr(char)
-                        self.__lines.append(line[newLine:pos])
-                        newLine = pos
-                    elif char == ","  and not self.__inString:
-                        self.__lines.append(line[newLine:pos])
+                        self.__check_uninterruptible_str(char)
+                        self.__lines.append(line[new_line:pos])
+                        new_line = pos
+                    elif char == "," and not self.__inString:
+                        self.__lines.append(line[new_line:pos])
                         pos = pos + 1
                         char = line[pos]
-                        self.__checkUninterruptibleStr(char)
-                        newLine = pos
+                        self.__check_uninterruptible_str(char)
+                        new_line = pos
                     elif char == "}":
-                        self.__lines.append(line[newLine:pos])
+                        self.__lines.append(line[new_line:pos])
                         self.__lines.append("}")
                         pos = pos + 1
                         if pos <= len(line):
-                            self.__checkUninterruptibleStr(line[pos])
-                        newLine = pos
+                            self.__check_uninterruptible_str(line[pos])
+                        new_line = pos
                     pos = pos + 1
                 if len(self.__lines) > 0:
                     line = self.__lines.pop(0)
             else:
                 line = self.__lines.pop(0)
             line = line.strip()
-            #if the string is not empty, proceed
+            # if the string is not empty, proceed
             if line != "":
-                #split it by '='
-                lineArray = line.split("=")
-                #if result is one element list
-                if len(lineArray) == 1:
-                    #this element is value
-                    value = lineArray[0].strip()
-                    #assign counter value to key
+                # split it by '='
+                line_array = line.split("=")
+                # if result is one element list
+                if len(line_array) == 1:
+                    # this element is value
+                    value = line_array[0].strip()
+                    # assign counter value to key
                     key = str(counter)
                 else:
-                    #first is key
+                    # first is key
                     if self.loweringKeys:
-                        key = lineArray[0].lower()
+                        key = line_array[0].lower()
                     else:
-                        key = lineArray[0]
-                    #get rid of redundant chars in key
+                        key = line_array[0]
+                    # get rid of redundant chars in key
                     key = self.__keyFilter.sub("", key).strip()
-                    #second is value
-                    value = lineArray[1].strip()
-                #if value is '}' - which is end of lua array, stop parsing
+                    # second is value
+                    value = line_array[1].strip()
+                # if value is '}' - which is end of lua array, stop parsing
                 if value == "}":
                     break
-                unfinished = False
                 if len(value) != 0:
-                    #remove finishing comma if there is one
+                    # remove finishing comma if there is one
                     if value[-1] == ",":
                         value = value[:-1]
-                    #get rid of redundant chars in value
+                    # get rid of redundant chars in value
                     value = self.__valFilter.sub("", value)
                 if len(value) != 0:
-                    #parse value:
-                    #if the string starts with '{'
+                    # parse value:
+                    # if the string starts with '{'
                     if value[-1] == "{":
-                        #add new item into the array: recursive function call
+                        # add new item into the array: recursive function call
                         if self.__prevUnfinished:
                             self.__prevUnfinished = False
-                            lua[prevkey] = self.__processLine(parent+">"+prevkey)
+                            lua[prevkey] = self.__process_line(parent + ">" + prevkey)
                         else:
-                            lua[key] = self.__processLine(parent+">"+key)
+                            lua[key] = self.__process_line(parent + ">" + key)
                     else:
-                        #add new item into the array: value itself
+                        # add new item into the array: value itself
                         if value[0] == "\"" or value[0] == "'":
                             value = value[1:]
                         if value[-1] == "\"" or value[-1] == "'":
                             value = value[:-1]
                         lua[key] = value
                 elif len(value) != 0:
-                    #add new item into the array: value itself
+                    # add new item into the array: value itself
                     lua[key] = value
                 elif len(key) != 0:
                     self.__prevUnfinished = True
                     prevkey = key
-            #checking line if it suits searchPattern, and adding if so
+            # checking line if it suits searchPattern, and adding if so
                 for searchKey in self.__searchPattern:
-                    #regkey = re.compile(".*("+searchKey.split(":")[-1].replace("*", ".*")+")$")
-                    #if regkey.match(parent+">"+key):
+                    # regkey = re.compile(".*("+searchKey.split(":")[-1].replace("*", ".*")+")$")
+                    # if regkey.match(parent+">"+key):
                     if re.match(".*>("+searchKey.split(":")[-1].replace("*", ".*")+")$", parent+">"+key):
-                        #get command from key
+                        # get command from key
                         valcmd = searchKey.split(":")
                         valcmd = valcmd[0] if len(valcmd) == 2 else "none"
-                        #add new value into the resulting array
-                        resultKey = self.__searchPattern[searchKey]
+                        # add new value into the resulting array
+                        result_key = self.__searchPattern[searchKey]
                         if valcmd == "count":
-                            if lua.has_key(key):
+                            if key in lua:
                                 if isinstance(lua[key], str):
                                     count = 1
                                 else:
                                     count = len(lua[key])
                             else:
                                 count = 0
-                            if self.__searchResult.has_key(resultKey):
-                                resultVal = self.__searchResult[resultKey] + count
+                            if result_key in self.__searchResult:
+                                result_val = self.__searchResult[result_key] + count
                             else:
-                                resultVal = count
+                                result_val = count
                         else:
-                            resultVal = lua[key]
-                        resultKey = resultKey.replace("__self__", key)
-                        resultKey = resultKey.replace("__parent__", parent.split(">")[-1])
-                        keycmd = resultKey.split(":")
-                        #unpack command from search key
+                            result_val = lua[key]
+                        result_key = result_key.replace("__self__", key)
+                        result_key = result_key.replace("__parent__", parent.split(">")[-1])
+                        keycmd = result_key.split(":")
+                        # unpack command from search key
                         if len(keycmd) == 2:
-                            resultKey = keycmd[1]
+                            result_key = keycmd[1]
                             keydst = keycmd[0]
                         else:
                             keydst = "__nowhere__"
-                        #write result into the array
+                        # write result into the array
                         if keydst == "__nowhere__":
-                            self.__searchResult[resultKey] = resultVal
+                            self.__searchResult[result_key] = result_val
                         else:
-                            if self.__searchResult.has_key(keydst):
+                            if keydst in self.__searchResult:
                                 if isinstance(self.__searchResult[keydst], dict):
-                                    self.__searchResult[keydst][resultKey] = resultVal
+                                    self.__searchResult[keydst][result_key] = result_val
                             else:
                                 self.__searchResult[keydst] = dict()
-                                self.__searchResult[keydst][resultKey] = resultVal
-                        if isinstance(resultVal, int):
-                            self.__foundItemsCount[searchKey] = self.__foundItemsCount[searchKey] + resultVal
+                                self.__searchResult[keydst][result_key] = result_val
+                        if isinstance(result_val, int):
+                            self.__foundItemsCount[searchKey] = self.__foundItemsCount[searchKey] + result_val
                         else:
                             self.__foundItemsCount[searchKey] = self.__foundItemsCount[searchKey] + 1
-            #increase counter
+            # increase counter
             counter = counter + 1
-        #return resulting array
+        # return resulting array
         return lua
         
-    def __parseLua(self):
-        #open file
-        if self.iszip == False:
+    def __parse_lua(self):
+        # open file
+        if not self.iszip:
             f = open(self.__path, "r")
         else:
-            if self.zip.testzip() == None :
-                for member in self.zip.namelist() :
+            if self.zip.testzip() is None:
+                for member in self.zip.namelist():
                     filename = os.path.basename(member)
                     if not filename:
                         continue
                     if filename == self.__path:
                         f = self.zip.open(member)
                         break
-        if not f :
+        if not f:
             return
-            
 
         self.__stream = f.readlines()
-        if self.__stream[-1][-1] != "\n": # file doesn't end in a newline
-                        self.__stream[-1] += "\n" # needed to prevent a bug happening when a file doesn't end with a newline.
+        if self.__stream[-1][-1] != "\n":  # file doesn't end in a newline
+            self.__stream[-1] += "\n"  # needed to prevent a bug happening when a file doesn't end with a newline.
         f.close()
-        #call recursive function
-        result = self.__processLine()
+        # call recursive function
+        result = self.__process_line()
         return result
-    
-    def __checkErrors(self):
+
+    def __check_errors(self):
         for key in self.__foundItemsCount:
-            resultKey = self.__searchPattern[key]
+            result_key = self.__searchPattern[key]
             if len(key.split(":")) == 2 or key.find("*") != -1:
                 if self.__foundItemsCount[key] == 0:
-                    if self.__defaultValues.has_key(resultKey):
-                        self.__searchResult[resultKey] = self.__defaultValues[resultKey]
+                    if result_key in self.__defaultValues:
+                        self.__searchResult[result_key] = self.__defaultValues[result_key]
                     else:
                         self.error = True
                         self.errors = self.errors + 1
                         self.errorMsg = self.errorMsg + "Error: no matches for '" + key + "' were found\n"
             else:
                 if self.__foundItemsCount[key] == 0:
-                    if self.__defaultValues.has_key(resultKey):
-                        self.__searchResult[resultKey] = self.__defaultValues[resultKey]
+                    if result_key in self.__defaultValues:
+                        self.__searchResult[result_key] = self.__defaultValues[result_key]
                     else:
                         self.error = True
                         self.errors = self.errors + 1
@@ -274,11 +270,11 @@ class luaParser:
                     self.warning = True
                     self.warnings = self.warnings + 1
                     self.errorMsg = self.errorMsg + "Warning: there were duplicate occurrences for '" + key + "'\n"
-                    
-    def parse(self, luaSearch, defValues = dict()):
-        self.__searchPattern.update(luaSearch)
-        self.__defaultValues.update(defValues)
+
+    def parse(self, lua_search, def_values=dict()):
+        self.__searchPattern.update(lua_search)
+        self.__defaultValues.update(def_values)
         self.__foundItemsCount = {}.fromkeys(self.__searchPattern.keys(), 0)
-        self.__parsedData = self.__parseLua()
-        self.__checkErrors()
+        self.__parsedData = self.__parse_lua()
+        self.__check_errors()
         return self.__searchResult

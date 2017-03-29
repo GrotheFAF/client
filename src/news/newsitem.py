@@ -1,10 +1,9 @@
 from PyQt4 import QtCore, QtGui
 
 import util
-import client
-
 import logging
 logger = logging.getLogger(__name__)
+
 
 class NewsItemDelegate(QtGui.QStyledItemDelegate):
     def __init__(self, *args, **kwargs):
@@ -68,16 +67,15 @@ class NewsItem(QtGui.QListWidgetItem):
 
     FORMATTER = unicode(util.readfile("news/formatters/newsitem.qhtml"))
 
-    def __init__(self, newsPost, *args, **kwargs):
-        QtGui.QListWidgetItem.__init__(self, *args, **kwargs)
+    def __init__(self, news_post, *args):
+        QtGui.QListWidgetItem.__init__(self, *args)
 
-        self.newsPost = newsPost
-
+        self.newsPost = news_post
 
         self.setText(self.FORMATTER.format(
-            author=newsPost['author'][0]['name'],
-            date=newsPost['date'],
-            title=newsPost['title']
+            author=news_post['author'][0]['name'],
+            date=news_post['date'],
+            title=news_post['title']
             ))
 
     def __ge__(self, other):

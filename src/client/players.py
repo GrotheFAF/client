@@ -1,10 +1,8 @@
 import random
 
 from client import Player
-from util import logger
 
 import json
-
 import util
 
 
@@ -35,60 +33,58 @@ class Players:
         # names of the client's clanmates
         self.clanlist = set()
 
-
-
-    #Color table used by the following method
+    # Color table used by the following method
     # CAVEAT: This will break if the theme is loaded after the client package is imported
     colors = json.loads(util.readfile("client/colors.json"))
     randomcolors = json.loads(util.readfile("client/randomcolors.json"))
 
-    def isFriend(self, id):
-        '''
+    def is_friend(self, user_id):
+        """
         Convenience function for other modules to inquire about a user's friendliness.
-        '''
-        return id in self.friends
+        """
+        return user_id in self.friends
 
-    def isFoe(self, id):
-        '''
+    def is_foe(self, user_id):
+        """
         Convenience function for other modules to inquire about a user's foeliness.
-        '''
-        return id in self.foes
+        """
+        return user_id in self.foes
 
-    def isPlayer(self, name):
-        '''
+    def is_player(self, name):
+        """
         Convenience function for other modules to inquire about a user's civilian status.
-        '''
+        """
         return name in self
 
-    def getUserColor(self, id):
-        '''
+    def get_user_color(self, user_id):
+        """
         Returns a user's color depending on their status with relation to the FAF client
-        '''
+        """
         # Return default color if we're not logged in
         if self.me is None:
-            return self.getColor("default")
+            return self.get_color("default")
 
-        if id == self.me.id:
-            return self.getColor("self")
-        if id in self.friends:
-            return self.getColor("friend")
-        if id in self.foes:
-            return self.getColor("foe")
-        if id in self.clanlist:
-            return self.getColor("clan")
+        if user_id == self.me.id:
+            return self.get_color("self")
+        if user_id in self.friends:
+            return self.get_color("friend")
+        if user_id in self.foes:
+            return self.get_color("foe")
+        if user_id in self.clanlist:
+            return self.get_color("clan")
         if self.coloredNicknames:
-            return self.getRandomColor(id)
-        if id in self:
-            return self.getColor("player")
+            return self.get_random_color(user_id)
+        if user_id in self:
+            return self.get_color("player")
 
-        return self.getColor("default")
+        return self.get_color("default")
 
-    def getRandomColor(self, id):
-        '''Generate a random color from a name'''
-        random.seed(id)
+    def get_random_color(self, user_id):
+        """Generate a random color from a name"""
+        random.seed(user_id)
         return random.choice(self.randomcolors)
 
-    def getColor(self, name):
+    def get_color(self, name):
         if name in self.colors:
             return self.colors[name]
         else:
@@ -107,7 +103,7 @@ class Players:
         val = self.__getitem__(item)
         return val if val else default
 
-    def getID(self, name):
+    def get_id(self, name):
         if name in self._logins:
             return self._logins[name].id
         return -1

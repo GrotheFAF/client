@@ -7,7 +7,7 @@ from PyQt4.QtCore import Qt
 import util
 from games.gameitem import GameItem, GameItemDelegate
 from games.moditem import ModItem, mod_invisible
-from games.hostgamewidget import HostgameWidget
+from games.hostgamewidget import HostGameWidget
 from fa.factions import Factions
 import fa
 import client
@@ -18,13 +18,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-FormClass, BaseClass = util.loadUiType("games/games.ui")
+FormClass, BaseClass = util.load_ui_type("games/games.ui")
 
 
 class GamesWidget(FormClass, BaseClass):
 
-    hide_private_games = Settings.persisted_property("play/hidePrivateGames", default_value=False, type=bool)
-    sort_games_index = Settings.persisted_property("play/sortGames", default_value=0, type=int)  # by player count
+    hide_private_games = Settings.persisted_property("play/hidePrivateGames", default_value=False, key_type=bool)
+    sort_games_index = Settings.persisted_property("play/sortGames", default_value=0, key_type=int)  # by player count
     sub_factions = Settings.persisted_property("play/subFactions", default_value=[False, False, False, False])
 
     def __init__(self, *args, **kwargs):
@@ -62,6 +62,9 @@ class GamesWidget(FormClass, BaseClass):
         self.searching = False
         self.race = None
         self.ispassworded = False
+
+        self.gameitem_counter = 0  # test
+        self.games_ignored_counter = 0  # test
 
         self.generate_select_subset()
 
@@ -187,8 +190,14 @@ class GamesWidget(FormClass, BaseClass):
         uid = message["uid"]
 
         if uid not in self.games:
+            # if message['state'] == 'playing':  # already started games
+            #    if time.time() - message['launched_at'] > 5*60+10:  # ignore older games
+            #        self.games_ignored_counter += 1  # test
+            #        return
+
             self.games[uid] = GameItem(uid)
             self.gameList.addItem(self.games[uid])
+            self.gameitem_counter += 1  # test
             self.games[uid].update(message)
 
             if message['state'] == 'open' and not message['password_protected']:
@@ -205,6 +214,7 @@ class GamesWidget(FormClass, BaseClass):
             if uid in self.games:
                 self.gameList.takeItem(self.gameList.row(self.games[uid]))
                 del self.games[uid]
+                self.gameitem_counter -= 1  # test
 
     def update_playbutton(self):
         if self.searching:
@@ -294,7 +304,7 @@ class GamesWidget(FormClass, BaseClass):
 
         self.stop_search_ranked()
 
-        hostgamewidget = HostgameWidget(self, item)
+        hostgamewidget = HostGameWidget(self, item)
         # Abort if the client cancelled the host game dialogue.
         if hostgamewidget.exec_() != 1:
             return

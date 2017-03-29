@@ -1,8 +1,9 @@
 from PyQt4 import QtCore, QtGui
 import util
+import client
 
 
-class gameSettingsWizard(QtGui.QWizard):
+class GameSettingsWizard(QtGui.QWizard):
     def __init__(self, *args, **kwargs):
         QtGui.QWizard.__init__(self, *args, **kwargs)
 
@@ -13,10 +14,8 @@ class gameSettingsWizard(QtGui.QWizard):
 
         self.setWizardStyle(1)
 
-        self.setPixmap(QtGui.QWizard.BannerPixmap,
-                QtGui.QPixmap('client/banner.png'))
-        self.setPixmap(QtGui.QWizard.BackgroundPixmap,
-                QtGui.QPixmap('client/background.png'))
+        self.setPixmap(QtGui.QWizard.BannerPixmap, QtGui.QPixmap('client/banner.png'))
+        self.setPixmap(QtGui.QWizard.BackgroundPixmap, QtGui.QPixmap('client/background.png'))
 
         self.setWindowTitle("Set Game Port")
 
@@ -32,10 +31,13 @@ class GameSettings(QtGui.QWizardPage):
 
         self.parent = parent
         self.setTitle("Network Settings")
-        self.setPixmap(QtGui.QWizard.WatermarkPixmap, util.pixmap("client/settings_watermark.png"))
+        self.setPixmap(QtGui.QWizard.WatermarkPixmap, util.pix_map("client/settings_watermark.png"))
         
         self.label = QtGui.QLabel()
-        self.label.setText('Forged Alliance needs an open UDP port to play. If you have trouble connecting to other players, try the UPnP option first. If that fails, you should try to open or forward the port on your router and firewall.<br/><br/>Visit the <a href="http://forums.faforever.com/forums/viewforum.php?f=3">Tech Support Forum</a> if you need help.<br/><br/>')
+        self.label.setText('Forged Alliance needs an open UDP port to play. If you have trouble connecting to other '
+                           'players, try the UPnP option first. If that fails, you should try to open or forward the '
+                           'port on your router and firewall.<br/><br/>Visit the <a href="http://forums.faforever.com'
+                           '/forums/viewforum.php?f=3">Tech Support Forum</a> if you need help.<br/><br/>')
         self.label.setOpenExternalLinks(True)
         self.label.setWordWrap(True)
 
@@ -49,7 +51,8 @@ class GameSettings(QtGui.QWizardPage):
         self.gamePortSpin.setValue(6112)
 
         self.checkUPnP = QtGui.QCheckBox("use UPnP")
-        self.checkUPnP.setToolTip("FAF can try to open and forward your game port automatically using UPnP.<br/><b>Caution: This doesn't work for all connections, but may help with some routers.</b>")
+        self.checkUPnP.setToolTip("FAF can try to open and forward your game port automatically using UPnP.<br/><b>"
+                                  "Caution: This doesn't work for all connections, but may help with some routers.</b>")
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.label)
@@ -57,7 +60,6 @@ class GameSettings(QtGui.QWizardPage):
         layout.addWidget(self.gamePortSpin)
         layout.addWidget(self.checkUPnP)
         self.setLayout(layout)
-
 
     def validatePage(self):
         return 1

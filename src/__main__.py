@@ -40,6 +40,7 @@ import util
 # Set up crash reporting
 excepthook_original = sys.excepthook
 
+
 def excepthook(exc_type, exc_value, traceback_object):
     """
     This exception hook will stop the app if an uncaught error occurred, regardless where in the QApplication.
@@ -55,23 +56,24 @@ def excepthook(exc_type, exc_value, traceback_object):
 
     sys.excepthook = excepthook
 
-def AdminUserErrorDialog():
+
+def adminuser_error_dialog():
     from config import Settings
     ignore_admin = Settings.get("client/ignore_admin", False, bool)
     if not ignore_admin:
         box = QtGui.QMessageBox()
-        box.setText("FAF should not be run as an administrator!<br><br>This probably means you need to fix the file permissions in C:\\ProgramData.<br>Proceed at your own risk.")
+        box.setText("FAF should not be run as an administrator!<br><br>This probably means you need to fix the file "
+                    "permissions in C:\\ProgramData.<br>Proceed at your own risk.")
         box.setStandardButtons(QtGui.QMessageBox.Ignore | QtGui.QMessageBox.Close)
         box.setIcon(QtGui.QMessageBox.Critical)
         box.setWindowTitle("FAF privilege error")
-        if (box.exec_() == QtGui.QMessageBox.Ignore):
+        if box.exec_() == QtGui.QMessageBox.Ignore:
             Settings.set("client/ignore_admin", True)
-
 
 
 def runFAF():
     # Load theme from settings (one of the first things to be done)
-    util.loadTheme()
+    util.load_theme()
 
     # Create client singleton and connect
     import client
@@ -79,7 +81,7 @@ def runFAF():
     faf_client = client.instance
     faf_client.setup()
 
-    if not faf_client.doConnect():
+    if not faf_client.do_connect():
         return
 
     faf_client.show()
@@ -97,7 +99,7 @@ if __name__ == '__main__':
         import ctypes
         if platform.release() != "XP":  # legacy special :-)
             if config.admin.isUserAdmin():
-                AdminUserErrorDialog()
+                adminuser_error_dialog()
 
         if getattr(ctypes.windll.shell32, "SetCurrentProcessExplicitAppUserModelID", None) is not None:
             myappid = 'com.faforever.lobby'
@@ -112,9 +114,8 @@ if __name__ == '__main__':
     # We can now set our excepthook since the app has been initialized
     sys.excepthook = excepthook
 
-
     if len(sys.argv) == 1:
-        #Do the magic
+        # Do the magic
         sys.path += ['.']
         runFAF()
     else:
@@ -123,10 +124,9 @@ if __name__ == '__main__':
             import fa
             fa.replay(sys.argv[1], True)  # Launch as detached process
 
-    #End of show
+    # End of show
     app.closeAllWindows()
     app.quit()
 
-    #End the application, perform some housekeeping
+    # End the application, perform some housekeeping
     logger.info("<<< --------------------------- Application Shutdown")
-

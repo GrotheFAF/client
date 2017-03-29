@@ -1,5 +1,4 @@
 from PyQt4 import QtGui
-import util
 from config import Settings
 
 """
@@ -11,21 +10,21 @@ connect on clicked event some actions, e.g.
 
 self.button.clicked.connect(self.dialog.show)
 """
+
+
 class NsHook():
     def __init__(self, eventType):
         self.eventType = eventType
         self._settings_key = 'notifications/{}'.format(eventType)
-        self.loadSettings()
+        self.load_settings()
         self.button = QtGui.QPushButton('More')
         self.button.setEnabled(False)
 
-    def loadSettings(self):
-        self.popup = Settings.get(self._settings_key + '/popup',
-                                  True, type=bool)
-        self.sound = Settings.get(self._settings_key + '/sound',
-                                  True, type=bool)
+    def load_settings(self):
+        self.popup = Settings.get(self._settings_key + '/popup', True, key_type=bool)
+        self.sound = Settings.get(self._settings_key + '/sound', True, key_type=bool)
 
-    def saveSettings(self):
+    def save_settings(self):
         Settings.set(self._settings_key+'/popup', self.popup)
         Settings.set(self._settings_key+'/sound', self.sound)
 
@@ -37,14 +36,14 @@ class NsHook():
 
     def switchPopup(self):
         self.popup = not self.popup
-        self.saveSettings()
+        self.save_settings()
 
     def soundEnabled(self):
         return self.sound
 
     def switchSound(self):
         self.sound = not self.sound
-        self.saveSettings()
+        self.save_settings()
 
     def settings(self):
         return self.button

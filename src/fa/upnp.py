@@ -26,12 +26,12 @@ def dump_mapping(mapping_port):
                                                      mapping_port.ExternalPort))
 
 if platform.system() == "Windows":
-    def createPortMapping(ip, port, protocol="UDP"):
+    def create_port_mapping(ip, port, protocol="UDP"):
         logger.info("UPnP mapping {}:{}".format(ip, port))
         try:
             import win32com.client
-            NATUPnP = win32com.client.Dispatch("HNetCfg.NATUPnP")
-            mapping_ports = NATUPnP.StaticPortMappingCollection
+            natu_pnp = win32com.client.Dispatch("HNetCfg.NATUPnP")
+            mapping_ports = natu_pnp.StaticPortMappingCollection
 
             if mapping_ports:
                 mapping_ports.Add(port, protocol, port, ip, True, UPNP_APP_NAME)
@@ -41,15 +41,15 @@ if platform.system() == "Windows":
             else:
                 logger.error("Couldn't get StaticPortMappingCollection")
         except:
-            logger.error("Exception in UPnP createPortMapping.",
+            logger.error("Exception in UPnP create_port_mapping.",
                          exc_info=sys.exc_info())
 
-    def removePortMappings():
+    def remove_port_mappings():
         logger.info("Removing UPnP port mapping.")
         try:
             import win32com.client
-            NATUPnP = win32com.client.Dispatch("HNetCfg.NATUPnP")
-            mapping_ports = NATUPnP.StaticPortMappingCollection
+            natu_pnp = win32com.client.Dispatch("HNetCfg.NATUPnP")
+            mapping_ports = natu_pnp.StaticPortMappingCollection
 
             if mapping_ports:
                 if mapping_ports.Count:
@@ -62,10 +62,10 @@ if platform.system() == "Windows":
             else:
                 logger.error("Couldn't get StaticPortMappingCollection")
         except:
-            logger.error("Exception in UPnP removePortMappings.", exc_info=sys.exc_info())
+            logger.error("Exception in UPnP remove_port_mappings.", exc_info=sys.exc_info())
 else:
-    def createPortMapping(ip, port, protocol='UDP'):
+    def create_port_mapping(ip, port, protocol='UDP'):
         logger.info("FIXME: Create a UPNP mapper for platform != Windows")
 
-    def removePortMappings():
+    def remove_port_mappings():
         logger.info("FIXME: Create a UPNP mapper for platform != Windows")

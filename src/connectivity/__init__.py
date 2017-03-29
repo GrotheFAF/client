@@ -9,11 +9,12 @@ from .helper import ConnectivityHelper
 
 logger = logging.getLogger(__name__)
 
+
 class ConnectivityDialog(QObject):
     def __init__(self, connectivity):
         QObject.__init__(self)
         self.connectivity = connectivity
-        self.dialog = util.loadUi('connectivity/connectivity.ui')
+        self.dialog = util.load_ui('connectivity/connectivity.ui')
         self.dialog.runTestButton.clicked.connect(self.run_relay_test)
 
     def update_relay_info(self):
@@ -36,7 +37,5 @@ class ConnectivityDialog(QObject):
 
     def exec_(self):
         self.dialog.test_result_label.setText(
-                "State: {}. Resolved address: {}:{}".
-                    format(self.connectivity.state, *self.connectivity.mapped_address)
-        )
+            "State: {}. Resolved address: {}:{}".format(self.connectivity.state, *self.connectivity.mapped_address))
         self.dialog.exec_()

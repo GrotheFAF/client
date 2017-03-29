@@ -11,7 +11,7 @@ from PyQt4.QtCore import QUrl
 
 CRASH_REPORT_USER = "pre-login"
 
-FormClass, BaseClass = util.loadUiType("client/crash.ui")
+FormClass, BaseClass = util.load_ui_type("client/crash.ui")
 
 
 class CrashDialog(FormClass, BaseClass):
@@ -33,6 +33,12 @@ class CrashDialog(FormClass, BaseClass):
             desc.append(("FA Path: ", fa_path))
             desc.append(("Home Directory", PERSONAL_DIR))
 
+        log = u""
+        try:
+            log += u"\n".join(readlines(LOG_FILE_FAF, False)[-128:])
+        except StandardError:
+            log += (unicode(LOG_FILE_FAF))
+            log += u"empty or not readable"
             desc = "".join(["{}: {}\n".format(n, d) for n, d in desc])
         except Exception:
             desc = "(Exception raised while writing runtime info)\n"

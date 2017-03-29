@@ -1,41 +1,43 @@
 from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore
 import urllib2
 import logging
 import os
 import util
-import warnings
 from config import Settings
 
-logger= logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 VAULT_PREVIEW_ROOT = "{}/faf/vault/map_previews/small/".format(Settings.get('content/host'))
 
-class downloadManager(QtCore.QObject):
-    ''' This class allows downloading stuff in the background'''
 
-    def __init__(self, parent = None):
+class DownloadManager(QtCore.QObject):
+    """ This class allows downloading stuff in the background """
+
+    def __init__(self, parent=None):
         QtCore.QObject.__init__(self, parent)
         self.nam = QNetworkAccessManager(self)
 
-        self.nam.finished.connect(self.finishedDownload)
+        self.nam.finished.connect(self.finished_download)
 
         self.modRequests = {}
         self.mapRequests = {}
         self.mapRequestsItem = []
 
     @QtCore.pyqtSlot(QNetworkReply)
-    def finishedDownload(self, reply):
-        ''' finishing downloads '''
+    def finished_download(self, reply):
+        """ finishing downloads """
         # mark reply for collection by Qt
         reply.deleteLater()
         urlstring = reply.url().toString()
         logger.info("Finished download from " + urlstring)
         reqlist = []
-        if urlstring in self.mapRequests: reqlist = self.mapRequests[urlstring]
-        if urlstring in self.modRequests: reqlist = self.modRequests[urlstring]
+        if urlstring in self.mapRequests:
+            reqlist = self.mapRequests[urlstring]
+        if urlstring in self.modRequests:
+            reqlist = self.modRequests[urlstring]
         if reqlist:
-            #save the map from cache
+            # save the map from cache
             name = os.path.basename(reply.url().toString())
             pathimg = os.path.join(util.CACHE_DIR, name)
             img = QtCore.QFile(pathimg)
@@ -43,15 +45,15 @@ class downloadManager(QtCore.QObject):
             img.write(reply.readAll())
             img.close()
             if os.path.exists(pathimg):
-                #Create alpha-mapped preview image
+                # Create alpha-mapped preview image
                 try:
-                    pass # the server already sends 100x100 pic
+                    pass  # the server already sends 100x100 pic
 #                    img = QtGui.QImage(pathimg).scaled(100,100)
 #                    img.save(pathimg)
                 except:
                     pathimg = "games/unknown_map.png"
                     logger.info("Failed to resize " + name)
-            else :
+            else:
                 pathimg = "games/unknown_map.png"
                 logger.debug("Web Preview failed for: " + name)
             logger.debug("Web Preview used for: " + name)
@@ -62,26 +64,29 @@ class downloadManager(QtCore.QObject):
                         self.mapRequestsItem.remove(requester)
                     else:
                         requester.setIcon(util.icon(pathimg, False))
-            if urlstring in self.mapRequests: del self.mapRequests[urlstring]
-            if urlstring in self.modRequests: del self.modRequests[urlstring]
+            if urlstring in self.mapRequests:
+                del self.mapRequests[urlstring]
+            if urlstring in self.modRequests:
+                del self.modRequests[urlstring]
 
     @QtCore.pyqtSlot(QNetworkReply.NetworkError)
-    def downloadError(self, networkError):
+    def downloadError(self, network_error):  # ?
         logger.info("Network Error")
 
     @QtCore.pyqtSlot()
-    def readyRead(self):
+    def readyRead(self):  # Qt Signal
         logger.info("readyRead")
 
     @QtCore.pyqtSlot(int, int)
     def progress(self, rcv, total):
         logger.info("received " + rcv + "out of" + total + " bytes")
 
-    def downloadMap(self, name, requester, item=False):
-        '''
+    def download_map(self, name, requester, item=False):
+        """
         Downloads a preview image from the web for the given map name
-        '''
-        #This is done so generated previews always have a lower case name. This doesn't solve the underlying problem (case folding Windows vs. Unix vs. FAF)
+        """
+        # This is done so generated previews always have a lower case name.
+        # This doesn't solve the underlying problem (case folding Windows vs. Unix vs. FAF)
         name = name.lower()
         if len(name) == 0:
             return
@@ -93,15 +98,15 @@ class downloadManager(QtCore.QObject):
             request = QNetworkRequest(url)
             rpl = self.nam.get(request)
             self.mapRequests[url.toString()].append(requester)
-        else :
+        else:
             self.mapRequests[url.toString()].append(requester)
         if item:
             self.mapRequestsItem.append(requester)
 
-    def downloadModPreview(self, strurl, requester):
+    def download_mod_preview(self, strurl, requester):
         url = QtCore.QUrl(strurl)
         if not url.toString() in self.modRequests:
-            logger.debug("Searching mod preview for: " + os.path.basename(strurl).rsplit('.',1)[0])
+            logger.debug("Searching mod preview for: " + os.path.basename(strurl).rsplit('.', 1)[0])
             self.modRequests[url.toString()] = []
             request = QNetworkRequest(url)
             rpl = self.nam.get(request)

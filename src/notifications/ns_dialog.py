@@ -7,7 +7,7 @@ from ns_settings import NotificationPosition
 """
 The UI popup of the notification system
 """
-FormClass, BaseClass = util.loadUiType("notification_system/dialog.ui")
+FormClass, BaseClass = util.load_ui_type("notification_system/dialog.ui")
 
 
 class NotificationDialog(FormClass, BaseClass):
@@ -21,19 +21,19 @@ class NotificationDialog(FormClass, BaseClass):
         self.standardIcon = util.icon("client/comment.png", pix=True)
 
         self.settings = settings
-        self.updatePosition()
+        self.update_position()
 
         # Frameless, always on top, steal no focus & no entry at the taskbar
         self.setWindowFlags(QtCore.Qt.ToolTip)
 
         # TODO: integrate into client.css
-        # self.setStyleSheet(client.instance.styleSheet())
+        # self.set_stylesheet(client.instance.styleSheet())
 
     @QtCore.pyqtSlot()
     def newEvent(self, pixmap, text, lifetime, sound):
         """ Called to display a new popup
         Keyword arguments:
-        pixmap -- Icon for the event (displayed left)
+        pix_map -- Icon for the event (displayed left)
         text- HTMl-Text of the vent (displayed right)
         lifetime -- Display duration
         sound -- true|false if should played
@@ -48,7 +48,7 @@ class NotificationDialog(FormClass, BaseClass):
         if sound:
             util.sound("chat/sfx/query.wav")
 
-        self.updatePosition()
+        self.update_position()
         self.show()
 
     @QtCore.pyqtSlot()
@@ -58,11 +58,11 @@ class NotificationDialog(FormClass, BaseClass):
         client.instance.notificationSystem.check_event()
 
     # mouseReleaseEvent sometimes not fired
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event):  # Qt Event handler
         if event.button() == QtCore.Qt.RightButton:
             self.hide()
 
-    def updatePosition(self):
+    def update_position(self):
         screen = QtGui.QDesktopWidget().screenGeometry()
         dialog_size = self.geometry()
         position = self.settings.popup_position  # client.instance.notificationSystem.settings.popup_position

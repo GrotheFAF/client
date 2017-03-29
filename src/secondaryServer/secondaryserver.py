@@ -1,8 +1,7 @@
 from PyQt4 import QtCore, QtNetwork
-import time
+
 import json
 import logging
-
 
 logger = logging.getLogger(__name__)
 
@@ -59,13 +58,13 @@ class SecondaryServer(QtCore.QObject):
         self.blockSize = 0
         self.serverSocket = QtNetwork.QTcpSocket()
 
-        self.serverSocket.error.connect(self.handleServerError)
-        self.serverSocket.readyRead.connect(self.readDataFromServer)
+        self.serverSocket.error.connect(self.handle_server_error)
+        self.serverSocket.readyRead.connect(self.read_data_from_server)
         self.serverSocket.connected.connect(self.send_pending)
         self.invisible = False
         self._requests = []
             
-    def setInvisible(self):
+    def set_invisible(self):
         self.invisible = True
     
     def send(self, command, *args, **kwargs):
@@ -84,15 +83,15 @@ class SecondaryServer(QtCore.QObject):
         self._requests = []
 
     def send_request(self, command, *args, **kwargs):
-        self.sendJson(command)
+        self.send_json(command)
 
-    def sendJson(self, message):
+    def send_json(self, message):
         data = json.dumps(message)
         logger.debug("Outgoing JSON Message: " + data)
-        self.writeToServer(data)      
+        self.write_to_server(data)
 
     @QtCore.pyqtSlot()
-    def readDataFromServer(self):
+    def read_data_from_server(self):
         ins = QtCore.QDataStream(self.serverSocket)
         ins.setVersion(QtCore.QDataStream.Qt_4_2)
 
@@ -103,18 +102,18 @@ class SecondaryServer(QtCore.QObject):
                 self.blockSize = ins.readUInt32()            
             if self.serverSocket.bytesAvailable() < self.blockSize:
                 return
-            
+
             action = ins.readQString()
             self.process(action, ins)
             self.blockSize = 0
-            
-    def writeToServer(self, action, *args, **kw):               
+
+    def write_to_server(self, action, *args, **kw):
         block = QtCore.QByteArray()
         out = QtCore.QDataStream(block, QtCore.QIODevice.ReadWrite)
         out.setVersion(QtCore.QDataStream.Qt_4_2)
         out.writeUInt32(0)
         out.writeQString(action)
-        
+
         for arg in args:
             if type(arg) is int:
                 out.writeInt(arg)
@@ -134,9 +133,9 @@ class SecondaryServer(QtCore.QObject):
         self.serverSocket.write(block)
 
     def process(self, action, stream):
-        self.receiveJSON(action, stream)
-        
-    def receiveJSON(self, data_string, stream):
+        self.receive_json(action, stream)
+
+    def receive_json(self, data_string, stream):
         """
         A fairly pythonic way to process received strings as JSON messages.
         """
@@ -145,17 +144,17 @@ class SecondaryServer(QtCore.QObject):
         self.dispatcher.dispatch(message)
 
     @QtCore.pyqtSlot('QAbstractSocket::SocketError')
-    def handleServerError(self, socketError):
+    def handle_server_error(self, socket_error):
         """
         Simple error handler that flags the whole operation as failed, not very graceful but what can you do...
         """
-        if socketError == QtNetwork.QAbstractSocket.RemoteHostClosedError:
+        if socket_error == QtNetwork.QAbstractSocket.RemoteHostClosedError:
             log("FA Server down: The server is down for maintenance, please try later.")
 
-        elif socketError == QtNetwork.QAbstractSocket.HostNotFoundError:
+        elif socket_error == QtNetwork.QAbstractSocket.HostNotFoundError:
             log("Connection to Host lost. Please check the host name and port settings.")
-            
-        elif socketError == QtNetwork.QAbstractSocket.ConnectionRefusedError:
+
+        elif socket_error == QtNetwork.QAbstractSocket.ConnectionRefusedError:
             log("The connection was refused by the peer.")
         else:
             log("The following error occurred: %s." % self.serverSocket.errorString())    

@@ -12,10 +12,12 @@ The UI of the Notification System Settings Frame.
 Each module/hook for the notification system must be registered here.
 """
 
+
 class IngameNotification(Enum):
     ENABLE = 0
     DISABLE = 1
     QUEUE = 2
+
 
 class NotificationPosition(Enum):
     BOTTOM_RIGHT = 0
@@ -35,7 +37,9 @@ class NotificationPosition(Enum):
 
 
 # TODO: how to register hooks?
-FormClass2, BaseClass2 = util.loadUiType("notification_system/ns_settings.ui")
+FormClass2, BaseClass2 = util.load_ui_type("notification_system/ns_settings.ui")
+
+
 class NsSettingsDialog(FormClass2, BaseClass2):
     def __init__(self):
         BaseClass2.__init__(self)
@@ -58,22 +62,22 @@ class NsSettingsDialog(FormClass2, BaseClass2):
         for row in range(0, model.rowCount(None)):
             self.tableView.setIndexWidget(model.createIndex(row, 3), model.getHook(row).settings())
 
-        self.loadSettings()
+        self.load_settings()
 
-
-    def loadSettings(self):
-        self.enabled = Settings.get('notifications/enabled', True, type=bool)
-        self.popup_lifetime = Settings.get('notifications/popup_lifetime', 5, type=int)
-        self.popup_position = NotificationPosition(Settings.get('notifications/popup_position', NotificationPosition.BOTTOM_RIGHT.value, type=int))
-        self.ingame_notifications =  IngameNotification(Settings.get('notifications/ingame', IngameNotification.ENABLE, type=int))
+    def load_settings(self):
+        self.enabled = Settings.get('notifications/enabled', True, key_type=bool)
+        self.popup_lifetime = Settings.get('notifications/popup_lifetime', 5, key_type=int)
+        self.popup_position = NotificationPosition(Settings.get('notifications/popup_position',
+                                                                NotificationPosition.BOTTOM_RIGHT.value, key_type=int))
+        self.ingame_notifications = IngameNotification(Settings.get('notifications/ingame', IngameNotification.ENABLE,
+                                                                    key_type=int))
 
         self.nsEnabled.setChecked(self.enabled)
         self.nsPopLifetime.setValue(self.popup_lifetime)
         self.nsPositionComboBox.setCurrentIndex(self.popup_position.value)
         self.nsIngameComboBox.setCurrentIndex(self.ingame_notifications.value)
 
-
-    def saveSettings(self):
+    def save_settings(self):
         Settings.set('notifications/enabled', self.enabled)
         Settings.set('notifications/popup_lifetime', self.popup_lifetime)
         Settings.set('notifications/popup_position', self.popup_position.value)
@@ -88,12 +92,12 @@ class NsSettingsDialog(FormClass2, BaseClass2):
         self.popup_position = NotificationPosition(self.nsPositionComboBox.currentIndex())
         self.ingame_notifications = IngameNotification(self.nsIngameComboBox.currentIndex())
 
-        self.saveSettings()
+        self.save_settings()
         self.hide()
 
     @QtCore.pyqtSlot()
     def show(self):
-        self.loadSettings()
+        self.load_settings()
         super(FormClass2, self).show()
 
     def popupEnabled(self, eventType):
@@ -116,6 +120,8 @@ class NsSettingsDialog(FormClass2, BaseClass2):
 Model Class for notification type table.
 Needs an NsHook.
 """
+
+
 class NotificationHooks(QtCore.QAbstractTableModel):
     POPUP = 1
     SOUND = 2
@@ -148,7 +154,7 @@ class NotificationHooks(QtCore.QAbstractTableModel):
         if not index.isValid():
             return None
 
-        #if role == QtCore.Qt.TextAlignmentRole and index.column() != 0:
+        # if role == QtCore.Qt.TextAlignmentRole and index.column() != 0:
         #    return QtCore.Qt.AlignHCenter
 
         if role == QtCore.Qt.CheckStateRole:

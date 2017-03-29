@@ -25,8 +25,8 @@ class QTurnSession(TURNSession):
     def channel_bound(self, address, channel):
         self.turn_client.channel_bound(address, channel)
 
-    def _write(self, bytes):
-        self.turn_client.send(bytes)
+    def _write(self, data):  # bytes
+        self.turn_client.send(data)
 
     def _recv(self, channel, data):
         self.turn_client.recv(channel, data)
@@ -71,13 +71,13 @@ class QTurnSocket(QUdpSocket):
         self.bindings = {}
         self.initial_port = port
         self._data_cb = data_cb
-        self.turn_host, self.turn_port = config.Settings.get('turn/host', type=unicode, default='dev.faforever.com'), \
-                               config.Settings.get('turn/port', type=int, default=3478)
+        self.turn_host, self.turn_port = config.Settings.get('turn/host', key_type=unicode, default='dev.faforever.com'), \
+            config.Settings.get('turn/port', key_type=int, default=3478)
         self._logger.info("Turn socket initialized: {}".format(self.turn_host))
         self.turn_address = None
         QHostInfo.lookupHost(self.turn_host, self._looked_up)
         self.bind(port)
-        self.readyRead.connect(self._readyRead)
+        self.readyRead.connect(self._ready_read)
         self.error.connect(self._error)
 
     def randomize_port(self):
@@ -151,7 +151,7 @@ class QTurnSocket(QUdpSocket):
             self._logger.debug("Emitting data, len: {}".format(len(data)))
             self._data_cb((host, port), data)
 
-    def _readyRead(self):
+    def _ready_read(self):
         while self.hasPendingDatagrams():
             data, host, port = self.readDatagram(self.pendingDatagramSize())
             self.handle_data((host.toString(), int(port)), data)

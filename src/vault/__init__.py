@@ -2,7 +2,6 @@ from PyQt4 import QtCore, QtGui
 from PyQt4 import QtWebKit
 from stat import *
 import util
-import urllib
 import logging
 import os
 from fa import maps
@@ -33,18 +32,17 @@ class MapVault(QtCore.QObject):
 
         self.ui.setPage(FAFPage())
 
-        self.ui.page().mainFrame().javaScriptWindowObjectCleared. \
-            connect(self.addScript)
+        self.ui.page().mainFrame().javaScriptWindowObjectCleared.connect(self.add_script)
 
         client.instance.mapsTab.layout().addWidget(self.ui)
 
         self.loaded = False
-        client.instance.showMaps.connect(self.reloadView)
+        client.instance.showMaps.connect(self.reload_view)
         self.ui.loadFinished.connect(self.ui.show)
-        self.reloadView()
+        self.reload_view()
 
     @QtCore.pyqtSlot()
-    def reloadView(self):
+    def reload_view(self):
         if self.loaded:
             return
         self.loaded = True
@@ -66,11 +64,11 @@ class MapVault(QtCore.QObject):
         self.ui.setUrl(url)
 
     @QtCore.pyqtSlot()
-    def addScript(self):
+    def add_script(self):
         frame = self.ui.page().mainFrame()
         frame.addToJavaScriptWindowObject("webVault", self)
 
-    def __preparePositions(self, positions, map_size):
+    def __prepare_positions(self, positions, map_size):
         img_size = [256, 256]
         size = [int(map_size['0']), int(map_size['1'])]
         off_x = 0
@@ -96,30 +94,30 @@ class MapVault(QtCore.QObject):
                 positions[postype][pos] = [int(x), int(y)]
 
     @QtCore.pyqtSlot()
-    def uploadMap(self):
-        mapDir = QtGui.QFileDialog.getExistingDirectory(
+    def upload_map(self):  # not used ?
+        map_dir = QtGui.QFileDialog.getExistingDirectory(
             client.instance,
             "Select the map directory to upload",
-            maps.getUserMapsFolder(),
+            maps.get_user_maps_folder(),
             QtGui.QFileDialog.ShowDirsOnly)
-        logger.debug("Uploading map from: " + mapDir)
-        if mapDir != "":
-            if maps.isMapFolderValid(mapDir):
-                os.chmod(mapDir, S_IWRITE)
-                mapName = os.path.basename(mapDir)
-                zipName = mapName.lower()+".zip"
+        logger.debug("Uploading map from: " + map_dir)
+        if map_dir != "":
+            if maps.is_map_folder_valid(map_dir):
+                os.chmod(map_dir, S_IWRITE)
+                map_name = os.path.basename(map_dir)
+                zip_name = map_name.lower()+".zip"
 
-                scenariolua = luaparser.luaParser(os.path.join(
-                    mapDir,
-                    maps.getScenarioFile(mapDir)))
-                scenarioInfos = scenariolua.parse({
-                    'scenarioinfo>name':'name', 'size':'map_size',
-                    'description':'description',
-                    'count:armies':'max_players',
-                    'map_version':'version',
-                    'type':'map_type',
-                    'teams>0>name':'battle_type'
-                    }, {'version':'1'})
+                scenariolua = luaparser.LuaParser(os.path.join(
+                    map_dir,
+                    maps.get_scenario_file(map_dir)))
+                scenario_infos = scenariolua.parse({
+                    'scenarioinfo>name': 'name', 'size': 'map_size',
+                    'description': 'description',
+                    'count:armies': 'max_players',
+                    'map_version': 'version',
+                    'type': 'map_type',
+                    'teams>0>name': 'battle_type'
+                    }, {'version': '1'})
 
                 if scenariolua.error:
                     logger.debug("There were {} errors and {} warnings".format(
@@ -131,7 +129,7 @@ class MapVault(QtCore.QObject):
                         client.instance,
                         "Lua parsing error",
                         "{}\nMap uploading cancelled.".format(
-                            scenariolua.errorMsg))
+                            scenariolua.errorMsg), 0x0400)
                 else:
                     if scenariolua.warning:
                         uploadmap = QtGui.QMessageBox.question(
@@ -144,14 +142,14 @@ class MapVault(QtCore.QObject):
                     else:
                         uploadmap = QtGui.QMessageBox.Yes
                     if uploadmap == QtGui.QMessageBox.Yes:
-                        savelua = luaparser.luaParser(os.path.join(
-                            mapDir,
-                            maps.getSaveFile(mapDir)
+                        savelua = luaparser.LuaParser(os.path.join(
+                            map_dir,
+                            maps.get_save_file(map_dir)
                             ))
-                        saveInfos = savelua.parse({
-                            'markers>mass*>position':'mass:__parent__',
-                            'markers>hydro*>position':'hydro:__parent__',
-                            'markers>army*>position':'army:__parent__'})
+                        save_infos = savelua.parse({
+                            'markers>mass*>position': 'mass:__parent__',
+                            'markers>hydro*>position': 'hydro:__parent__',
+                            'markers>army*>position': 'army:__parent__'})
                         if savelua.error or savelua.warning:
                             logger.debug("There were {} errors and {} warnings".format(
                                 scenariolua.errors,
@@ -159,39 +157,39 @@ class MapVault(QtCore.QObject):
                                 ))
                             logger.debug(scenariolua.errorMsg)
 
-                        self.__preparePositions(
-                            saveInfos,
-                            scenarioInfos["map_size"])
+                        self.__prepare_positions(
+                            save_infos,
+                            scenario_infos["map_size"])
 
-                        tmpFile = maps.processMapFolderForUpload(
-                            mapDir,
-                            saveInfos)
-                        if not tmpFile:
+                        tmp_file = maps.process_map_folder_for_upload(
+                            map_dir,
+                            save_infos)
+                        if not tmp_file:
                             QtGui.QMessageBox.critical(
                                 client.instance,
                                 "Map uploading error",
                                 "Couldn't make previews for {}\n"
-                                "Map uploading cancelled.".format(mapName))
+                                "Map uploading cancelled.".format(map_name), 0x0400)
                             return None
 
-                        qfile = QtCore.QFile(tmpFile.name)
-                        client.instance.lobby_connection.writeToServer("UPLOAD_MAP", zipName, scenarioInfos, qfile)
+                        qfile = QtCore.QFile(tmp_file.name)
+                        client.instance.lobby_connection.write_to_server("UPLOAD_MAP", zip_name, scenario_infos, qfile)
 
-                        #removing temporary files
+                        # removing temporary files
                         qfile.remove()
             else:
                 QtGui.QMessageBox.information(
                     client.instance,
                     "Map selection",
-                    "This folder doesn't contain valid map data.")
+                    "This folder doesn't contain valid map data.", 0x0400)
 
     @QtCore.pyqtSlot(str)
-    def downloadMap(self, link):
+    def download_map(self, link):
         link = urllib2.unquote(link)
         name = maps.link2name(link)
-        if not maps.isMapAvailable(name):
-            maps.downloadMap(name)
-            maps.existMaps(True)
+        if not maps.is_map_available(name):
+            maps.download_map(name)
+            maps.exist_maps(True)
         else:
             show = QtGui.QMessageBox.question(
                 client.instance,
@@ -200,4 +198,4 @@ class MapVault(QtCore.QObject):
                 QtGui.QMessageBox.Yes,
                 QtGui.QMessageBox.No)
             if show == QtGui.QMessageBox.Yes:
-                util.showDirInFileBrowser(maps.folderForMap(name))
+                util.showDirInFileBrowser(maps.folder_for_map(name))

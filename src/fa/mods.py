@@ -7,25 +7,26 @@ import config
 logger = logging.getLogger(__name__)
 
 
-def checkMods(mods):  # mods is a dictionary of uid-name pairs
+def check_mods(mods):  # mods is a dictionary of uid-name pairs
     """
     Assures that the specified mods are available in FA, or returns False.
     Also sets the correct active mods in the ingame mod manager.
     """
     logger.info("Updating FA for mods %s" % ", ".join(mods))
     to_download = []
-    inst = modvault.getInstalledMods()
+    inst = modvault.get_installed_mods()
     uids = [mod.uid for mod in inst]
     for uid in mods:
         if uid not in uids:
             to_download.append(uid)
 
-    auto = config.Settings.get('mods/autodownload', default=False, type=bool)
+    auto = config.Settings.get('mods/autodownload', default=False, key_type=bool)
     if not auto:
         mod_names = ", ".join([mods[uid] for uid in mods])
         msgbox = QtGui.QMessageBox()
         msgbox.setWindowTitle("Download Mod")
-        msgbox.setText("Seems that you don't have mods used in this game. Do you want to download them?<br/><b>" + mod_names + "</b>")
+        msgbox.setText("Seems that you don't have mods used in this game. Do you want to download them?<br/><b>" +
+                       mod_names + "</b>")
         msgbox.setInformativeText("If you respond 'Yes to All' mods will be downloaded automatically in the future")
         msgbox.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.YesToAll | QtGui.QMessageBox.No)
         result = msgbox.exec_()
@@ -43,17 +44,17 @@ def checkMods(mods):  # mods is a dictionary of uid-name pairs
             return False
 
     actual_mods = []
-    inst = modvault.getInstalledMods()
+    inst = modvault.get_installed_mods()
     uids = {}
     for mod in inst:
         uids[mod.uid] = mod
     for uid in mods:
         if uid not in uids:
-            QtGui.QMessageBox.warning(None, "Mod not Found",
-                                      "%s was apparently not installed correctly. Please check this." % mods[uid])
+            QtGui.QMessageBox.warning(None, "Mod not Found", "%s was apparently not installed correctly."
+                                                             " Please check this." % mods[uid], 0x400)
             return
         actual_mods.append(uids[uid])
-    if not modvault.setActiveMods(actual_mods):
+    if not modvault.set_active_mods(actual_mods):
         logger.warn("Couldn't set the active mods in the game.prefs file")
         return False
 

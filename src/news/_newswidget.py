@@ -1,10 +1,8 @@
 from PyQt4 import QtCore, QtGui, QtWebKit
-from PyQt4.QtCore import Qt
 
 import webbrowser
 import util
 import client
-import re
 from .newsitem import NewsItem, NewsItemDelegate
 from .newsmanager import NewsManager
 
@@ -13,6 +11,7 @@ import base64
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 class Hider(QtCore.QObject):
     """
@@ -38,10 +37,11 @@ class Hider(QtCore.QObject):
         if sender.isWidgetType():
             self.hide(sender)
 
-FormClass, BaseClass = util.loadUiType("news/news.ui")
+FormClass, BaseClass = util.load_ui_type("news/news.ui")
+
 
 class NewsWidget(FormClass, BaseClass):
-    CSS = util.readstylesheet('news/news_webview.css')
+    CSS = util.read_stylesheet('news/news_webview.css')
 
     HTML = unicode(util.readfile('news/news_webview_frame.html'))
 
@@ -59,30 +59,27 @@ class NewsWidget(FormClass, BaseClass):
             ))
         # open all links in external browser
         self.newsWebView.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)
-        self.newsWebView.page().linkClicked.connect(self.linkClicked)
+        self.newsWebView.page().linkClicked.connect(self.link_clicked)
 
         # hide webview until loaded to avoid FOUC
         self.hider = Hider()
         self.hider.hide(self.newsWebView)
-        self.newsWebView.loadFinished.connect(self.loadFinished)
+        self.newsWebView.loadFinished.connect(self.load_finished)
 
-        self.newsList.setIconSize(QtCore.QSize(0,0))
+        self.newsList.setIconSize(QtCore.QSize(0, 0))
         self.newsList.setItemDelegate(NewsItemDelegate(self))
-        self.newsList.currentItemChanged.connect(self.itemChanged)
+        self.newsList.currentItemChanged.connect(self.item_changed)
 
-    def addNews(self, newsPost):
-        newsItem = NewsItem(newsPost, self.newsList)
+    def add_news(self, news_post):
+        news_item = NewsItem(news_post, self.newsList)
 
-    def itemChanged(self, current, previous):
-        self.newsWebView.setHtml(self.HTML.format(
-            title = current.newsPost['title'],
-            content = current.newsPost['body'],
-        ))
+    def item_changed(self, current, previous):
+        self.newsWebView.setHtml(self.HTML.format(title=current.newsPost['title'], content=current.newsPost['body'],))
 
-    def linkClicked(self, url):
+    @staticmethod
+    def link_clicked(url):
         webbrowser.open(url.toString())
 
-    def loadFinished(self, ok):
+    def load_finished(self, ok):
         self.hider.unhide(self.newsWebView)
-        self.newsWebView.loadFinished.disconnect(self.loadFinished)
-
+        self.newsWebView.loadFinished.disconnect(self.load_finished)

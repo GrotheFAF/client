@@ -1,13 +1,13 @@
 
-
 import struct
 
 
 class ReplayParser:
     def __init__(self, filepath):
         self.file = filepath
-    
-    def __readline(self, offset, binary):
+
+    @staticmethod
+    def __readline(offset, binary):
         line = ''
         while True:
             
@@ -23,7 +23,7 @@ class ReplayParser:
             else:
                 line = line + char[0]
         return offset, line
-        
+
     def get_version(self):
         f = open(self.file, 'rb')
         binary = f.read()

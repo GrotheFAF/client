@@ -46,7 +46,7 @@ class Notifications:
 
     def set_notification_enabled(self, enabled):
         self.settings.enabled = enabled
-        self.settings.saveSettings()
+        self.settings.save_settings()
 
     @QtCore.pyqtSlot()
     def on_event(self, event_type, data):
@@ -63,11 +63,11 @@ class Notifications:
 
         if event_type == self.USER_ONLINE:
             if self.settings.getCustomSetting(event_type, 'mode') == 'all' or \
-                    client.instance.players.isFriend(data['user']):
+                    client.instance.players.is_friend(data['user']):
                 do_add = True
         elif event_type == self.NEW_GAME:
             if self.settings.getCustomSetting(event_type, 'mode') == 'all' or \
-                    ('host' in data and client.instance.players.isFriend(data['host'])):
+                    ('host' in data and client.instance.players.is_friend(data['host'])):
                 do_add = True
 
         if do_add:
@@ -99,7 +99,8 @@ class Notifications:
         if event_type == self.USER_ONLINE:
             userid = data['user']
             pix_map = self.user
-            text = '<html>%s<br><font color="silver" size="-2">joined</font> %s</html>' % (client.instance.players[userid].login, data['channel'])
+            text = '<html>%s<br><font color="silver" size="-2">joined</font> %s</html>' % \
+                   (client.instance.players[userid].login, data['channel'])
         elif event_type == self.NEW_GAME:
 
             preview = maps.preview(data['mapname'], pixmap=True)
@@ -125,7 +126,8 @@ class Notifications:
                 mod_html = ''
             else:
                 mod_html = '<br><font size="-4"><font color="red">mods</font> %s</font>' % mod_str
-            text = '<html>%s<br><font color="silver" size="-2">on</font> %s%s</html>' % (data['title'], maps.getDisplayName(data['mapname']), mod_html)
+            text = '<html>%s<br><font color="silver" size="-2">on</font> %s%s</html>' % \
+                   (data['title'], maps.get_display_name(data['mapname']), mod_html)
 
         self.dialog.newEvent(pix_map, text, self.settings.popup_lifetime, self.settings.soundEnabled(event_type))
 

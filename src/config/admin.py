@@ -8,6 +8,7 @@
 
 import sys, os, traceback, types
 
+
 def isUserAdmin():
 
     if os.name == 'nt':
@@ -24,6 +25,7 @@ def isUserAdmin():
         return os.getuid() == 0
     else:
         raise RuntimeError, "Unsupported operating system for this module: %s" % (os.name,)
+
 
 def runAsAdmin(cmdLine=None, wait=True):
 
@@ -45,7 +47,7 @@ def runAsAdmin(cmdLine=None, wait=True):
     params = " ".join(['"%s"' % (x,) for x in cmdLine[1:]])
     cmdDir = ''
     showCmd = win32con.SW_SHOWNORMAL
-    #showCmd = win32con.SW_HIDE
+    # showCmd = win32con.SW_HIDE
     lpVerb = 'runas'  # causes UAC elevation prompt.
 
     # print "Running", cmd, params
@@ -66,7 +68,7 @@ def runAsAdmin(cmdLine=None, wait=True):
         procHandle = procInfo['hProcess']
         obj = win32event.WaitForSingleObject(procHandle, win32event.INFINITE)
         rc = win32process.GetExitCodeProcess(procHandle)
-        #print "Process handle %s returned code %s" % (procHandle, rc)
+        # print "Process handle %s returned code %s" % (procHandle, rc)
     else:
         rc = None
 
@@ -76,7 +78,7 @@ def test():
     rc = 0
     if not isUserAdmin():
         print "You're not an admin.", os.getpid(), "params: ", sys.argv
-        #rc = runAsAdmin(["c:\\Windows\\notepad.exe"])
+        # rc = runAsAdmin(["c:\\Windows\\notepad.exe"])
         rc = runAsAdmin()
     else:
         print "You are an admin!", os.getpid(), "params: ", sys.argv

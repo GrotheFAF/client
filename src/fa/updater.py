@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 debugLog = []
 
 
-FormClass, BaseClass = util.loadUiType("fa/updater/updater.ui")
+FormClass, BaseClass = util.load_ui_type("fa/updater/updater.ui")
 
 
 class UpdaterProgressDialog(FormClass, BaseClass):
@@ -49,16 +49,16 @@ class UpdaterProgressDialog(FormClass, BaseClass):
         self.watches = []
 
     @QtCore.pyqtSlot(str)
-    def appendLog(self, text):
+    def append_log(self, text):
         self.logPlainTextEdit.appendPlainText(text)
 
     @QtCore.pyqtSlot(QtCore.QObject)
-    def addWatch(self, watch):
+    def add_watch(self, watch):
         self.watches.append(watch)
-        watch.finished.connect(self.watchFinished)
+        watch.finished.connect(self.watch_finished)
 
     @QtCore.pyqtSlot()
-    def watchFinished(self):
+    def watch_finished(self):
         for watch in self.watches:
             if not watch.isFinished():
                 return
@@ -190,7 +190,8 @@ class Updater(QtCore.QObject):
         log("Update finished at " + timestamp())
         return self.result
 
-    def fetch_file(self, url, to_file):
+    @staticmethod
+    def fetch_file(url, to_file):
         try:
             logger.info('Updater: Downloading {}'.format(url))
             progress = QtGui.QProgressDialog()
@@ -242,13 +243,14 @@ class Updater(QtCore.QObject):
                 logger.debug("File downloaded successfully.")
                 return True
             else:
-                QtGui.QMessageBox.information(None, "Aborted", "Download not complete.")
+                QtGui.QMessageBox.information(None, "Aborted", "Download not complete.", 0x0400)
                 logger.warn("File download not complete.")
                 return False
         except:
             logger.error("Updater error: ", exc_info=sys.exc_info())
             QtGui.QMessageBox.information(None, "Download Failed",
-                                          "The file wasn't properly sent by the server. <br/><b>Try again later.</b>")
+                                          "The file wasn't properly sent by the server. <br/><b>Try again later.</b>",
+                                          0x0400)
             return False
 
     def update_files(self, destination, filegroup):
@@ -276,7 +278,8 @@ class Updater(QtCore.QObject):
             md5_file = util.md5(os.path.join(util.APPDATA_DIR, destination, file_to_update))
             if md5_file is None:
                 if self.version:
-                    if self.featured_mod == "faf" or self.featured_mod == "ladder1v1" or filegroup == "FAF" or filegroup == "FAFGAMEDATA":
+                    if self.featured_mod == "faf" or self.featured_mod == "ladder1v1"\
+                            or filegroup == "FAF" or filegroup == "FAFGAMEDATA":
                         self.write_to_server("REQUEST_VERSION", destination, file_to_update, str(self.version))
                     else:
                         self.write_to_server("REQUEST_MOD_VERSION", destination, file_to_update,
@@ -286,7 +289,8 @@ class Updater(QtCore.QObject):
                     self.write_to_server("REQUEST_PATH", destination, file_to_update)
             else:
                 if self.version:
-                    if self.featured_mod == "faf" or self.featured_mod == "ladder1v1" or filegroup == "FAF" or filegroup == "FAFGAMEDATA":
+                    if self.featured_mod == "faf" or self.featured_mod == "ladder1v1"\
+                            or filegroup == "FAF" or filegroup == "FAFGAMEDATA":
                         self.write_to_server("PATCH_TO", destination, file_to_update, md5_file, str(self.version))
                     else:
 
@@ -367,7 +371,7 @@ class Updater(QtCore.QObject):
 
         log("Updates applied successfully.")
 
-    def prepare_binFAF(self):
+    def prepare_bin_faf(self):
         """
         Creates all necessary files in the binFAF folder, which contains a modified copy of all
         that is in the standard bin folder of Forged Alliance
@@ -375,12 +379,12 @@ class Updater(QtCore.QObject):
         self.progress.setLabelText("Preparing binFAF...")
 
         # now we check if we've got a binFAF folder
-        FA_bindir = os.path.join(config.Settings.get("ForgedAlliance/app/path"), 'bin')
-        FAF_dir = util.BIN_DIR
+        fa_bindir = os.path.join(config.Settings.get("ForgedAlliance/app/path"), 'bin')
+        faf_dir = util.BIN_DIR
 
         # Try to copy without overwriting, but fill in any missing files, otherwise it might miss some files to update
-        root_src_dir = FA_bindir
-        root_dst_dir = FAF_dir
+        root_src_dir = fa_bindir
+        root_dst_dir = faf_dir
 
         for src_dir, _, files in os.walk(root_src_dir):
             dst_dir = src_dir.replace(root_src_dir, root_dst_dir)
@@ -392,7 +396,8 @@ class Updater(QtCore.QObject):
                 if not os.path.exists(dst_file):
                     shutil.copy(src_file, dst_dir)
                 st = os.stat(dst_file)
-                os.chmod(dst_file, st.st_mode | stat.S_IWRITE)   # make all files we were considering writable, because we may need to patch them
+                # make all files we were considering writable, because we may need to patch them
+                os.chmod(dst_file, st.st_mode | stat.S_IWRITE)
 
     def do_update(self):
         """ The core function that does most of the actual update work."""
@@ -401,12 +406,12 @@ class Updater(QtCore.QObject):
                 self.write_to_server("REQUEST_SIM_PATH", self.featured_mod)
                 self.wait_for_sim_mod_path()
                 if self.result == self.RESULT_SUCCESS:
-                    if modvault.downloadMod(self.mod_path):
+                    if modvault.download_mod(self.mod_path):
                         self.write_to_server("ADD_DOWNLOAD_SIM_MOD", self.featured_mod)
 
             else:
                 # Prepare FAF directory & all necessary files
-                self.prepare_binFAF()
+                self.prepare_bin_faf()
 
                 # Update the mod if it's requested
                 if self.featured_mod == "faf" or self.featured_mod == "ladder1v1":  # HACK - ladder1v1 "is" FAF. :-)
@@ -441,10 +446,10 @@ class Updater(QtCore.QObject):
             pass  # The user knows damn well what happened here.
         elif self.result == self.RESULT_PASS:
             QtGui.QMessageBox.information(QtGui.QApplication.activeWindow(), "Installation Required",
-                                          "You can't play without a legal version of Forged Alliance.")
+                                          "You can't play without a legal version of Forged Alliance.", 0x0400)
         elif self.result == self.RESULT_BUSY:
             QtGui.QMessageBox.information(QtGui.QApplication.activeWindow(), "Server Busy",
-                                          "The Server is busy preparing new patch files.<br/>Try again later.")
+                                          "The Server is busy preparing new patch files.<br/>Try again later.", 0x0400)
         elif self.result == self.RESULT_FAILURE:
             failure_dialog()
 
@@ -452,17 +457,17 @@ class Updater(QtCore.QObject):
         return self.result
 
     @QtCore.pyqtSlot('QAbstractSocket::SocketError')
-    def handle_server_error(self, socketError):
+    def handle_server_error(self, socket_error):
         """
         Simple error handler that flags the whole operation as failed, not very graceful but what can you do...
         """
-        if socketError == QtNetwork.QAbstractSocket.RemoteHostClosedError:
+        if socket_error == QtNetwork.QAbstractSocket.RemoteHostClosedError:
             log("FA Server down: The server is down for maintenance, please try later.")
 
-        elif socketError == QtNetwork.QAbstractSocket.HostNotFoundError:
+        elif socket_error == QtNetwork.QAbstractSocket.HostNotFoundError:
             log("Connection to Host lost. Please check the host name and port settings.")
 
-        elif socketError == QtNetwork.QAbstractSocket.ConnectionRefusedError:
+        elif socket_error == QtNetwork.QAbstractSocket.ConnectionRefusedError:
             log("The connection was refused by the peer.")
         else:
             log("The following error occurred: %s." % self.updateSocket.errorString())
@@ -593,7 +598,8 @@ class Updater(QtCore.QObject):
             log("Unexpected server command received: " + action)
             self.result = self.RESULT_FAILURE
 
-    def apply_patch(self, original, patch):
+    @staticmethod
+    def apply_patch(original, patch):
         to_file = os.path.join(util.CACHE_DIR, "patchedFile")
         # applying delta
         if sys.platform == 'win32':

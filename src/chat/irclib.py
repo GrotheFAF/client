@@ -255,9 +255,9 @@ class IRC:
         number is highest priority).  If a handler function returns
         \"NO MORE\", no more handlers will be called.
         """
-        if not event in self.handlers:
+        if event not in self.handlers:
             self.handlers[event] = []
-        bisect.insort(self.handlers[event], ((priority, handler)))
+        bisect.insort(self.handlers[event], (priority, handler))
 
     def remove_global_handler(self, event, handler):
         """Removes a global handler function.
@@ -861,9 +861,7 @@ class ServerConnection(Connection):
 
     def whowas(self, nick, max="", server=""):
         """Send a WHOWAS command."""
-        self.send_raw("WHOWAS %s%s%s" % (nick,
-                                         max and (" " + max),
-                                         server and (" " + server)))
+        self.send_raw("WHOWAS %s%s%s" % (nick, max and (" " + max), server and (" " + server)))
 
 
 class DCCConnectionError(IRCError):
@@ -948,9 +946,7 @@ class DCCConnection(Connection):
         except socket.error, x:
             pass
         self.socket = None
-        self.irclibobj._handle_event(
-            self,
-            Event("dcc_disconnect", self.peeraddress, "", [message]))
+        self.irclibobj._handle_event(self, Event("dcc_disconnect", self.peeraddress, "", [message]))
         self.irclibobj._remove_connection(self)
 
     def process_data(self):
@@ -962,11 +958,8 @@ class DCCConnection(Connection):
             self.socket = conn
             self.connected = 1
             if DEBUG:
-                print "DCC connection from %s:%d" % (
-                    self.peeraddress, self.peerport)
-            self.irclibobj._handle_event(
-                self,
-                Event("dcc_connect", self.peeraddress, None, None))
+                print "DCC connection from %s:%d" % (self.peeraddress, self.peerport)
+            self.irclibobj._handle_event(self, Event("dcc_connect", self.peeraddress, None, None))
             return
 
         try:
@@ -1005,9 +998,7 @@ class DCCConnection(Connection):
             if DEBUG:
                 print "command: %s, source: %s, target: %s, arguments: %s" % (
                     command, prefix, target, arguments)
-            self.irclibobj._handle_event(
-                self,
-                Event(command, prefix, target, arguments))
+            self.irclibobj._handle_event(self, Event(command, prefix, target, arguments))
 
     def _get_socket(self):
         """[Internal]"""
@@ -1072,7 +1063,7 @@ class SimpleIRCClient:
         self.dcc_connections.remove(c)
 
     def irc_connect(self, server, port, nickname, password=None, username=None,
-                ircname=None, localaddress="", localport=0, ssl=False, ipv6=False):
+                    ircname=None, localaddress="", localport=0, ssl=False, ipv6=False):
         """Connect/reconnect to a server.
 
         Arguments:

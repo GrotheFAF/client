@@ -1,15 +1,14 @@
 
-
-
-
 # Initialize logging system
 import logging
 logger = logging.getLogger(__name__)
 
 IRC_ELEVATION = '%@~%+&'
 
+
 def user2name(user):
     return (user.split('!')[0]).strip(IRC_ELEVATION)
+
 
 def parse_irc_source(src):
     """
@@ -21,16 +20,15 @@ def parse_irc_source(src):
         elevation, username = username[0], username[1:]
     else:
         elevation = ''
-    id, hostname = tail.split('@')
+    user_id, hostname = tail.split('@')
     try:
-        id = int(id)
+        user_id = int(user_id)
     except ValueError:
-        id = -1
-    return username, id, elevation, hostname
+        user_id = -1
+    return username, user_id, elevation, hostname
 
 
-
-from _chatwidget import ChatWidget as Lobby
+from _chatwidget import ChatWidget
 
 # CAVEAT: DO NOT REMOVE! These are promoted widgets and py2exe wouldn't include them otherwise
 from chat.chatlineedit import ChatLineEdit

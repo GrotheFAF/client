@@ -1,5 +1,4 @@
 
-
 from PyQt4 import QtCore
 from games.gameitem import GameItem, GameItemDelegate
 import modvault
@@ -12,10 +11,10 @@ import fa.check
 import logging
 logger = logging.getLogger(__name__)
 
-FormClass, BaseClass = util.loadUiType("games/host.ui")
+FormClass, BaseClass = util.load_ui_type("games/host.ui")
 
 
-class HostgameWidget(FormClass, BaseClass):
+class HostGameWidget(FormClass, BaseClass):
     def __init__(self, parent, item, iscoop=False, *args, **kwargs):
         BaseClass.__init__(self, *args, **kwargs)
 
@@ -60,8 +59,8 @@ class HostgameWidget(FormClass, BaseClass):
         index = 0
         if not self.iscoop:
             allmaps = dict()
-            for map_key in maps.maps.keys() + maps.getUserMaps():
-                allmaps[map_key] = maps.getDisplayName(map_key)
+            for map_key in maps.maps.keys() + maps.get_user_maps():
+                allmaps[map_key] = maps.get_display_name(map_key)
             for (map_key, name) in sorted(allmaps.iteritems(), key=lambda x: x[1]):
                 if map_key == self.mapname:
                     index = i
@@ -73,13 +72,13 @@ class HostgameWidget(FormClass, BaseClass):
 
         self.mods = {}
         # this makes it so you can select every non-ui_only mod
-        for mod in modvault.getInstalledMods():
+        for mod in modvault.get_installed_mods():
             if mod.ui_only:
                 continue
             self.mods[mod.totalname] = mod
             self.modList.addItem(mod.totalname)
 
-        names = [mod.totalname for mod in modvault.getActiveMods(uimods=False, temporary=False)]
+        names = [mod.totalname for mod in modvault.get_active_mods(uimods=False, temporary=False)]
         logger.debug("Active Mods detected: %s" % str(names))
         for name in names:
             l = self.modList.findItems(name, QtCore.Qt.MatchExactly)
@@ -125,7 +124,7 @@ class HostgameWidget(FormClass, BaseClass):
 
         modnames = [str(moditem.text()) for moditem in self.modList.selectedItems()]
         mods = [self.mods[modstr] for modstr in modnames]
-        modvault.setActiveMods(mods, True, False)
+        modvault.set_active_mods(mods, True, False)
 
         client.instance.host_game(title=self.title,
                                   mod=self.featured_mod,

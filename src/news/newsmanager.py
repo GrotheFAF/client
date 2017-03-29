@@ -1,14 +1,13 @@
 from PyQt4 import QtCore
 from PyQt4.QtCore import QObject, Qt
 
-from .newsitem import NewsItem
 from .wpapi import WPAPI
 
 import client
 
-import math
 import logging
 logger = logging.getLogger(__name__)
+
 
 class NewsManager(QObject):
     FRAMES = 5
@@ -18,18 +17,18 @@ class NewsManager(QObject):
         self.widget = client
 #        self.newsContent = []
 #        self.newsFrames = []
-#        self.selectedFrame = None
-#        self.page = 0
+        self.selectedFrame = None
+        self.page = 0
 #
 #        for i in range(self.FRAMES):
 #            frame = NewsFrame()
 #            self.newsFrames.append(frame)
 #            client.newsAreaLayout.addWidget(frame)
-#            frame.clicked.connect(self.frameClicked)
+#            frame.clicked.connect(self.frame_clicked)
 #
-#        client.nextPageButton.clicked.connect(self.nextPage)
-#        client.prevPageButton.clicked.connect(self.prevPage)
-#        client.pageBox.currentIndexChanged.connect(self.selectPage)
+#        client.nextPageButton.clicked.connect(self.next_page)
+#        client.prevPageButton.clicked.connect(self.prev_page)
+#        client.pageBox.currentIndexChanged.connect(self.select_page)
 
         self.WpApi = WPAPI(client)
         self.WpApi.newsDone.connect(self.on_wpapi_done)
@@ -45,33 +44,33 @@ class NewsManager(QObject):
         We need to set up pagination and the news item frames.
         """
         for item in items:
-            self.widget.addNews(item)
+            self.widget.add_news(item)
         self.widget.newsList.setCurrentItem(self.widget.newsList.item(0))
 #        self.newsContent = self.newsContent + items
 #
 #        self.npages = int(math.ceil(len(self.newsContent) / self.FRAMES))
 #
-##        origpage = self.page
+#        # origpage = self.page
 #
 #        pb = client.instance.pageBox
 #        pb.insertItems(pb.count(), ['Page {: >2}'.format(x + 1) for x in range(pb.count(), self.npages)])
 #
-#        self.selectPage(self.page)
+#        self.select_page(self.page)
 
     @QtCore.pyqtSlot()
-    def frameClicked(self):
+    def frame_clicked(self):
         sender = self.sender()
         logger.info("Sender: {}".format(sender))
         logger.info("Clicked '{}'".format(sender.content[0]))
         # unexpanded frame - expand
         if self.selectedFrame != sender:
-            self.expandFrame(sender)
+            self.expand_frame(sender)
         # expanded frame - unexpand if click not in webview
         else:
             if not sender.newsWebView.underMouse():
-                self.resetFrames()
+                self.reset_frames()
 
-    def expandFrame(self, selectedFrame):
+    def expand_frame(self, selected_frame):
         if self.selectedFrame is not None:
             self.selectedFrame.collapse()
             self.selectedFrame.mf.doFilter = True
@@ -79,27 +78,27 @@ class NewsManager(QObject):
             for frame in self.newsFrames:
                 frame.collapse()
 
-        selectedFrame.expand(Qt.ScrollBarAsNeeded, set_filter=False)
+        selected_frame.expand(Qt.ScrollBarAsNeeded, set_filter=False)
 
-        self.selectedFrame = selectedFrame
+        self.selectedFrame = selected_frame
 
-    def resetFrames(self):
-        logger.info('resetFrames')
+    def reset_frames(self):
+        logger.info('reset_frames')
         self.selectedFrame = None
         for frame in self.newsFrames:
             frame.expand(Qt.ScrollBarAlwaysOff, set_filter=True)
 
-    def nextPage(self):
+    def next_page(self):
         pb = client.instance.pageBox
         pb.setCurrentIndex(self.page + 1)
 
-    def prevPage(self):
+    def prev_page(self):
         pb = client.instance.pageBox
         pb.setCurrentIndex(self.page - 1)
 
     @QtCore.pyqtSlot(int)
-    def selectPage(self, idx):
-        logger.info('selectPage')
+    def select_page(self, idx):
+        logger.info('select_page')
         self.page = idx
 
         client.instance.prevPageButton.setEnabled(True)
@@ -112,11 +111,10 @@ class NewsManager(QObject):
             # download next page
             self.WpApi.download(page=self.npages+1, perpage=self.FRAMES)
 
-        firstNewsIdx = idx * self.FRAMES
+        first_news_idx = idx * self.FRAMES
 
         for frameIdx in range(self.FRAMES):
-            nc = self.newsContent[frameIdx + firstNewsIdx]
+            nc = self.newsContent[frameIdx + first_news_idx]
             self.newsFrames[frameIdx].set_content(nc[0], nc[1])
 
-        self.resetFrames()
-
+        self.reset_frames()

@@ -27,7 +27,7 @@ def build_argument_list(game_info, port, arguments=None):
     arguments.append('/numgames {}'.format(client.instance.me.number_of_games))
 
     # log file
-    if Settings.get("game/logs", False, type=bool):
+    if Settings.get("game/logs", False, key_type=bool):
         arguments.append("/log")
         arguments.append('"' + util.LOG_FILE_GAME + '"')
 

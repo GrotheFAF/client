@@ -1,33 +1,32 @@
 import os
-
 import sys
 import logging
-
 import config
 import util
 
 logger = logging.getLogger(__name__)
 
 
-def steamPath():
+def get_steam_path():
     try:
         import _winreg
-        steam_key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, "Software\\Valve\\Steam", 0, (_winreg.KEY_WOW64_64KEY + _winreg.KEY_ALL_ACCESS))
+        steam_key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, "Software\\Valve\\Steam", 0,
+                                    (_winreg.KEY_WOW64_64KEY + _winreg.KEY_ALL_ACCESS))
         return _winreg.QueryValueEx(steam_key, "SteamPath")[0].replace("/", "\\")
     except StandardError, e:
         return None
 
 
-def writeFAPathLua():
+def write_fa_path_lua():
     """
     Writes a small lua file to disk that helps the new SupComDataPath.lua find the actual install of the game
     """
     name = os.path.join(util.APPDATA_DIR, u"fa_path.lua")
-    gamepath_fa = config.Settings.get("ForgedAlliance/app/path", type=str)
+    gamepath_fa = config.Settings.get("ForgedAlliance/app/path", key_type=str)
 
     code = 'fa_path = "' + gamepath_fa.replace("\\", "\\\\") + '"' + "\n"
 
-    gamepath_sc = config.Settings.get("SupremeCommander/app/path", type=str)
+    gamepath_sc = config.Settings.get("SupremeCommander/app/path", key_type=str)
     if gamepath_sc:
         code = code + 'sc_path = "' + gamepath_sc.replace("\\", "\\\\") + '"' + "\n"
 
@@ -37,12 +36,12 @@ def writeFAPathLua():
         os.fsync(lua.fileno())  # Ensuring the file is absolutely, positively on disk.
 
 
-def typicalForgedAlliancePaths():
+def typical_forgedalliance_paths():
     """
     Returns a list of the most probable paths where Supreme Commander: Forged Alliance might be installed
     """
     pathlist = [
-        config.Settings.get("ForgedAlliance/app/path", "", type=str),
+        config.Settings.get("ForgedAlliance/app/path", "", key_type=str),
 
         # Retail path
         os.path.expandvars("%ProgramFiles%\\THQ\\Gas Powered Games\\Supreme Commander - Forged Alliance"),
@@ -58,19 +57,19 @@ def typicalForgedAlliancePaths():
     ]
 
     # Registry Steam path
-    steam_path = steamPath()
+    steam_path = get_steam_path()
     if steam_path:
         pathlist.append(os.path.join(steam_path, "SteamApps", "common", "Supreme Commander Forged Alliance"))
 
-    return filter(validatePath, pathlist)
+    return filter(validate_path, pathlist)
 
 
-def typicalSupComPaths():
+def typical_supcom_paths():
     """
     Returns a list of the most probable paths where Supreme Commander might be installed
     """
     pathlist = [
-        config.Settings.get("SupremeCommander/app/path", None, type=str),
+        config.Settings.get("SupremeCommander/app/path", None, key_type=str),
 
         # Retail path
         os.path.expandvars("%ProgramFiles%\\THQ\\Gas Powered Games\\Supreme Commander"),
@@ -86,27 +85,33 @@ def typicalSupComPaths():
     ]
 
     # Registry Steam path
-    steam_path = steamPath()
+    steam_path = get_steam_path()
     if steam_path:
         pathlist.append(os.path.join(steam_path, "SteamApps", "common", "Supreme Commander"))
 
-    return filter(validatePath, pathlist)
+    return filter(validate_path, pathlist)
 
 
-def validatePath(path):
+def validate_path(path):
     try:
         # Supcom only supports Ascii Paths
-        if not path.decode("ascii"): return False
+        if not path.decode("ascii"):
+            return False
 
-        # We check whether the base path and a gamedata/lua.scd file exists. This is a mildly naive check, but should suffice
-        if not os.path.isdir(path): return False
-        if not os.path.isfile(os.path.join(path, r'gamedata', r'lua.scd')): return False
+        # We check whether the base path and a gamedata/lua.scd file exists.
+        # This is a mildly naive check, but should suffice
+        if not os.path.isdir(path):
+            return False
+        if not os.path.isfile(os.path.join(path, r'gamedata', r'lua.scd')):
+            return False
 
         # Reject or fix paths that end with a slash.
         # LATER: this can have all sorts of intelligent logic added
         # Suggested: Check if the files are actually the right ones, if not, tell the user what's wrong with them.
-        if path.endswith("/"): return False
-        if path.endswith("\\"): return False
+        if path.endswith("/"):
+            return False
+        if path.endswith("\\"):
+            return False
 
         return True
     except:

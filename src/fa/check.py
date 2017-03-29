@@ -1,7 +1,5 @@
 import logging
 import os
-import glob
-import shutil
 import zipfile
 import binascii
 
@@ -9,8 +7,8 @@ from PyQt4 import QtGui
 
 import fa
 import config
-from fa.mods import checkMods
-from fa.path import writeFAPathLua, validatePath
+from fa.mods import check_mods
+from fa.path import write_fa_path_lua, validate_path
 from fa.wizards import Wizard
 import util
 
@@ -23,14 +21,14 @@ def map(mapname, force=False, silent=False):
     """
     logger.info("Updating FA for map: " + str(mapname))
 
-    if fa.maps.isMapAvailable(mapname):
+    if fa.maps.is_map_available(mapname):
         logger.info("Map is available.")
         return True
 
     if force:
-        return fa.maps.downloadMap(mapname, silent=silent)
+        return fa.maps.download_map(mapname, silent=silent)
 
-    auto = config.Settings.get('maps/autodownload', default=False, type=bool)
+    auto = config.Settings.get('maps/autodownload', default=False, key_type=bool)
     if not auto:
         msgbox = QtGui.QMessageBox()
         msgbox.setWindowTitle("Download Map")
@@ -43,7 +41,8 @@ def map(mapname, force=False, silent=False):
         elif result == QtGui.QMessageBox.YesToAll:
             config.Settings.set('maps/autodownload', True)
 
-    return fa.maps.downloadMap(mapname, silent=silent)
+    return fa.maps.download_map(mapname, silent=silent)
+
 
 def featured_mod(featured_mod, version):
     pass
@@ -54,7 +53,7 @@ def sim_mod(sim_mod, version):
 
 
 def path(parent):
-    while not validatePath(util.settings.value("ForgedAlliance/app/path", "", type=str)):
+    while not validate_path(util.settings.value("ForgedAlliance/app/path", "", type=str)):
         logger.warn("Invalid game path: " + util.settings.value("ForgedAlliance/app/path", "", type=str))
         wizard = Wizard(parent)
         result = wizard.exec_()
@@ -62,11 +61,12 @@ def path(parent):
             return False
 
     logger.info("Writing fa_path.lua config file.")
-    writeFAPathLua()
+    write_fa_path_lua()
 
 
 def game(parent):
     return True
+
 
 def crc32(fname):
     try:
@@ -76,7 +76,8 @@ def crc32(fname):
         logger.exception('CRC check fail!')
         return None
 
-def checkMovies(files):
+
+def check_movies(files):
     """
     Unpacks movies (based on path in zipfile) to the movies folder.
 
@@ -107,6 +108,7 @@ def checkMovies(files):
                     if not os.path.exists(tgtpath) or os.stat(tgtpath).st_size != zi.file_size or crc32(tgtpath) != zi.CRC:
                         zf.extract(zi, util.APPDATA_DIR)
 
+
 def check(featured_mod, mapname=None, version=None, modVersions=None, sim_mods=None, silent=False):
     """
     This checks whether the mods are properly updated and player has the correct map.
@@ -133,7 +135,7 @@ def check(featured_mod, mapname=None, version=None, modVersions=None, sim_mods=N
 
     try:
         if len(game_updater.updatedFiles) > 0:
-            checkMovies(game_updater.updatedFiles)
+            check_movies(game_updater.updatedFiles)
     except:
         logger.exception('Error checking game files for movies')
         return False
@@ -144,7 +146,6 @@ def check(featured_mod, mapname=None, version=None, modVersions=None, sim_mods=N
             return False
 
     if sim_mods:
-        return checkMods(sim_mods)
+        return check_mods(sim_mods)
 
     return True
-

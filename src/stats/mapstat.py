@@ -6,7 +6,7 @@ import client
 import datetime
 from fa import maps
 
-FormClass, BaseClass = util.loadUiType("stats/mapstat.ui")
+FormClass, BaseClass = util.load_ui_type("stats/mapstat.ui")
 
 
 class LadderMapStat(FormClass, BaseClass):
@@ -28,11 +28,11 @@ class LadderMapStat(FormClass, BaseClass):
         self.parent.laddermapTab.layout().addWidget(self)
 
         self.parent.laddermaplist.connect(self.updatemaps)
-        self.parent.laddermapstat.connect(self.updatemapstat)
+        self.parent.laddermapstat.connect(self.update_mapstat)
 
         self.maplist.itemClicked.connect(self.mapselected)
         
-    def getSeasonDate(self):
+    def get_season_date(self):
         now = datetime.date.today()
 
         if (now.month == 3 and now.day < 21) or now.month < 3:
@@ -40,11 +40,11 @@ class LadderMapStat(FormClass, BaseClass):
             
         elif (now.month == 6 and now.day < 21) or now.month < 6:
     
-            previous = datetime.datetime(now.year, 03, 21)
+            previous = datetime.datetime(now.year, 3, 21)
             
         elif (now.month == 9 and now.day < 21) or now.month < 9:
          
-            previous = datetime.datetime(now.year, 06, 21)
+            previous = datetime.datetime(now.year, 6, 21)
             
         else:
           
@@ -53,7 +53,7 @@ class LadderMapStat(FormClass, BaseClass):
         return previous.strftime('%d %B %Y')
     
     @QtCore.pyqtSlot(dict)
-    def updatemapstat(self, message):
+    def update_mapstat(self, message):
         """ fill all the data for that map """
 
         if message["idmap"] != self.mapid :
@@ -94,30 +94,30 @@ class LadderMapStat(FormClass, BaseClass):
             game_played = 1
 
         self.mapstats.insertHtml("<br><font size='+1'>" + str(game_played) + " games played on this map </font><br>")
-        
+
         self.mapstats.insertHtml("<br><font size='+1'>" + str(round(float(draws)/float(game_played),2)) +
                                  "% of the games end with a draw ("+str(draws) + " games) </font><br>")
 
         self.mapstats.insertHtml("<br><font size='+1'> Average time for a game : " + averagetime + "</font><br>")
         self.mapstats.insertHtml("<br><font size='+1'> Maximum time for a game : " + maxtime + "</font><br>")
+
+        total_faction = float(uef_total + cybran_total + aeon_total + sera_total)
+        if total_faction == 0:
+            total_faction = 1
+
+        percentUef    = round((uef_total    / total_faction) * 100.0, 2)
         
-        totalFaction = float(uef_total + cybran_total + aeon_total + sera_total) 
-        if totalFaction == 0:
-            totalFaction = 1
-        
-        percentUef    = round((uef_total    / totalFaction) * 100.0, 2)
-        
-        percentAeon   = round((aeon_total   / totalFaction) * 100.0, 2)
-        percentCybran = round((cybran_total / totalFaction) * 100.0, 2)
-        percentSera   = round((sera_total   / totalFaction) * 100.0, 2)
-        
+        percentAeon   = round((aeon_total   / total_faction) * 100.0, 2)
+        percentCybran = round((cybran_total / total_faction) * 100.0, 2)
+        percentSera   = round((sera_total   / total_faction) * 100.0, 2)
+
         self.mapstats.insertHtml("<br><font size='+1'>" + str(percentUef) + " % UEF ("+str(uef_total) + " occurrences) </font>")
         self.mapstats.insertHtml("<br><font size='+1'>" + str(percentCybran) + " % Cybran ("+str(cybran_total) + " occurrences) </font>")
         self.mapstats.insertHtml("<br><font size='+1'>" + str(percentAeon) + " % Aeon ("+str(aeon_total) + " occurrences) </font>")
         self.mapstats.insertHtml("<br><font size='+1'>" + str(percentSera) + " % Seraphim ("+str(sera_total) + " occurrences) </font><br>")
 
-        # if a win was ignored, it's because of a mirror matchup. No win count, but we have to remove 2 times the occurences.
-        # once for each player..
+        # if a win was ignored, it's because of a mirror matchup. No win count,
+        # but we have to remove 2 times the occurences. once for each player..
         
         uefnomirror = (float(uef_total) - float(uef_ignore) * 2)
         cybrannomirror = (float(cybran_total) - float(cybran_ignore) * 2)
@@ -164,7 +164,7 @@ class LadderMapStat(FormClass, BaseClass):
 
         self.maps = message["values"]
         
-        self.mapstats.insertHtml("<font size='+5'>Stats since : %s</font>" % self.getSeasonDate())
+        self.mapstats.insertHtml("<font size='+5'>Stats since : %s</font>" % self.get_season_date())
         self.mapstats.insertHtml("<font size='+1'><br>Number of game played :</font><font size='+1' color='red'> %i </font>" % message["gamesplayed"])
         
         # clearing current map list

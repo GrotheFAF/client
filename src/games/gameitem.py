@@ -62,7 +62,7 @@ class GameItemDelegate(QtGui.QStyledItemDelegate):
 
 
 class GameItem(QtGui.QListWidgetItem):
-    TEXTWIDTH = 250
+    TEXTWIDTH = 255
     ICONSIZE = 110
     PADDING = 10
 
@@ -91,9 +91,9 @@ class GameItem(QtGui.QListWidgetItem):
 
         self.setHidden(True)
 
-    def url(self, player_id=None):
+    def url(self, player_id=None):  # <- update
         if not player_id:
-            player_id = self.host
+            player_id = self.hostid  # <- announce_replay
 
         if self.state == "playing":
             url = QtCore.QUrl()
@@ -115,27 +115,27 @@ class GameItem(QtGui.QListWidgetItem):
         return None 
 
     @QtCore.pyqtSlot()
-    def announce_replay(self):
-        if not client.instance.players.isFriend(self.hostid):
+    def announce_replay(self):  # <- update - timer
+        if not client.instance.players.is_friend(self.hostid):
             return
 
-        if not self.state == "playing":
+        if not self.state == "playing":  # game already over
             return
 
         # User does not want to see this in chat
         if not client.instance.livereplays:
             return
 
-        in_str = ' in <a style="color:' + client.instance.getColor("url") + '" href="' + self.url().toString() + '">'\
+        in_str = ' in <a style="color:' + client.instance.get_color("url") + '" href="' + self.url().toString() + '">'\
                  + self.title + '</a> (on "' + self.mapdisplayname + '")'
         if self.mod == "faf":
-            client.instance.forwardLocalBroadcast(self.host, 'is playing live' + in_str)
+            client.instance.forward_local_broadcast(self.host, 'is playing live' + in_str)
         else:
-            client.instance.forwardLocalBroadcast(self.host, 'is playing ' + self.mod + in_str)
+            client.instance.forward_local_broadcast(self.host, 'is playing ' + self.mod + in_str)
 
     @QtCore.pyqtSlot()
-    def announce_hosting(self):
-        if not client.instance.players.isFriend(self.hostid) or self.isHidden():
+    def announce_hosting(self):  # <- update
+        if not client.instance.players.is_friend(self.hostid) or self.isHidden():
             return
 
         if not self.state == "open":
@@ -151,13 +151,13 @@ class GameItem(QtGui.QListWidgetItem):
             return
 
         if self.mod == "faf":
-            client.instance.forwardLocalBroadcast(self.host, 'is hosting <a style="color:' +
-                                                  client.instance.getColor("url") + '" href="' + url.toString() + '">' +
-                                                  self.title + '</a> (on "' + self.mapdisplayname + '")')
+            client.instance.forward_local_broadcast(self.host, 'is hosting <a style="color:' +
+                                                    client.instance.get_color("url") + '" href="' + url.toString()
+                                                    + '">' + self.title + '</a> (on "' + self.mapdisplayname + '")')
         else:
-            client.instance.forwardLocalBroadcast(self.host, 'is hosting ' + self.mod + ' <a style="color:' +
-                                                  client.instance.getColor("url") + '" href="' + url.toString() + '">' +
-                                                  self.title + '</a> (on "' + self.mapdisplayname + '")')
+            client.instance.forward_local_broadcast(self.host, 'is hosting ' + self.mod + ' <a style="color:' +
+                                                    client.instance.get_color("url") + '" href="' + url.toString()
+                                                    + '">' + self.title + '</a> (on "' + self.mapdisplayname + '")')
 
     def update(self, message, old_client=None):
         """
@@ -180,14 +180,14 @@ class GameItem(QtGui.QListWidgetItem):
         if 'host_id' in message:
             self.hostid = message['host_id']
         elif self.hostid == -1:  # fresh game
-            self.hostid = client.instance.players.getID(self.host)
-        elif self.hostid != client.instance.players.getID(self.host):  # somethings funny (offline)
-            self.hostid = client.instance.players.getID(self.host)
+            self.hostid = client.instance.players.get_id(self.host)
+        elif self.hostid != client.instance.players.get_id(self.host):  # somethings funny (offline)
+            self.hostid = client.instance.players.get_id(self.host)
 
         # Map preview code
         if self.mapname != message['mapname']:
             self.mapname = message['mapname']
-            self.mapdisplayname = maps.getDisplayName(self.mapname)
+            self.mapdisplayname = maps.get_display_name(self.mapname)
             refresh_map_icon = True
         else:
             refresh_map_icon = False
@@ -261,7 +261,7 @@ class GameItem(QtGui.QListWidgetItem):
                 else:
                     icon = maps.preview(self.mapname)
                     if not icon:
-                        client.instance.downloader.downloadMap(self.mapname, self)
+                        client.instance.downloader.download_map(self.mapname, self)
                         icon = util.icon("games/unknown_map.png")
 
                 self.setIcon(icon)
@@ -278,7 +278,7 @@ class GameItem(QtGui.QListWidgetItem):
 
             if self.hostid == -1:  # user offline (?)
                 self.host += " <font color='darkred'>(offline)</font>"
-            color = client.instance.players.getUserColor(self.hostid)
+            color = client.instance.players.get_user_color(self.hostid)
 
             self.edit_tooltip(teams, observers)
 
@@ -372,11 +372,11 @@ class GameItem(QtGui.QListWidgetItem):
         if self.hostid == -1:
             self_is_friend = False
         else:
-            self_is_friend = client.instance.players.isFriend(self.hostid)
+            self_is_friend = client.instance.players.is_friend(self.hostid)
         if other.hostid == -1:
             other_is_friend = False
         else:
-            other_is_friend = client.instance.players.isFriend(other.hostid)
+            other_is_friend = client.instance.players.is_friend(other.hostid)
         if self_is_friend and not other_is_friend:
             return True
         if not self_is_friend and other_is_friend:
@@ -387,7 +387,7 @@ class GameItem(QtGui.QListWidgetItem):
         # 1: By avg. Player Rating
         # 2: By Map
         # 3: By Host
-        # 4+: By age = uid
+        # 4+: By Age = uid
         try:
             sort_by = self.listWidget().sortBy
         except AttributeError:

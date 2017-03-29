@@ -3,7 +3,6 @@ import os
 import subprocess
 import getpass
 import codecs
-from ctypes import *
 
 from PyQt4.QtGui import QDesktopServices, QMessageBox, QInputDialog
 from PyQt4.QtCore import QUrl
@@ -16,6 +15,7 @@ if sys.platform == 'win32':
     import win32serviceutil
     import win32service
 
+
 # Developer mode flag
 def developer():
     return sys.executable.endswith("python.exe")
@@ -25,39 +25,39 @@ from config import VERSION as VERSION_STRING
 import logging
 logger = logging.getLogger(__name__)
 
-LOGFILE_MAX_SIZE = 256 * 1024  #256kb should be enough for anyone
+LOGFILE_MAX_SIZE = 256 * 1024  # 256kb should be enough for anyone
 
 UNITS_PREVIEW_ROOT = "{}/faf/unitsDB/icons/big/".format(Settings.get('content/host'))
 
 import fafpath
 COMMON_DIR = fafpath.get_resdir()
 
-stylesheets = {} # map [qt obj] ->  filename of stylesheet
+stylesheets = {}  # map [qt obj] ->  filename of stylesheet
 
 APPDATA_DIR = Settings.get('client/data_path')
 
-#This is used to store init_*.lua files
+# This is used to store init_*.lua files
 LUA_DIR = os.path.join(APPDATA_DIR, "lua")
 
-#This contains the themes
+# This contains the themes
 THEME_DIR = os.path.join(APPDATA_DIR, "themes")
 
-#This contains cached data downloaded while communicating with the lobby - at the moment, mostly map preview pngs.
+# This contains cached data downloaded while communicating with the lobby - at the moment, mostly map preview pngs.
 CACHE_DIR = os.path.join(APPDATA_DIR, "cache")
 
-#This contains cached data downloaded for FA extras
+# This contains cached data downloaded for FA extras
 EXTRA_DIR = os.path.join(APPDATA_DIR, "extra")
 
-#This contains the replays recorded by the local replay server
+# This contains the replays recorded by the local replay server
 REPLAY_DIR = os.path.join(APPDATA_DIR, "replays")
 
-#This contains all Lobby, Chat and Game logs
+# This contains all Lobby, Chat and Game logs
 LOG_DIR = os.path.join(APPDATA_DIR, "logs")
 LOG_FILE_FAF = os.path.join(LOG_DIR, 'forever.log')
 LOG_FILE_GAME = os.path.join(LOG_DIR, 'game.log')
 LOG_FILE_REPLAY = os.path.join(LOG_DIR, 'replay.log')
 
-#This contains the game binaries (old binFAF folder) and the game mods (.faf files)
+# This contains the game binaries (old binFAF folder) and the game mods (.faf files)
 BIN_DIR = os.path.join(APPDATA_DIR, "bin")
 GAMEDATA_DIR = os.path.join(APPDATA_DIR, "gamedata")
 REPO_DIR = os.path.join(APPDATA_DIR, "repo")
@@ -108,7 +108,7 @@ except:
 
 logger.info('PERSONAL_DIR final: ' + PERSONAL_DIR)
 
-#Ensure Application data directories exist
+# Ensure Application data directories exist
 if not os.path.isdir(APPDATA_DIR):
     os.makedirs(APPDATA_DIR)
 
@@ -134,7 +134,6 @@ if not os.path.isdir(EXTRA_DIR):
     os.makedirs(EXTRA_DIR)
 
 from PyQt4 import QtGui, uic, QtCore
-from PyQt4.uic import *
 import shutil
 import hashlib
 import re
@@ -142,7 +141,7 @@ import re
 
 # Dirty log rotation: Get rid of logs if larger than 1 MiB
 try:
-    #HACK: Clean up obsolete logs directory trees
+    # HACK: Clean up obsolete logs directory trees
     if os.path.isfile(os.path.join(LOG_DIR, "faforever.log")):
         shutil.rmtree(LOG_DIR)
         os.makedirs(LOG_DIR)
@@ -153,16 +152,18 @@ try:
 except:
     pass
 
-def clearDirectory(directory, confirm=True):
-    if (os.path.isdir(directory)):
-        if (confirm):
+
+def clear_directory(directory, confirm=True):
+    if os.path.isdir(directory):
+        if confirm:
             result = QtGui.QMessageBox.question(None, "Clear Directory",
-                                                "Are you sure you wish to clear the following directory:<br/><b>&nbsp;&nbsp;" + directory + "</b>",
+                                                "Are you sure you wish to clear the following directory:<br/><b>&nbsp;"
+                                                "&nbsp;" + directory + "</b>",
                                                 QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
         else:
             result = QtGui.QMessageBox.Yes
 
-        if (result == QtGui.QMessageBox.Yes):
+        if result == QtGui.QMessageBox.Yes:
             shutil.rmtree(directory)
             return True
         else:
@@ -180,6 +181,7 @@ __themedir = None
 from config import _settings
 settings = _settings
 
+
 def clean_slate(path):
     if os.path.exists(path):
         logger.info("Wiping " + path)
@@ -187,7 +189,7 @@ def clean_slate(path):
     os.makedirs(path)
 
 
-def loadTheme():
+def load_theme():
     global __theme
     global __themedir
 
@@ -196,14 +198,15 @@ def loadTheme():
     settings.endGroup()
     logger.debug("Loaded Theme: " + str(loaded))
 
-    setTheme(loaded, False)
+    set_theme(loaded, False)
 
 
-def getTheme():
+def get_theme():
     return __theme
 
+
 # Throws an exception if it fails to read and parse theme version string.
-def _checkThemeVersion(theme):
+def _check_theme_version(theme):
     version_file = os.path.join(THEME_DIR, theme, "version")
     version_str = open(version_file).read().strip()
     version = Version(version_str)
@@ -229,12 +232,14 @@ def _checkThemeVersion(theme):
     else:
         return override_version
 
-def _checkThemeOutdated(theme):
-    theme_version = _checkThemeVersion(theme)
+
+def _check_theme_outdated(theme):
+    theme_version = _check_theme_version(theme)
     faf_version = Version(VERSION_STRING)
     return faf_version > theme_version
 
-def _do_setTheme(new_theme):
+
+def _do_set_theme(new_theme):
     global __theme
     global __themedir
 
@@ -256,14 +261,14 @@ def _do_setTheme(new_theme):
         return theme_changed()
 
     try:
-        outdated = _checkThemeOutdated(new_theme)
+        outdated = _check_theme_outdated(new_theme)
     except:
         QtGui.QMessageBox.information(
                 QtGui.QApplication.activeWindow(),
                 "Invalid Theme",
                 "Failed to read the version of the following theme:<br/><b>" +
                 new_theme +
-                "</b><br/><i>Contact the maker of the theme for a fix!</i>")
+                "</b><br/><i>Contact the maker of the theme for a fix!</i>", 0x0400)
         logger.error("Error reading theme version: " + new_theme + " in directory " + test_dir)
         return theme_changed()
 
@@ -291,7 +296,7 @@ def _do_setTheme(new_theme):
                     QtGui.QApplication.activeWindow(),
                     "Notice",
                     "If the applied theme causes crashes, clear the '[theme_version_override]'<br/>" +
-                    "section of your FA client config file.")
+                    "section of your FA client config file.", 0x0400)
             logger.info("Overriding version of theme " + new_theme + "with " + VERSION_STRING)
             override_config = "theme_version_override/" + new_theme
             Settings.set(override_config, VERSION_STRING)
@@ -307,28 +312,29 @@ def _do_setTheme(new_theme):
             pass
     return theme_changed()
 
-def setTheme(theme, restart=True):
+
+def set_theme(theme, restart=True):
     global __theme
 
-    set_theme = _do_setTheme(theme)
+    theme_set = _do_set_theme(theme)
 
-    #Starting value of __theme needn't be the value in settings
+    # Starting value of __theme needn't be the value in settings
     settings.beginGroup("theme")
     settings.setValue("theme/name", __theme)
     settings.endGroup()
     settings.sync()
 
-    if set_theme and restart:
-        QtGui.QMessageBox.information(None, "Restart Needed", "FAF will quit now.")
+    if theme_set and restart:
+        QtGui.QMessageBox.information(None, "Restart Needed", "FAF will quit now.", 0x0400)
         QtGui.QApplication.quit()
 
 
-def listThemes():
-    '''
+def list_themes():
+    """
     Searches the THEME_DIR for all available themes, returning them as Callable Theme objects.
-    '''
+    """
     themes = [None]
-    if (os.path.isdir(THEME_DIR)):
+    if os.path.isdir(THEME_DIR):
         for infile in os.listdir(THEME_DIR):
             if os.path.isdir(os.path.join(THEME_DIR, infile)):
                 themes.append(infile)
@@ -337,20 +343,20 @@ def listThemes():
     return themes
 
 
-def curDownloadAvatar(url):
+def current_download_avatar(url):
     if url in DOWNLOADING_RES_PIX:
         return DOWNLOADING_RES_PIX[url]
     return None
 
 
-def removeCurrentDownloadAvatar(url, player, item):
+def remove_current_download_avatar(url, player):
     if url in DOWNLOADING_RES_PIX:
         DOWNLOADING_RES_PIX[url].remove(player)
 
 
-def addcurDownloadAvatar(url, player):
+def add_current_download_avatar(url, player):
     if url in DOWNLOADING_RES_PIX:
-        if not player in DOWNLOADING_RES_PIX[url]:
+        if player not in DOWNLOADING_RES_PIX[url]:
             DOWNLOADING_RES_PIX[url].append(player)
         return False
     else:
@@ -369,11 +375,11 @@ def respix(url):
     return None
 
 
-def pixmap(filename, themed=True):
-    '''
-    This function loads a pixmap from a themed directory, or anywhere.
+def pix_map(filename, themed=True):
+    """
+    This function loads a pix_map from a themed directory, or anywhere.
     It also stores them in a cache dictionary (may or may not be necessary depending on how Qt works under the hood)
-    '''
+    """
     try:
         return __pixmapcache[filename]
     except:
@@ -383,48 +389,47 @@ def pixmap(filename, themed=True):
             else:
                 pix = QtGui.QPixmap(os.path.join(COMMON_DIR, filename))
         else:
-            pix = QtGui.QPixmap(filename)  #Unthemed means this can come from any location
+            pix = QtGui.QPixmap(filename)  # Unthemed means this can come from any location
 
         __pixmapcache[filename] = pix
         return pix
-    return None
 
 
-def loadUi(filename, themed=True):
-    '''
+def load_ui(filename, themed=True):
+    """
     Loads and compiles a Qt Ui file via uic.
     Looks in theme directories first. Nonthemed means the file can come from anywhere.
-    '''
+    """
     if themed:
         if __themedir and os.path.isfile(os.path.join(__themedir, filename)):
             ui = uic.loadUi(os.path.join(__themedir, filename))
         else:
             ui = uic.loadUi(os.path.join(COMMON_DIR, filename))
     else:
-        ui = uic.loadUi(filename)  #Unthemed means this can come from any location
+        ui = uic.loadUi(filename)  # Unthemed means this can come from any location
 
     return ui
 
 
-def loadUiType(filename, themed=True):
-    '''
+def load_ui_type(filename, themed=True):
+    """
     Loads and compiles a Qt Ui file via uic, and returns the Type and Basetype as a tuple
     Looks in theme directories first. Nonthemed means the file can come from anywhere.
-    '''
+    """
     if themed:
         if __themedir and os.path.isfile(os.path.join(__themedir, filename)):
             return uic.loadUiType(os.path.join(__themedir, filename))
         else:
             return uic.loadUiType(os.path.join(COMMON_DIR, filename))
     else:
-        return uic.loadUiType(filename)  #Unthemed means this can come from any location
+        return uic.loadUiType(filename)  # Unthemed means this can come from any location
 
 
 def readlines(filename, themed=True):
-    '''
+    """
     Reads and returns the contents of a file. It looks in theme folders first.
     If non-themed, the file can come from anywhere.
-    '''
+    """
     if themed:
         if __themedir and os.path.isfile(os.path.join(__themedir, filename)):
             result = open(os.path.join(__themedir, filename))
@@ -441,31 +446,33 @@ def readlines(filename, themed=True):
     return lines
 
 
-def setStyleSheet(obj, filename):
+def set_stylesheet(obj, filename):
     stylesheets[obj] = filename
-    obj.setStyleSheet(readstylesheet(filename))
+    obj.setStyleSheet(read_stylesheet(filename))
 
 
-def reloadStyleSheets():
+def reload_stylesheets():
     for obj, filename in stylesheets.iteritems():
-        obj.setStyleSheet(readstylesheet(filename))
+        obj.setStyleSheet(read_stylesheet(filename))
 
-def readstylesheet(filename):
+
+def read_stylesheet(filename):
     if __themedir and os.path.isfile(os.path.join(__themedir, filename)):
         result = open(os.path.join(__themedir, filename)).read().replace("%THEMEPATH%", __themedir.replace("\\", "/"))
         logger.info(u"Read themed stylesheet: " + filename)
     else:
-        baseDir = os.path.join(COMMON_DIR, os.path.dirname(filename))
-        result = open(os.path.join(COMMON_DIR, filename)).read().replace("%THEMEPATH%", baseDir.replace("\\", "/"))
+        base_dir = os.path.join(COMMON_DIR, os.path.dirname(filename))
+        result = open(os.path.join(COMMON_DIR, filename)).read().replace("%THEMEPATH%", base_dir.replace("\\", "/"))
         logger.info(u"Read common stylesheet: " + filename)
 
     return result
 
 
 def themeurl(filename):
-    '''
-    This creates an url to use for a local stylesheet. It's a bit of a hack because Qt has a bug identifying proper localfile QUrls
-    '''
+    """
+    This creates an url to use for a local stylesheet.
+    It's a bit of a hack because Qt has a bug identifying proper localfile QUrls
+    """
     if __themedir and os.path.isfile(os.path.join(__themedir, filename)):
         return QtCore.QUrl("file://" + os.path.join(__themedir, filename).replace("\\", "/"))
     elif os.path.isfile(os.path.join(COMMON_DIR, filename)):
@@ -475,10 +482,10 @@ def themeurl(filename):
 
 
 def readfile(filename, themed=True):
-    '''
+    """
     Reads and returns the contents of a file. It looks in theme folders first.
     If non-themed, the file can come from anywhere.
-    '''
+    """
     if themed:
         if __themedir and os.path.isfile(os.path.join(__themedir, filename)):
             result = codecs.open(os.path.join(__themedir, filename), encoding='utf-8')
@@ -495,11 +502,12 @@ def readfile(filename, themed=True):
     return data
 
 
-def __downloadPreviewFromWeb(unitname):
-    '''
+def __download_preview_from_web(unitname):
+    """
     Downloads a preview image from the web for the given unit name
-    '''
-    #This is done so generated previews always have a lower case name. This doesn't solve the underlying problem (case folding Windows vs. Unix vs. FAF)
+    """
+    # This is done so generated previews always have a lower case name.
+    # This doesn't solve the underlying problem (case folding Windows vs. Unix vs. FAF)
     import urllib2
     unitname = unitname.lower()
 
@@ -512,11 +520,11 @@ def __downloadPreviewFromWeb(unitname):
     with open(img, 'wb') as fp:
         shutil.copyfileobj(req, fp)
         fp.flush()
-        os.fsync(fp.fileno())  #probably works fine without the flush and fsync
+        os.fsync(fp.fileno())  # probably works fine without the flush and fsync
         fp.close()
 
 
-def iconUnit(unitname):
+def icon_unit(unitname):
     # Try to load directly from cache
 
     img = os.path.join(CACHE_DIR, unitname)
@@ -524,42 +532,43 @@ def iconUnit(unitname):
         logger.log(5, "Using cached preview image for: " + unitname)
         return icon(img, False)
     # Try to download from web
-    img = __downloadPreviewFromWeb(unitname)
+    img = __download_preview_from_web(unitname)
     if img and os.path.isfile(img):
         logger.debug("Using web preview image for: " + unitname)
         return icon(img, False)
 
 
 def icon(filename, themed=True, pix=False):
-    '''
-    Convenience method returning an icon from a cached, optionally themed pixmap as returned by the util.pixmap(...) function
-    '''
+    """
+    Convenience method returning an icon from a cached,
+    optionally themed pix_map as returned by the util.pix_map(...) function
+    """
     if pix:
-        return pixmap(filename, themed)
+        return pix_map(filename, themed)
     else:
-        icon = QtGui.QIcon()
-        icon.addPixmap(pixmap(filename, themed), QtGui.QIcon.Normal)
-        splitExt = os.path.splitext(filename)
-        if len(splitExt) == 2:
-            pixDisabled = pixmap(splitExt[0] + "_disabled" + splitExt[1], themed)
-            if pixDisabled != None:
-                icon.addPixmap(pixDisabled, QtGui.QIcon.Disabled, QtGui.QIcon.On)
+        qicon = QtGui.QIcon()
+        qicon.addPixmap(pix_map(filename, themed), QtGui.QIcon.Normal)
+        split_ext = os.path.splitext(filename)
+        if len(split_ext) == 2:
+            pix_disabled = pix_map(split_ext[0] + "_disabled" + split_ext[1], themed)
+            if pix_disabled is not None:
+                qicon.addPixmap(pix_disabled, QtGui.QIcon.Disabled, QtGui.QIcon.On)
 
-            pixActive = pixmap(splitExt[0] + "_active" + splitExt[1], themed)
-            if pixActive != None:
-                icon.addPixmap(pixActive, QtGui.QIcon.Active, QtGui.QIcon.On)
+            pix_active = pix_map(split_ext[0] + "_active" + split_ext[1], themed)
+            if pix_active is not None:
+                qicon.addPixmap(pix_active, QtGui.QIcon.Active, QtGui.QIcon.On)
 
-            pixSelected = pixmap(splitExt[0] + "_selected" + splitExt[1], themed)
-            if pixSelected != None:
-                icon.addPixmap(pixSelected, QtGui.QIcon.Selected, QtGui.QIcon.On)
+            pix_selected = pix_map(split_ext[0] + "_selected" + split_ext[1], themed)
+            if pix_selected is not None:
+                qicon.addPixmap(pix_selected, QtGui.QIcon.Selected, QtGui.QIcon.On)
 
-        return icon
+        return qicon
 
 
 def sound(filename, themed=True):
-    '''
+    """
     Plays a sound, from one of the themed or fallback folders, or optionally from anywhere if unthemed.
-    '''
+    """
     if themed:
         if __themedir and os.path.isfile(os.path.join(__themedir, filename)):
             QtGui.QSound.play(os.path.join(__themedir, filename))
@@ -570,9 +579,9 @@ def sound(filename, themed=True):
 
 
 def wait(until):
-    '''
+    """
     Super-simple wait function that takes a callable and waits until the callable returns true or the user aborts.
-    '''
+    """
     progress = QtGui.QProgressDialog()
     progress.show()
 
@@ -610,14 +619,21 @@ def html_escape(text):
 
 
 def irc_escape(text, a_style=""):
-    #first, strip any and all html
+    # first, strip any and all html
     text = html_escape(text)
 
-    #taken from django and adapted
+    # taken from django and adapted
     url_re = re.compile(
         r'^((https?|faflive|fafgame|fafmap|ftp|ts3server)://)?'  # protocols    
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+'  # domain name, then TLDs
-        r'(?:ac|ad|ae|aero|af|ag|ai|al|am|an|ao|aq|ar|arpa|as|asia|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|biz|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cat|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|com|coop|cr|cu|cv|cw|cx|cy|cz|de|dj|dk|dm|do|dz|ec|edu|ee|eg|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gov|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|info|int|io|iq|ir|is|it|je|jm|jo|jobs|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mil|mk|ml|mm|mn|mo|mobi|mp|mq|mr|ms|mt|mu|museum|mv|mw|mx|my|mz|na|name|nc|ne|net|nf|ng|ni|nl|no|np|nr|nu|nz|om|org|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|pro|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|st|su|sv|sx|sy|sz|tc|td|tel|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|travel|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|xxx|ye|yt|za|zm|zw)'
+        r'(?:ac|ad|ae|aero|af|ag|ai|al|am|an|ao|aq|ar|arpa|as|asia|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|biz|bj|bm|bn|'
+        r'bo|br|bs|bt|bv|bw|by|bz|ca|cat|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|com|coop|cr|cu|cv|cw|cx|cy|cz|de|dj|dk|dm|do|'
+        r'dz|ec|edu|ee|eg|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gov|gp|gq|gr|gs|gt|gu|gw|gy|hk'
+        r'|hm|hn|hr|ht|hu|id|ie|il|im|in|info|int|io|iq|ir|is|it|je|jm|jo|jobs|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|'
+        r'lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mil|mk|ml|mm|mn|mo|mobi|mp|mq|mr|ms|mt|mu|museum|mv|mw|mx|my|'
+        r'mz|na|name|nc|ne|net|nf|ng|ni|nl|no|np|nr|nu|nz|om|org|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|pro|ps|pt|pw|py|qa|re|ro'
+        r'|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|st|su|sv|sx|sy|sz|tc|td|tel|tf|tg|th|tj|tk|tl|tm|tn|to'
+        r'|tp|tr|travel|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|xxx|ye|yt|za|zm|zw)'
         r'|localhost'  # localhost...
         r'|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
         r'(?::\d+)?'  # optional port
@@ -630,7 +646,7 @@ def irc_escape(text, a_style=""):
     for fragment in strings:
         match = url_re.match(fragment)
         if match:
-            if u"://" in fragment:  #slight hack to get those protocol-less URLs on board. Better: With groups!
+            if u"://" in fragment:  # slight hack to get those protocol-less URLs on board. Better: With groups!
                 rpl = u'<a href="{0}" style="{1}">{0}</a>'.format(fragment, a_style)
             else:
                 rpl = u'<a href="http://{0}" style="{1}">{0}</a>'.format(fragment, a_style)
@@ -655,19 +671,21 @@ def md5(file_name):
     IOErrors raised here are handled in doUpdate.
     """
     m = hashlib.md5()
-    if not os.path.isfile(file_name): return None
+    if not os.path.isfile(file_name):
+        return None
 
     with open(file_name, "rb") as fd:
         while True:
             content = fd.read(1024 * 1024)
-            if not content: break
+            if not content:
+                break
             m.update(content)
 
     return m.hexdigest()
 
 
-def uniqueID(user, session):
-    ''' This is used to uniquely identify a user's machine to prevent smurfing. '''
+def unique_id(user, session):
+    """ This is used to uniquely identify a user's machine to prevent smurfing. """
     # the UID check needs the WMI service running on Windows
     if sys.platform == 'win32':
         try:
@@ -720,4 +738,3 @@ def now():
     return _dateDummy.now()
 
 from crash import CrashDialog
-

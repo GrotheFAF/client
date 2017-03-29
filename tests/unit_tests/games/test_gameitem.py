@@ -9,8 +9,8 @@ def test_average_rating(qtbot):
     from client import Player
     from games.gameitem import GameItem
     players = [Player(id=1, login='Test-1', global_rating=(2000, 200)),
-              Player(id=2, login='Test-2', global_rating=(1000, 150)),
-              Player(id=3, login='Test-3', global_rating=(1200, 100))]
+               Player(id=2, login='Test-2', global_rating=(1000, 150)),
+               Player(id=3, login='Test-3', global_rating=(1200, 100))]
     g = GameItem(0)
     client.players = dict(map(lambda p: (p.id, p), players))
     g.client = client

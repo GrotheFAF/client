@@ -31,7 +31,8 @@
 # please add it to your top-level .gitignore file.
 
 from subprocess import check_output
-import sys, os
+import sys
+import os
 from semantic_version import Version
 
 __all__ = ["is_development_version", "is_prerelease_version",
@@ -46,12 +47,14 @@ def is_prerelease_version(version):
     return Version(version).prerelease is not None
 
 
-def version_filename(dir):
-    return os.path.join(dir, "RELEASE-VERSION")
 
-def read_version_file(dir):
+def version_filename(version_file):
+    return os.path.join(version_file, "RELEASE-VERSION")
+
+
+def read_version_file(version_file):
     try:
-        f = open(version_filename(dir), "r")
+        f = open(version_filename(version_file), "r")
 
         try:
             version = f.readlines()[0]
@@ -62,6 +65,7 @@ def read_version_file(dir):
 
     except IOError:
         return None
+
 
 def write_version_file(version, dir):
     with open(version_filename(dir), "w") as f:

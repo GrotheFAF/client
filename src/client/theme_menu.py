@@ -1,5 +1,6 @@
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtCore
 import util
+
 
 class ThemeMenu(QtCore.QObject):
     themeSelected = QtCore.pyqtSignal(object)
@@ -18,13 +19,13 @@ class ThemeMenu(QtCore.QObject):
             self._themes[action] = theme
             action.setCheckable(True)
         self._menu.addSeparator()
-        self._menu.addAction("Reload Stylesheet", util.reloadStyleSheets)
+        self._menu.addAction("Reload Stylesheet", util.reload_stylesheets)
 
-        self._updateThemeChecks()
+        self._update_theme_checks()
 
-    def _updateThemeChecks(self):
+    def _update_theme_checks(self):
         self._updating = True
-        new_theme = util.getTheme()
+        new_theme = util.get_theme()
         for action in self._themes:
             action.setChecked(new_theme == self._themes[action])
         self._updating = False
@@ -40,4 +41,4 @@ class ThemeMenu(QtCore.QObject):
             self._updating = False
         else:
             self.themeSelected.emit(self._themes[action])
-            self._updateThemeChecks()
+            self._update_theme_checks()

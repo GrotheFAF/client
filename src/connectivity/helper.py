@@ -3,7 +3,7 @@ from __future__ import division
 from functools import partial
 
 from PyQt4.QtCore import QObject, pyqtSignal, QTimer, Qt
-from PyQt4.QtNetwork import QUdpSocket, QHostAddress, QAbstractSocket
+from PyQt4.QtNetwork import QHostAddress, QAbstractSocket
 import time
 
 from connectivity import QTurnSocket
@@ -11,8 +11,7 @@ from connectivity.relay import Relay
 from connectivity.turn import TURNState
 from decorators import with_logger
 
-
-from PyQt4 import QtGui, uic
+from PyQt4 import QtGui
 
 
 @with_logger
@@ -102,8 +101,8 @@ class ConnectivityHelper(QObject):
         self._socket.state_changed.connect(self.turn_state_changed)
 
         dispatch = self._client.lobby_dispatch
-        dispatch.subscribe_to('connectivity', self.handle_SendNatPacket, "SendNatPacket")
-        dispatch.subscribe_to('connectivity', self.handle_ConnectivityState, "ConnectivityState")
+        dispatch.subscribe_to('connectivity', self.handle_send_nat_packet, "SendNatPacket")
+        dispatch.subscribe_to('connectivity', self.handle_connectivity_state, "ConnectivityState")
         dispatch.subscribe_to('connectivity', self.handle_message)
 
         self.relay_address, self.mapped_address = None, None
@@ -149,18 +148,21 @@ class ConnectivityHelper(QObject):
             self.mapped_address = self._socket.relay_address
             self.ready.emit()
 
-    def handle_SendNatPacket(self, msg):
+    def handle_send_nat_packet(self, msg):
         target, message = msg['args']
         host, port = target.split(':')
         if self.state is None and self._socket.localPort() == self._port:
             self._socket.randomize_port()
         self._socket.writeDatagram(b'\x08'+message.encode(), QHostAddress(host), int(port))
 
-    def handle_ConnectivityState(self, msg):
+    def handle_connectivity_state(self, msg):
         state, addr = msg['args']
         if state == 'BLOCKED':
             self._logger.warning("Outbound traffic is blocked")
-            QtGui.QMessageBox.warning(None, "Traffic Blocked", "Your outbound traffic appears to be blocked. Try restarting FAF. <br/> If the error persists please contact a moderator and send your logs. <br/> We are already working on a solution to this problem.")
+            QtGui.QMessageBox.warning(None, "Traffic Blocked",
+                                      "Your outbound traffic appears to be blocked. Try restarting FAF. <br/> If the "
+                                      "error persists please contact a moderator and send your logs. <br/> We are "
+                                      "already working on a solution to this problem.", 0x0400)
         else:
             host, port = addr.split(':')
             self.state, self.mapped_address = state, (host, port)

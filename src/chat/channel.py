@@ -17,7 +17,7 @@ QUERY_BLINK_SPEED = 250
 CHAT_TEXT_LIMIT = 350
 CHAT_REMOVEBLOCK = 50
 
-FormClass, BaseClass = util.loadUiType("chat/channel.ui")
+FormClass, BaseClass = util.load_ui_type("chat/channel.ui")
 
 
 class IRCPlayer(Player):
@@ -54,7 +54,7 @@ class Channel(FormClass, BaseClass):
         self.lobby = lobby
         self.chatters = {}
 
-        self.lasttimestamp= None
+        self.last_timestamp = None
 
         # Query flasher
         self.blinker = QtCore.QTimer()
@@ -87,31 +87,31 @@ class Channel(FormClass, BaseClass):
 
             self.nickList.horizontalHeader().setResizeMode(Chatter.SORT_COLUMN, QtGui.QHeaderView.Stretch)
 
-            self.nickList.itemDoubleClicked.connect(self.nickDoubleClicked)
-            self.nickList.itemPressed.connect(self.nickPressed)
+            self.nickList.itemDoubleClicked.connect(self.nick_doubleclicked)
+            self.nickList.itemPressed.connect(self.nick_pressed)
 
-            self.nickFilter.textChanged.connect(self.filterNicks)
+            self.nickFilter.textChanged.connect(self.filter_nicks)
 
             client.instance.usersUpdated.connect(self.update_users)
         else:
             self.nickFrame.hide()
             self.announceLine.hide()
 
-        self.chatArea.anchorClicked.connect(self.openUrl)
-        self.chatEdit.returnPressed.connect(self.sendLine)
-        self.chatEdit.setChatters(self.chatters)
+        self.chatArea.anchorClicked.connect(self.open_url)
+        self.chatEdit.returnPressed.connect(self.send_line)
+        self.chatEdit.set_chatters(self.chatters)
 
-    def joinChannel(self, index):
+    def joinChannel(self, index):  # Qt ?
         """ join another channel """
         channel = self.channelsComboBox.itemText(index)
         if channel.startswith('#'):
-            self.lobby.autoJoin([channel])
+            self.lobby.auto_join([channel])
 
-    def keyReleaseEvent(self, keyevent):
+    def keyReleaseEvent(self, key_event):  # Qt QShowEvent
         """
         Allow the ctrl-C event.
         """
-        if keyevent.key() == 67:
+        if key_event.key() == 67:
             self.chatArea.copy()
 
     def resizeEvent(self, size):
@@ -121,32 +121,32 @@ class Channel(FormClass, BaseClass):
     def setTextWidth(self):
         self.chatArea.setLineWrapColumnOrWidth(self.chatArea.size().width() - 20)  # Hardcoded, but seems to be enough (tabstop was a bit large)
 
-    def showEvent(self, event):
-        self.stopBlink()
+    def showEvent(self, event):  # Qt QShowEvent
+        self.stop_blink()
         self.setTextWidth()
         return BaseClass.showEvent(self, event)
 
     @QtCore.pyqtSlot()
-    def clearWindow(self):
+    def clearWindow(self):  # Qt ?
         if self.isVisible():
             self.chatArea.setPlainText("")
-            self.lasttimestamp = 0
+            self.last_timestamp = 0
 
     @QtCore.pyqtSlot()
-    def filterNicks(self):
+    def filter_nicks(self):
         for chatter in self.chatters.keys():
-            self.chatters[chatter].setVisible(self.chatters[chatter].isFiltered(self.nickFilter.text().lower()))
+            self.chatters[chatter].set_visible(self.chatters[chatter].is_filtered(self.nickFilter.text().lower()))
 
-    def updateUserCount(self):
+    def update_user_count(self):
         count = len(self.chatters.keys())
         self.nickFilter.setPlaceholderText(str(count) + " users... (type to filter)")
 
         if self.nickFilter.text():
-            self.filterNicks()
+            self.filter_nicks()
 
     @QtCore.pyqtSlot()
     def blink(self):
-        if (self.blinked):
+        if self.blinked:
             self.blinked = False
             self.lobby.tabBar().setTabText(self.lobby.indexOf(self), self.name)
         else:
@@ -154,39 +154,39 @@ class Channel(FormClass, BaseClass):
             self.lobby.tabBar().setTabText(self.lobby.indexOf(self), "")
 
     @QtCore.pyqtSlot()
-    def stopBlink(self):
+    def stop_blink(self):
         self.blinker.stop()
         self.lobby.tabBar().setTabText(self.lobby.indexOf(self), self.name)
 
     @QtCore.pyqtSlot()
-    def startBlink(self):
+    def start_blink(self):
         self.blinker.start(QUERY_BLINK_SPEED)
 
     @QtCore.pyqtSlot()
-    def pingWindow(self):
-        QtGui.QApplication.alert(client.instance)
+    def ping_window(self):
+        QtGui.QApplication.alert(client.instance, 0)
 
         if not self.isVisible() or QtGui.QApplication.activeWindow() != client.instance:
-            if self.oneMinuteOrOlder():
+            if self.one_minute_or_older():
                 if client.instance.soundeffects:
                     util.sound("chat/sfx/query.wav")
 
         if not self.isVisible():
             if not self.blinker.isActive() and not self == self.lobby.currentWidget():
-                    self.startBlink()
+                    self.start_blink()
 
     @QtCore.pyqtSlot(QtCore.QUrl)
-    def openUrl(self, url):
+    def open_url(self, url):
         logger.debug("Clicked on URL: " + url.toString())
         if url.scheme() == "faflive":
             replay(url)
         elif url.scheme() == "fafgame":
-            client.instance.joinGameFromURL(url)
+            client.instance.join_game_from_url(url)
         else:
             QtGui.QDesktopServices.openUrl(url)
 
     @QtCore.pyqtSlot(str, str)
-    def printAnnouncement(self, text, color, size, scroll_forced = True):
+    def print_announcement(self, text, color, size, scroll_forced=True):
         # scroll if close to the last line of the log
         scroll_current = self.chatArea.verticalScrollBar().value()
         scroll_needed = scroll_forced or ((self.chatArea.verticalScrollBar().maximum() - scroll_current) < 20)
@@ -204,7 +204,7 @@ class Channel(FormClass, BaseClass):
         else:
             self.chatArea.verticalScrollBar().setValue(scroll_current)
 
-    def printLine(self, name, text, scroll_forced=False, formatter=Formatters.FORMATTER_MESSAGE):
+    def print_line(self, name, text, scroll_forced=False, formatter=Formatters.FORMATTER_MESSAGE):
         if self.lines > CHAT_TEXT_LIMIT:
             cursor = self.chatArea.textCursor()
             cursor.movePosition(QtGui.QTextCursor.Start)
@@ -212,34 +212,35 @@ class Channel(FormClass, BaseClass):
             cursor.removeSelectedText()
             self.lines = self.lines - CHAT_REMOVEBLOCK
 
-        if client.instance.players.isPlayer(name):
+        if client.instance.players.is_player(name):
             player = client.instance.players[name]
         else:
             player = IRCPlayer(name)
 
-        displayName = name
+        display_name = name
         if player.clan is not None:
-            displayName = "<b>[%s]</b>%s" % (player.clan, name)
+            display_name = "<b>[%s]</b>%s" % (player.clan, name)
 
         # Play a ping sound and flash the title under certain circumstances
         mentioned = text.find(client.instance.login) != -1
         if mentioned or (self.private and not (formatter is Formatters.FORMATTER_RAW and text == "quit.")):
-            self.pingWindow()
+            self.ping_window()
 
         avatar = None
+        avatar_tip = ""
         if name in self.chatters:
             chatter = self.chatters[name]
             color = chatter.textColor().name()
             if chatter.avatar:
                 avatar = chatter.avatar["url"]
-                avatarTip = chatter.avatarTip or ""
+                avatar_tip = chatter.avatarTip or ""
 
         else:
             # Fallback and ask the client. We have no Idea who this is.
-            color = client.instance.players.getUserColor(player.id)
+            color = client.instance.players.get_user_color(player.id)
 
         if mentioned:
-            color = client.instance.getColor("you")
+            color = client.instance.get_color("you")
 
         # scroll if close to the last line of the log
         scroll_current = self.chatArea.verticalScrollBar().value()
@@ -256,13 +257,16 @@ class Channel(FormClass, BaseClass):
             if pix:
                 if not self.chatArea.document().resource(QtGui.QTextDocument.ImageResource, QtCore.QUrl(avatar)):
                     self.chatArea.document().addResource(QtGui.QTextDocument.ImageResource,  QtCore.QUrl(avatar), pix)
-                line = formatter.format(time=self.timestamp(), avatar=avatar, avatarTip=avatarTip, name=displayName,
-                                        color=color, width=self.maxChatterWidth, text=util.irc_escape(text, self.lobby.a_style))
+                line = formatter.format(time=self.timestamp(), avatar=avatar, avatarTip=avatar_tip, name=display_name,
+                                        color=color, width=self.maxChatterWidth,
+                                        text=util.irc_escape(text, self.lobby.a_style))
             else:
                 formatter = Formatters.FORMATTER_MESSAGE
-                line = formatter.format(time=self.timestamp(), name=displayName, color=color, width=self.maxChatterWidth, text=util.irc_escape(text, self.lobby.a_style))
+                line = formatter.format(time=self.timestamp(), name=display_name, color=color,
+                                        width=self.maxChatterWidth, text=util.irc_escape(text, self.lobby.a_style))
         else:
-            line = formatter.format(time=self.timestamp(), name=displayName, color=color, width=self.maxChatterWidth, text=util.irc_escape(text, self.lobby.a_style))
+            line = formatter.format(time=self.timestamp(), name=display_name, color=color, width=self.maxChatterWidth,
+                                    text=util.irc_escape(text, self.lobby.a_style))
 
         self.chatArea.insertHtml(line)
         self.lines += 1
@@ -273,35 +277,35 @@ class Channel(FormClass, BaseClass):
             self.chatArea.verticalScrollBar().setValue(scroll_current)
 
     @QtCore.pyqtSlot(str, str)
-    def printMsg(self, name, text, scroll_forced=False):
+    def print_msg(self, name, text, scroll_forced=False):
         if name in self.chatters and self.chatters[name].avatar:
             fmt = Formatters.FORMATTER_MESSAGE_AVATAR
         else:
             fmt = Formatters.FORMATTER_MESSAGE
-        self.printLine(name, text, scroll_forced, fmt)
+        self.print_line(name, text, scroll_forced, fmt)
 
     @QtCore.pyqtSlot(str, str)
-    def printAction(self, name, text, scroll_forced=False, server_action=False):
+    def print_action(self, name, text, scroll_forced=False, server_action=False):
         if server_action:
             fmt = Formatters.FORMATTER_RAW
         elif name in self.chatters and self.chatters[name].avatar:
             fmt = Formatters.FORMATTER_ACTION_AVATAR
         else:
             fmt = Formatters.FORMATTER_ACTION
-        self.printLine(name, text, scroll_forced, fmt)
+        self.print_line(name, text, scroll_forced, fmt)
 
     @QtCore.pyqtSlot(str, str)
-    def printRaw(self, name, text, scroll_forced=False):
+    def print_raw(self, name, text, scroll_forced=False):
         """
         Print an raw message in the chatArea of the channel
         """
-        id = client.instance.players.getID(name)
+        name_id = client.instance.players.get_id(name)
 
-        color = client.instance.players.getUserColor(id)
+        color = client.instance.players.get_user_color(name_id)
 
         # Play a ping sound
         if self.private and name != client.instance.login:
-            self.pingWindow()
+            self.ping_window()
 
         # scroll if close to the last line of the log
         scroll_current = self.chatArea.verticalScrollBar().value()
@@ -323,23 +327,23 @@ class Channel(FormClass, BaseClass):
     def timestamp(self):
         """ returns a fresh timestamp string once every minute, and an empty string otherwise """
         timestamp = time.strftime("%H:%M")
-        if self.lasttimestamp != timestamp:
-            self.lasttimestamp = timestamp
+        if self.last_timestamp != timestamp:
+            self.last_timestamp = timestamp
             return timestamp
         else:
             return ""
 
-    def oneMinuteOrOlder(self):
+    def one_minute_or_older(self):
         timestamp = time.strftime("%H:%M")
-        return self.lasttimestamp != timestamp
+        return self.last_timestamp != timestamp
 
     @QtCore.pyqtSlot(QtGui.QTableWidgetItem)
-    def nickDoubleClicked(self, item):
+    def nick_doubleclicked(self, item):
         chatter = self.nickList.item(item.row(), Chatter.SORT_COLUMN)  # Look up the associated chatter object
-        chatter.doubleClicked(item)
+        chatter.doubleclicked(item)
 
     @QtCore.pyqtSlot(QtGui.QTableWidgetItem)
-    def nickPressed(self, item):
+    def nick_pressed(self, item):
         if QtGui.QApplication.mouseButtons() == QtCore.Qt.RightButton:
             # Look up the associated chatter object
             chatter = self.nickList.item(item.row(), Chatter.SORT_COLUMN)
@@ -347,17 +351,17 @@ class Channel(FormClass, BaseClass):
 
     @QtCore.pyqtSlot(list)
     def update_users(self, updated_users):
-        for id in updated_users:
-            if id in client.instance.players:
-                name = client.instance.players[id].login
+        for user in updated_users:
+            if user in client.instance.players:
+                name = client.instance.players[user].login
             else:
-                name = id
+                name = user
             if name in self.chatters:
                 self.chatters[name].update()
 
-        self.updateUserCount()
+        self.update_user_count()
 
-    def elevateChatter(self, name, modes):
+    def elevate_chatter(self, name, modes):
         add = re.compile(".*\+([a-z]+)")
         remove = re.compile(".*\-([a-z]+)")
         if name in self.chatters:
@@ -377,7 +381,6 @@ class Channel(FormClass, BaseClass):
             removematch = re.search(remove, modes)
             if removematch:
                 modes = removematch.group(1)
-                mode = ""
                 if "o" in modes and self.chatters[name].elevation == "@":
                     self.chatters[name].elevation = None
                     self.chatters[name].update()
@@ -388,48 +391,47 @@ class Channel(FormClass, BaseClass):
                     self.chatters[name].elevation = None
                     self.chatters[name].update()
 
-    def addChatter(self, name, id=-1, elevation='', hostname='', join=False):
+    def add_chatter(self, user_name, user_id=-1, elevation='', hostname='', join=False):
         """
         Adds an user to this chat channel, and assigns an appropriate icon depending on friendship and FAF player status
         """
-        if name not in self.chatters:
-            item = Chatter(self.nickList, (name, id, elevation, hostname), self.lobby, None)
-            self.chatters[name] = item
+        if user_name not in self.chatters:
+            item = Chatter(self.nickList, (user_name, user_id, elevation, hostname), self.lobby, None)
+            self.chatters[user_name] = item
 
-        self.chatters[name].update()
+        self.chatters[user_name].update()
 
-        self.updateUserCount()
+        self.update_user_count()
 
         if join and client.instance.joinsparts:
-            self.printAction(name, "joined the channel.", server_action=True)
+            self.print_action(user_name, "joined the channel.", server_action=True)
 
-    def renameChatter(self, oldname, newname):
+    def rename_chatter(self, oldname, newname):
         if oldname in self.chatters:
             chatter = self.chatters.pop(oldname)
             chatter.name = newname
             self.chatters[newname] = chatter
             chatter.update()
 
-
-    def removeChatter(self, name, server_action=None):
+    def remove_chatter(self, name, server_action=None):
         if name in self.chatters:
             self.nickList.removeRow(self.chatters[name].row())
             del self.chatters[name]
 
             if server_action and (client.instance.joinsparts or self.private):
-                self.printAction(name, server_action, server_action=True)
-                self.stopBlink()
+                self.print_action(name, server_action, server_action=True)
+                self.stop_blink()
 
-        self.updateUserCount()
+        self.update_user_count()
 
-    def setAnnounceText(self,text):
+    def set_announce_text(self, text):
         self.announceLine.clear()
-        self.announceLine.setText("<style>a{color:cornflowerblue}</style><b><font color=white>" + util.irc_escape(text) + "</font></b>")
-
+        self.announceLine.setText("<style>a{color:cornflowerblue}</style><b><font color=white>" + util.irc_escape(text)
+                                  + "</font></b>")
 
     @QtCore.pyqtSlot()
-    def sendLine(self, target=None):
-        self.stopBlink()
+    def send_line(self, target=None):
+        self.stop_blink()
 
         if not target:
             target = self.name  # pubmsg in channel
@@ -451,21 +453,21 @@ class Channel(FormClass, BaseClass):
                 if text.startswith("/join "):
                     self.lobby.join(text[6:])
                 elif text.startswith("/topic "):
-                    self.lobby.setTopic(self.name, text[7:])
+                    self.lobby.set_topic(self.name, text[7:])
                 elif text.startswith("/msg "):
                     blobs = text.split(" ")
-                    self.lobby.sendMsg(blobs[1], " ".join(blobs[2:]))
+                    self.lobby.send_msg(blobs[1], " ".join(blobs[2:]))
                 elif text.startswith("/me "):
-                    if self.lobby.sendAction(target, text[4:]):
-                        self.printAction(client.instance.login, text[4:], True)
+                    if self.lobby.send_action(target, text[4:]):
+                        self.print_action(client.instance.login, text[4:], True)
                     else:
-                        self.printAction("IRC", "action not supported", True)
+                        self.print_action("IRC", "action not supported", True)
                 elif text.startswith("/seen "):
-                    if self.lobby.sendMsg("nickserv", "info %s" % (text[6:])):
-                        self.printAction("IRC", "info requested on %s" % (text[6:]), True)
+                    if self.lobby.send_msg("nickserv", "info %s" % (text[6:])):
+                        self.print_action("IRC", "info requested on %s" % (text[6:]), True)
                     else:
-                        self.printAction("IRC", "not connected", True)
+                        self.print_action("IRC", "not connected", True)
             else:
-                if self.lobby.sendMsg(target, text):
-                    self.printMsg(client.instance.login, text, True)
+                if self.lobby.send_msg(target, text):
+                    self.print_msg(client.instance.login, text, True)
         self.chatEdit.clear()

@@ -35,7 +35,7 @@ class TURNSession:
         self.lifetime = 0
 
     @abstractmethod
-    def _write(self, bytes):
+    def _write(self, data):
         pass
 
     @abstractmethod
@@ -71,19 +71,18 @@ class TURNSession:
     def start(self):
         self.logger.info("Requesting relay allocation")
         # Remove any previous allocation we may have
-        self._write(STUNMessage('Refresh',
-                               [('LIFETIME', 0)]).to_bytes())
+        self._write(STUNMessage('Refresh', [('LIFETIME', 0)]).to_bytes())
         # Allocate a new UDP relay address
-        self._send(STUNMessage('Allocate',
-                               [('REQUESTED-TRANSPORT', 17)]))
+        self._send(STUNMessage('Allocate', [('REQUESTED-TRANSPORT', 17)]))
         self._call_in(self._retransmit, 15)
 
     def stop(self):
         self.state = TURNState.STOPPED
 
-    def is_stun_message(self, data):
+    @staticmethod
+    def is_stun_message(data):
         try:
-            channel, len = struct.unpack('!HH', data[:4])
+            channel, length = struct.unpack('!HH', data[:4])
             if 0x4000 <= channel <= 0x7FFF:
                 return True
             else:
@@ -116,6 +115,7 @@ class TURNSession:
         self._write(stun_msg.to_bytes())
 
     _channeldata_format = struct.Struct('!HH')
+
     def send_to(self, data, addr):
         if isinstance(addr, int):
             msg = struct.pack('!HH', addr, len(data))
@@ -124,9 +124,7 @@ class TURNSession:
             header = TURNSession._channeldata_format.pack(self.bindings[addr], len(data))
             self._write(header + data)
         else:
-            self._write(STUNMessage('Send',
-                                    [('XOR-PEER-ADDRESS', addr),
-                               ('DATA', data)]).to_bytes())
+            self._write(STUNMessage('Send', [('XOR-PEER-ADDRESS', addr), ('DATA', data)]).to_bytes())
 
     def _retransmit(self):
         if not self.state == TURNState.STOPPED:
@@ -161,7 +159,7 @@ class TURNSession:
                     self.logger.info("Successfully bound {}:{} to {}".format(addr, port, channel_id))
                     self.bindings[(addr, port)] = channel_id
                     self.channel_bound((addr, port), channel_id)
-                    self._pending_bindings.remove((txid, (addr,port), channel_id))
+                    self._pending_bindings.remove((txid, (addr, port), channel_id))
         elif stun_msg.method_str == 'CreatePermissionSuccess':
             pass
         elif stun_msg.method_str == 'RefreshSuccess':
@@ -190,8 +188,7 @@ class TURNSession:
         self._write(STUNMessage('Refresh').to_bytes())
         for addr, channel in self.bindings.items():
             self._write(STUNMessage('ChannelBind',
-                  [('CHANNEL-NUMBER', channel),
-                   ('XOR-PEER-ADDRESS', addr)]).to_bytes())
+                                    [('CHANNEL-NUMBER', channel), ('XOR-PEER-ADDRESS', addr)]).to_bytes())
 
     def __str__(self):
         return "TURNSession({}, {}, {}, {})".format(self.state, self.mapped_addr, self.relayed_addr, self.lifetime)

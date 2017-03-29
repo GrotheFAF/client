@@ -29,7 +29,7 @@ class ServerReconnecter(QtCore.QObject):
 
         self._reconnect_timer = QtCore.QTimer(self)
         self._reconnect_timer.setSingleShot(True)
-        self._reconnect_timer.timeout.connect(self._connection.doConnect)
+        self._reconnect_timer.timeout.connect(self._connection.do_connect)
 
         # For explicit disconnect UI
         self._enabled = True
@@ -102,7 +102,7 @@ class ServerReconnecter(QtCore.QObject):
         if self._connection_attempts < 3:
             logger.info("Reconnecting immediately")
             self._reconnect_timer.stop()
-            self._connection.doConnect()
+            self._connection.do_connect()
         elif self._reconnect_timer.isActive():
             return
         else:
@@ -149,7 +149,7 @@ class ServerConnection(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.socket = QtNetwork.QTcpSocket()
         self.socket.readyRead.connect(self.read_from_server)
-        self.socket.error.connect(self.socketError)
+        self.socket.error.connect(self.socket_error)
         self.socket.setSocketOption(QtNetwork.QTcpSocket.KeepAliveOption, 1)
         self.socket.stateChanged.connect(self.on_socket_state_change)
 
@@ -190,7 +190,7 @@ class ServerConnection(QtCore.QObject):
         self._state = value
         self.state_changed.emit(value)
 
-    def doConnect(self):
+    def do_connect(self):
         self._disconnect_requested = False
         self.state = ConnectionState.CONNECTING
         self.socket.connectToHost(self._host, self._port)
@@ -209,7 +209,7 @@ class ServerConnection(QtCore.QObject):
         self.socket.disconnectFromHost()
 
     def set_upnp(self, port):
-        fa.upnp.createPortMapping(self.socket.localAddress().toString(), port, "UDP")
+        fa.upnp.create_port_mapping(self.socket.localAddress().toString(), port, "UDP")
 
     @QtCore.pyqtSlot()
     def read_from_server(self):
@@ -282,7 +282,7 @@ class ServerConnection(QtCore.QObject):
             return
 
     @QtCore.pyqtSlot(QtNetwork.QAbstractSocket.SocketError)
-    def socketError(self, error):
+    def socket_error(self, error):
         if (error == QtNetwork.QAbstractSocket.SocketTimeoutError
                 or error == QtNetwork.QAbstractSocket.NetworkError
                 or error == QtNetwork.QAbstractSocket.ConnectionRefusedError
