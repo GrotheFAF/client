@@ -1,6 +1,4 @@
 from PyQt4 import QtCore, QtGui
-import trueskill
-from trueskill import Rating
 from fa import maps
 import util
 import os
@@ -84,8 +82,6 @@ class GameItem(QtGui.QListWidgetItem):
         self.mods = None
         self.moddisplayname = None
         self.state = None
-        self.gamequality = 0
-        self.nTeams = 0
         self.options = []
         self.players = []
 
@@ -239,21 +235,6 @@ class GameItem(QtGui.QListWidgetItem):
             num_players = message.get('num_players', 0)
             slots = message.get('max_players', 12)
 
-            self.nTeams = len(teams)
-
-            # Tuples for feeding into trueskill.
-            team_list = []
-            rating_tuples = []
-            for team in teams:
-                ratings_for_team = map(lambda player: Rating(player.rating_mean, player.rating_deviation), team)
-                rating_tuples.append(tuple(ratings_for_team))
-                team_list.append(str(len(team)))
-
-            try:
-                self.gamequality = 100*round(trueskill.quality(rating_tuples), 2)
-            except ValueError:
-                self.gamequality = 0
-
             # Alternate icon: If private game, use game_locked icon. Otherwise, use preview icon from map library.
             if refresh_map_icon:
                 if self.password_protected:
@@ -266,15 +247,20 @@ class GameItem(QtGui.QListWidgetItem):
 
                 self.setIcon(icon)
 
-            if self.gamequality == 0:
-                quality_str = "? %"
-            else:
-                quality_str = str(self.gamequality)+" %"
+            if len(teams) > 1:
+                # list of team sizes
+                team_list = []
+                for team in teams:
+                    team_list.append(str(len(team)))
 
-            if len(team_list) > 1:
                 team_str = "<font size='-1'> in </font>" + " vs ".join(team_list)
+                if len(observers) > 0:
+                    team_str += " + " + str(len(observers)) + "O."
             else:
-                team_str = ""
+                if len(observers) > 0:
+                    team_str = " " + str(len(observers)) + " O."
+                else:
+                    team_str = ""
 
             if self.hostid == -1:  # user offline (?)
                 self.host += " <font color='darkred'>(offline)</font>"
@@ -285,11 +271,11 @@ class GameItem(QtGui.QListWidgetItem):
             if self.mod == "faf" or self.mod == "coop":
                 self.setText(self.FORMATTER_FAF.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
                                                        title=self.title, host=self.host, players=num_players,
-                                                       teams=team_str, gamequality=quality_str))
+                                                       teams=team_str, avgrating=self.average_rating))
             else:
                 self.setText(self.FORMATTER_MOD.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
                                                        title=self.title, host=self.host, players=num_players,
-                                                       teams=team_str, mod=self.mod, gamequality=quality_str))
+                                                       teams=team_str, mod=self.mod, avgrating=self.average_rating))
         elif self.state != "playing":
             self.state = "funky"
 
@@ -332,7 +318,7 @@ class GameItem(QtGui.QListWidgetItem):
                 if i == 1:
                     player_html = "<tr><td><img src='%s'></td><td align='left' " \
                                     "valign='middle' width='135'>%s</td></tr>" % (country, player_str)
-                elif i == self.nTeams:
+                elif i == len(teams):
                     player_html = "<tr><td align='right' valign='middle' width='135'>%s</td>" \
                                     "<td><img src='%s'></td></tr>" % (player_str, country)
                 else:
