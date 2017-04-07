@@ -109,9 +109,9 @@ class ReplayRecorder(QtCore.QObject):
             progress.close()
 
         self.relaySocket.disconnectFromHost()
-        
+
         self.write_replay_file()
-        
+
         self.done()
 
     def write_replay_file(self):
@@ -121,16 +121,16 @@ class ReplayRecorder(QtCore.QObject):
                 self.__logger.info("Found Complete Replay Info")
             else:
                 self.__logger.warn("Replay Info not Complete")
-            
+
             self.replayInfo = fa.instance.info
-                 
+
         self.replayInfo['game_end'] = time.time()  # this is closing FA time, not game end time
-        
+
         filename = os.path.join(util.REPLAY_DIR, str(self.replayInfo['uid']) + "-" + self.replayInfo['recorder']
                                 + ".fafreplay")
         self.__logger.info("Writing local replay as " + filename + ", containing " + str(self.replayData.size())
                            + " bytes of replay data.")
-               
+
         replay = QtCore.QFile(filename)
         replay.open(QtCore.QIODevice.WriteOnly | QtCore.QIODevice.Text)
         replay.write(json.dumps(self.replayInfo))  # Text 'header' of replay file

@@ -3,6 +3,7 @@ from fa import maps
 import util
 import os
 from games.moditem import mod_invisible
+import traceback
 import client
 
 import logging
@@ -76,7 +77,7 @@ class GameItem(QtGui.QListWidgetItem):
         self.mapdisplayname = ""
         self.title = None
         self.host = ""
-        self.hostid = -1
+        self.host_id = -1
         self.password_protected = False
         self.mod = None
         self.mods = None
@@ -89,7 +90,7 @@ class GameItem(QtGui.QListWidgetItem):
 
     def url(self, player_id=None):  # <- update
         if not player_id:
-            player_id = self.hostid  # <- announce_replay
+            player_id = self.host_id  # <- announce_replay
 
         if self.state == "playing":
             url = QtCore.QUrl()
@@ -112,7 +113,7 @@ class GameItem(QtGui.QListWidgetItem):
 
     @QtCore.pyqtSlot()
     def announce_replay(self):  # <- update - timer
-        if not client.instance.players.is_friend(self.hostid):
+        if not client.instance.players.is_friend(self.host_id):
             return
 
         if not self.state == "playing":  # game already over
@@ -131,7 +132,7 @@ class GameItem(QtGui.QListWidgetItem):
 
     @QtCore.pyqtSlot()
     def announce_hosting(self):  # <- update
-        if not client.instance.players.is_friend(self.hostid) or self.isHidden():
+        if not client.instance.players.is_friend(self.host_id) or self.isHidden():
             return
 
         if not self.state == "open":
@@ -161,7 +162,7 @@ class GameItem(QtGui.QListWidgetItem):
         """
 
         if old_client:
-            logger.error('gamesitem.update called with 3 args')
+            logger.error('GameItem.update called with 3 args')
             logger.error(traceback.format_stack())
 
         self.title = message['title']  # can be renamed in Lobby (now)
@@ -174,11 +175,11 @@ class GameItem(QtGui.QListWidgetItem):
             self.host = message['host']
 
         if 'host_id' in message:
-            self.hostid = message['host_id']
-        elif self.hostid == -1:  # fresh game
-            self.hostid = client.instance.players.get_id(self.host)
-        elif self.hostid != client.instance.players.get_id(self.host):  # somethings funny (offline)
-            self.hostid = client.instance.players.get_id(self.host)
+            self.host_id = message['host_id']
+        elif self.host_id == -1:  # fresh game
+            self.host_id = client.instance.players.get_id(self.host)
+        elif self.host_id != client.instance.players.get_id(self.host):  # somethings funny (offline)
+            self.host_id = client.instance.players.get_id(self.host)
 
         # Map preview code
         if self.mapname != message['mapname']:
@@ -255,16 +256,16 @@ class GameItem(QtGui.QListWidgetItem):
 
                 team_str = "<font size='-1'> in </font>" + " vs ".join(team_list)
                 if len(observers) > 0:
-                    team_str += " + " + str(len(observers)) + "O."
+                    team_str += "<font size='-1'> + " + str(len(observers)) + " O.</font>"
             else:
                 if len(observers) > 0:
-                    team_str = " " + str(len(observers)) + " O."
+                    team_str = "<font size='-1'> " + str(len(observers)) + " O.</font>"
                 else:
                     team_str = ""
 
-            if self.hostid == -1:  # user offline (?)
+            if self.host_id == -1:  # user offline (?)
                 self.host += " <font color='darkred'>(offline)</font>"
-            color = client.instance.players.get_user_color(self.hostid)
+            color = client.instance.players.get_user_color(self.host_id)
 
             self.edit_tooltip(teams, observers)
 
@@ -355,14 +356,14 @@ class GameItem(QtGui.QListWidgetItem):
         if not client.instance: return True  # If not initialized...
 
         # Friend games are on top
-        if self.hostid == -1:
+        if self.host_id == -1:
             self_is_friend = False
         else:
-            self_is_friend = client.instance.players.is_friend(self.hostid)
-        if other.hostid == -1:
+            self_is_friend = client.instance.players.is_friend(self.host_id)
+        if other.host_id == -1:
             other_is_friend = False
         else:
-            other_is_friend = client.instance.players.is_friend(other.hostid)
+            other_is_friend = client.instance.players.is_friend(other.host_id)
         if self_is_friend and not other_is_friend:
             return True
         if not self_is_friend and other_is_friend:
