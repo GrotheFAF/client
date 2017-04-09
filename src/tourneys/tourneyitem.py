@@ -94,9 +94,9 @@ class TourneyItem(QtGui.QListWidgetItem):
             if old_state != self.state and self.state == "started" and player["name"] == client.instance.login:
                 channel = "#" + self.title.replace(" ", "_")
                 client.instance.autoJoin.emit([channel])
-                QtGui.QMessageBox.information(client.instance, "Tournament started !", "Your tournament has started !\n"
-                                                                                       "You have automatically joined "
-                                                                                       "the tournament channel.", 0x400)
+                QtGui.QMessageBox.information(client.instance, "Tournament started !",
+                                              "Your tournament has started !\nYou have automatically joined "
+                                              "the tournament channel.", QtGui.QMessageBox.Ok)
 
         playerstring = "<br/>".join(self.playersname)
 

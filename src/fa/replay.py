@@ -38,7 +38,8 @@ def replay(source, detach=False):
 
                     if binary.size() == 0:
                         logger.info("Invalid replay")
-                        QtGui.QMessageBox.critical(None, "FA Forever Replay", "Sorry, this replay is corrupted.", 0x400)
+                        QtGui.QMessageBox.critical(None, "FA Forever Replay", "Sorry, this replay is corrupted."
+                                                   , "Bummer!")
                         return False
 
                     scfa_replay = QtCore.QFile(os.path.join(util.CACHE_DIR, "temp.scfareplay"))
@@ -70,7 +71,8 @@ def replay(source, detach=False):
                     version = parser.get_version()
                 else:
                     QtGui.QMessageBox.critical(None, "FA Forever Replay", "Sorry, FAF has no idea how to replay "
-                                                                          "this file:<br/><b>" + source + "</b>", 0x400)
+                                                                          "this file:<br/><b>" + source + "</b>"
+                                               , "Stupid!")
 
                 logger.info("Replaying " + str(arg_string) + " with mod " + str(mod) + " on map " + str(mapname))
                 
@@ -96,14 +98,14 @@ def replay(source, detach=False):
             else:
                 QtGui.QMessageBox.critical(None, "FA Forever Replay",
                                            "App doesn't know how to play replays from that scheme:<br/><b>" +
-                                           url.scheme() + "</b>", 0x0400)
+                                           url.scheme() + "</b>", "Stupid App!")
                 return False
 
                 # We couldn't construct a decent argument format to tell ForgedAlliance for this replay
         if not arg_string:
             QtGui.QMessageBox.critical(None, "FA Forever Replay",
                                        "App doesn't know how to play replays from that source:<br/><b>" +
-                                       str(source) + "</b>", 0x0400)
+                                       str(source) + "</b>", "Stupid App!")
             return False
 
         # Launch preparation: Start with an empty arguments list

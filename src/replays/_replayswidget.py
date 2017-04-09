@@ -136,7 +136,7 @@ class ReplaysWidget(BaseClass, FormClass):
     @staticmethod
     def finish_request(reply):
         if reply.error() != QNetworkReply.NoError:
-            QtGui.QMessageBox.warning(client.instance, "Network Error", reply.errorString(), "")
+            QtGui.QMessageBox.warning(client.instance, "Network Error", reply.errorString(), QtGui.QMessageBox.Ok)
         else:
             faf_replay = QtCore.QFile(os.path.join(util.CACHE_DIR, "temp.fafreplay"))
             faf_replay.open(QtCore.QIODevice.WriteOnly | QtCore.QIODevice.Truncate)
@@ -201,10 +201,10 @@ class ReplaysWidget(BaseClass, FormClass):
         self.searchInfoLabel.setText("Searching...")
         self.connect_to_replayvault()
         self.send(dict(command="list"))
-        self.minRating.setValue(0)
-        self.mapName.setText("")
         self.playerName.setText("")
+        self.mapName.setText("")
         self.modList.setCurrentIndex(0)  # "All"
+        self.minRating.setValue(0)
 
     def replay_vault(self, message):
         action = message["action"]

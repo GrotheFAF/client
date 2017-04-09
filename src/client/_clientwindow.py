@@ -765,7 +765,7 @@ class ClientWindow(FormClass, BaseClass):
         if result == QtGui.QMessageBox.Yes:
             util.settings.clear()
             util.settings.sync()
-            QtGui.QMessageBox.information(client.instance, "Restart Needed", "FAF will quit now.", 0x00000400)  # OK
+            QtGui.QMessageBox.information(client.instance, "Restart Needed", "FAF will quit now.", "Quit")
             QtGui.QApplication.quit()
 
     @QtCore.pyqtSlot()
@@ -777,7 +777,7 @@ class ClientWindow(FormClass, BaseClass):
     def clear_cache(self):
         changed = util.clear_directory(util.CACHE_DIR)
         if changed:
-            QtGui.QMessageBox.information(client.instance, "Restart Needed", "FAF will quit now.", 0x00000400)  # OK
+            QtGui.QMessageBox.information(client.instance, "Restart Needed", "FAF will quit now.", "Quit")
             QtGui.QApplication.quit()
 
     # Clear the online users lists
@@ -944,13 +944,13 @@ class ClientWindow(FormClass, BaseClass):
         logger.error("FA has died with error: " + fa.instance.errorString())
         if error_code == 0:
             logger.error("FA has failed to start")
-            QtGui.QMessageBox.critical(client.instance, "Error from FA", "FA has failed to start.", 0x0400)  # ok
+            QtGui.QMessageBox.critical(client.instance, "Error from FA", "FA has failed to start.", "Sad!")
         elif error_code == 1:
             logger.error("FA has crashed or killed after starting")
         else:
             text = "FA has failed to start with error code: " + str(error_code)
             logger.error(text)
-            QtGui.QMessageBox.critical(client.instance, "Error from FA", text, 0x0400)  # ok
+            QtGui.QMessageBox.critical(client.instance, "Error from FA", text, QtGui.QMessageBox.Ok)
         self.gameExit.emit()
 
     @QtCore.pyqtSlot(int)
@@ -1335,7 +1335,7 @@ class ClientWindow(FormClass, BaseClass):
                 self.tray.showMessage("Scores", message["text"], QtGui.QSystemTrayIcon.Information, 3500)
                 self.localBroadcast.emit("Scores", message["text"])
             else:
-                QtGui.QMessageBox.information(client.instance, "Notice from Server", message["text"], 0x00000400)
+                QtGui.QMessageBox.information(client.instance, "Notice from Server", message["text"], "Ok")
 
         if message["style"] == "kill":
             logger.info("Server has killed your Forged Alliance Process.")

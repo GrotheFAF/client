@@ -123,7 +123,8 @@ class AvatarWidget(QtGui.QDialog):
                                                                description=text, file=file_data))
 
             else:
-                QtGui.QMessageBox.warning(self, "Bad image", "The image must be in png, format is 40x20 !", 0x0400)
+                QtGui.QMessageBox.warning(self, "Bad image", "The image must be in png, format is 40x20 !"
+                                          , QtGui.QMessageBox.Ok)
 
     def finish_request(self, reply):
 

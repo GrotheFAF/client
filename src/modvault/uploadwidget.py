@@ -44,7 +44,7 @@ class UploadModWidget(FormClass, BaseClass):
         n = self.Name.text()
         if any([(i in n) for i in '"<*>|?/\\:']):
             QtGui.QMessageBox.information(client.instance, "Invalid Name",
-                                          "The mod name contains invalid characters: /\\<>|?:\"", 0x0400)
+                                          "The mod name contains invalid characters: /\\<>|?:\"", QtGui.QMessageBox.Ok)
             return
 
         iconpath = modvault.icon_path_to_full(self.modinfo.icon)
@@ -56,10 +56,10 @@ class UploadModWidget(FormClass, BaseClass):
             infolder = False
 
         if iconpath != "" and not infolder:
-            QtGui.QMessageBox.information(client.instance, "Invalid Icon File", "The file %s is not located inside the "
-                                                                                "modfolder. Copy the icon file to your "
-                                                                                "modfolder and change the mod_info.lua "
-                                                                                "accordingly" % iconpath, 0x0400)
+            QtGui.QMessageBox.information(client.instance, "Invalid Icon File",
+                                          "The file %s is not located inside the modfolder. Copy the icon file to your "
+                                          "modfolder and change the mod_info.lua accordingly" % iconpath,
+                                          QtGui.QMessageBox.Ok)
             return
 
         try:
@@ -70,7 +70,7 @@ class UploadModWidget(FormClass, BaseClass):
             temp.flush()
         except:
             QtGui.QMessageBox.critical(client.instance, "Mod uploading error",
-                                       "Something went wrong zipping the mod files.", 0x0400)
+                                       "Something went wrong zipping the mod files.", QtGui.QMessageBox.Ok)
             return
 
         qfile = QtCore.QFile(temp.name)
@@ -92,18 +92,19 @@ class UploadModWidget(FormClass, BaseClass):
             if not succes:
                 QtGui.QMessageBox.information(client.instance, "Invalid Icon File",
                                               "Because FAF can't read DDS files, it tried to convert it to a png. This"
-                                              " failed. Try something else", 0x0400)
+                                              " failed. Try something else", QtGui.QMessageBox.Ok)
                 return False
         try:
             self.Thumbnail.setPixmap(util.pix_map(iconfilename, False))
         except:
             QtGui.QMessageBox.information(client.instance, "Invalid Icon File",
-                                          "This was not a valid icon file. Please pick a png or jpeg", 0x0400)
+                                          "This was not a valid icon file. Please pick a png or jpeg",
+                                          QtGui.QMessageBox.Ok)
             return False
         self.modinfo.thumbnail = modvault.full_path_to_icon(iconfilename)
         self.IconURI.setText(iconfilename)
         return True
-    
+
 
 # from http://stackoverflow.com/questions/1855095/how-to-create-a-zip-archive-of-a-directory-in-python
 def zipdir(path, zipf, fname):

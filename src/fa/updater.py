@@ -243,14 +243,14 @@ class Updater(QtCore.QObject):
                 logger.debug("File downloaded successfully.")
                 return True
             else:
-                QtGui.QMessageBox.information(None, "Aborted", "Download not complete.", 0x0400)
+                QtGui.QMessageBox.information(None, "Aborted", "Download not complete.", QtGui.QMessageBox.Ok)
                 logger.warn("File download not complete.")
                 return False
         except:
             logger.error("Updater error: ", exc_info=sys.exc_info())
             QtGui.QMessageBox.information(None, "Download Failed",
                                           "The file wasn't properly sent by the server. <br/><b>Try again later.</b>",
-                                          0x0400)
+                                          QtGui.QMessageBox.Ok)
             return False
 
     def update_files(self, destination, filegroup):
@@ -446,10 +446,12 @@ class Updater(QtCore.QObject):
             pass  # The user knows damn well what happened here.
         elif self.result == self.RESULT_PASS:
             QtGui.QMessageBox.information(QtGui.QApplication.activeWindow(), "Installation Required",
-                                          "You can't play without a legal version of Forged Alliance.", 0x0400)
+                                          "You can't play without a legal version of Forged Alliance.",
+                                          QtGui.QMessageBox.Ok)
         elif self.result == self.RESULT_BUSY:
             QtGui.QMessageBox.information(QtGui.QApplication.activeWindow(), "Server Busy",
-                                          "The Server is busy preparing new patch files.<br/>Try again later.", 0x0400)
+                                          "The Server is busy preparing new patch files.<br/>Try again later.",
+                                          QtGui.QMessageBox.Ok)
         elif self.result == self.RESULT_FAILURE:
             failure_dialog()
 

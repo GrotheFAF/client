@@ -178,7 +178,7 @@ class ModVault(FormClass, BaseClass):
                                  " warnings.")
                     logger.debug(modinfofile.errorMsg)
                     QtGui.QMessageBox.critical(client.instance, "Lua parsing error", modinfofile.errorMsg +
-                                               "\nMod uploading cancelled.", 0x0400)  # Ok
+                                               "\nMod uploading cancelled.", QtGui.QMessageBox.Ok)
                 else:
                     if modinfofile.warning:
                         uploadmod = QtGui.QMessageBox.question(client.instance, "Lua parsing warning",
@@ -193,8 +193,8 @@ class ModVault(FormClass, BaseClass):
                         dialog = UploadModWidget(self, mod_dir, modinfo)
                         dialog.exec_()
             else:
-                QtGui.QMessageBox.information(client.instance, "Mod selection", "This folder doesn't contain a "
-                                                                                "mod_info.lua file", 0x0400)  # Ok
+                QtGui.QMessageBox.information(client.instance, "Mod selection",
+                                              "This folder doesn't contain a mod_info.lua file", QtGui.QMessageBox.Ok)
 
     @QtCore.pyqtSlot()
     def tab_opened(self):

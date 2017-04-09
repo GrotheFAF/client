@@ -67,7 +67,8 @@ class GameProcess(QtCore.QProcess):
                 self.startDetached(executable, arguments, os.path.dirname(executable))
             return True
         else:
-            QtGui.QMessageBox.warning(None, "ForgedAlliance.exe", "Another instance of FA is already running.", 0x0400)
+            QtGui.QMessageBox.warning(None, "ForgedAlliance.exe", "Another instance of FA is already running.",
+                                      QtGui.QMessageBox.Ok)
             return False
 
     def running(self):
@@ -77,7 +78,7 @@ class GameProcess(QtCore.QProcess):
         if self.running():
             QtGui.QMessageBox.warning(QtGui.QApplication.activeWindow(), "ForgedAllianceForever.exe",
                                       "<b>Forged Alliance is already running.</b><br/>You can only run one instance of"
-                                      " the game.", 0x0400)  # Ok
+                                      " the game.", QtGui.QMessageBox.Ok)
             return False
         return True
 

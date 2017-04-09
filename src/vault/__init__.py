@@ -129,7 +129,7 @@ class MapVault(QtCore.QObject):
                         client.instance,
                         "Lua parsing error",
                         "{}\nMap uploading cancelled.".format(
-                            scenariolua.errorMsg), 0x0400)
+                            scenariolua.errorMsg), QtGui.QMessageBox.Ok)
                 else:
                     if scenariolua.warning:
                         uploadmap = QtGui.QMessageBox.question(
@@ -169,7 +169,7 @@ class MapVault(QtCore.QObject):
                                 client.instance,
                                 "Map uploading error",
                                 "Couldn't make previews for {}\n"
-                                "Map uploading cancelled.".format(map_name), 0x0400)
+                                "Map uploading cancelled.".format(map_name), QtGui.QMessageBox.Ok)
                             return None
 
                         qfile = QtCore.QFile(tmp_file.name)
@@ -181,7 +181,7 @@ class MapVault(QtCore.QObject):
                 QtGui.QMessageBox.information(
                     client.instance,
                     "Map selection",
-                    "This folder doesn't contain valid map data.", 0x0400)
+                    "This folder doesn't contain valid map data.", QtGui.QMessageBox.Ok)
 
     @QtCore.pyqtSlot(str)
     def download_map(self, link):

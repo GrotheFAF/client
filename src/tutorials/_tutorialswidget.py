@@ -29,7 +29,7 @@ class TutorialsWidget(FormClass, BaseClass):
 
     def finish_replay(self, reply):
         if reply.error() != QNetworkReply.NoError:
-            QtGui.QMessageBox.warning(self, "Network Error", reply.errorString(), 0x0400)
+            QtGui.QMessageBox.warning(self, "Network Error", reply.errorString(), QtGui.QMessageBox.Ok)
         else:
             filename = os.path.join(util.CACHE_DIR, str("tutorial.fafreplay"))
             replay = QtCore.QFile(filename)

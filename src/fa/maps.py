@@ -515,13 +515,13 @@ def download_map(name, silent=False):
                 None,
                 "Map not downloadable",
                 "<b>This map was not found in the vault (or is broken).</b>"
-                "<br/>You need to get it from somewhere else in order to use it.", 0x0400)
+                "<br/>You need to get it from somewhere else in order to use it.", QtGui.QMessageBox.Ok)
         else:
             logger.error("Download Exception", exc_info=sys.exc_info())
             QtGui.QMessageBox.information(
                 None,
                 "Map installation failed",
-                "<b>This map could not be installed (please report this map or bug).</b>", 0x0400)
+                "<b>This map could not be installed (please report this map or bug).</b>", QtGui.QMessageBox.Ok)
         return False
 
     # Count the map downloads

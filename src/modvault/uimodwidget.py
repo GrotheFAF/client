@@ -44,7 +44,8 @@ class UIModWidget(FormClass, BaseClass):
         success = modvault.set_active_mods(selected_mods, False)
         if not success:
             QtGui.QMessageBox.information(None, "Error", "Could not set the active UI mods. Maybe something is wrong "
-                                                         "with your game.prefs file. Please send your log.", 0x0400)
+                                                         "with your game.prefs file. Please send your log.",
+                                          QtGui.QMessageBox.Ok)
         self.done(1)
 
     @QtCore.pyqtSlot(QtGui.QListWidgetItem)

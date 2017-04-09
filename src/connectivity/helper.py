@@ -162,7 +162,7 @@ class ConnectivityHelper(QObject):
             QtGui.QMessageBox.warning(None, "Traffic Blocked",
                                       "Your outbound traffic appears to be blocked. Try restarting FAF. <br/> If the "
                                       "error persists please contact a moderator and send your logs. <br/> We are "
-                                      "already working on a solution to this problem.", 0x0400)
+                                      "already working on a solution to this problem.", QtGui.QMessageBox.Ok)
         else:
             host, port = addr.split(':')
             self.state, self.mapped_address = state, (host, port)

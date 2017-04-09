@@ -268,7 +268,7 @@ def _do_set_theme(new_theme):
                 "Invalid Theme",
                 "Failed to read the version of the following theme:<br/><b>" +
                 new_theme +
-                "</b><br/><i>Contact the maker of the theme for a fix!</i>", 0x0400)
+                "</b><br/><i>Contact the maker of the theme for a fix!</i>", QtGui.QMessageBox.Ok)
         logger.error("Error reading theme version: " + new_theme + " in directory " + test_dir)
         return theme_changed()
 
@@ -296,7 +296,7 @@ def _do_set_theme(new_theme):
                     QtGui.QApplication.activeWindow(),
                     "Notice",
                     "If the applied theme causes crashes, clear the '[theme_version_override]'<br/>" +
-                    "section of your FA client config file.", 0x0400)
+                    "section of your FA client config file.", QtGui.QMessageBox.Ok)
             logger.info("Overriding version of theme " + new_theme + "with " + VERSION_STRING)
             override_config = "theme_version_override/" + new_theme
             Settings.set(override_config, VERSION_STRING)
@@ -325,7 +325,7 @@ def set_theme(theme, restart=True):
     settings.sync()
 
     if theme_set and restart:
-        QtGui.QMessageBox.information(None, "Restart Needed", "FAF will quit now.", 0x0400)
+        QtGui.QMessageBox.information(None, "Restart Needed", "FAF will quit now.", QtGui.QMessageBox.Ok)
         QtGui.QApplication.quit()
 
 
@@ -691,10 +691,15 @@ def unique_id(user, session):
         try:
             _, wmi_state, _, _, _, _, _ = win32serviceutil.QueryServiceStatus('Winmgmt')
             if wmi_state != win32service.SERVICE_RUNNING:
-                QMessageBox.critical(None, "WMI service not running", "FAF requires the 'Windows Management Instrumentation' service for smurf protection to be running. "
-                                     "Please run 'service.msc', open the 'Windows Management Instrumentation' service, set the startup type to automatic and restart FAF.")
+                QMessageBox.critical(None, "WMI service not running",
+                                     "FAF requires the 'Windows Management Instrumentation' service for smurf "
+                                     "protection to be running. Please run 'service.msc', open the 'Windows Management "
+                                     "Instrumentation' service, set the startup type to automatic and restart FAF.",
+                                     QtGui.QMessageBox.Ok)
         except Exception as e:
-            QMessageBox.critical(None, "WMI service missing", "FAF requires the 'Windows Management Instrumentation' service for smurf protection. This service could not be found.")
+            QMessageBox.critical(None, "WMI service missing",
+                                 "FAF requires the 'Windows Management Instrumentation' service for smurf protection. "
+                                 "This service could not be found.", QtGui.QMessageBox.Ok)
 
     if sys.platform == 'win32':
         exe_path = os.path.join(fafpath.get_libdir(), "faf-uid.exe")

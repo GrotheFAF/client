@@ -233,7 +233,8 @@ class GamesWidget(FormClass, BaseClass):
             race = Factions.get_random_faction()
 
         if fa.instance.running():
-            QtGui.QMessageBox.information(client.instance, "ForgedAllianceForever.exe", "FA is already running.", "")
+            QtGui.QMessageBox.information(client.instance, "ForgedAllianceForever.exe", "FA is already running.",
+                                          QtGui.QMessageBox.Ok)
             self.stop_search_ranked()
             return
 

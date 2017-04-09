@@ -405,12 +405,11 @@ def download_mod(item):  # most of this function is stolen from fa.maps.download
             dirname = zfile.namelist()[0].split('/', 1)[0]
             if os.path.exists(os.path.join(MODFOLDER, dirname)):
                 oldmod = get_mod_info_from_folder(dirname)
-                result = QtGui.QMessageBox.question(None, "Modfolder already exists", "The mod is to be downloaded to "
-                                                                                      "the folder '%s'. This folder "
-                                                                                      "already exists and contains "
-                                                                                      "<b>%s</b>. Do you want to "
-                                                                                      "overwrite this mod?" %
-                                                    (dirname, oldmod.totalname), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+                result = QtGui.QMessageBox.question(None, "Modfolder already exists",
+                                                    "The mod is to be downloaded to the folder '%s'. This folder "
+                                                    "already exists and contains <b>%s</b>. Do you want to overwrite "
+                                                    "this mod?" % (dirname, oldmod.totalname),
+                                                    QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
                 if result == QtGui.QMessageBox.No:
                     return False
                 remove_mod(oldmod)
@@ -425,13 +424,15 @@ def download_mod(item):  # most of this function is stolen from fa.maps.download
         logger.warn("Mod download or extraction failed for: " + link)        
         if sys.exc_type is urllib2.HTTPError:
             logger.warning("ModVault download failed with HTTPError, mod probably not in vault (or broken).")
-            QtGui.QMessageBox.information(None, "Mod not downloadable", "<b>This mod was not found in the vault (or is"
-                                                                        " broken).</b><br/>You need to get it from some"
-                                                                        "where else in order to use it.", 0x0400)
+            QtGui.QMessageBox.information(None, "Mod not downloadable",
+                                          "<b>This mod was not found in the vault (or is broken).</b><br/>"
+                                          "You need to get it from somewhere else in order to use it.",
+                                          QtGui.QMessageBox.Ok)
         else:                
             logger.error("Download Exception", exc_info=sys.exc_info())
-            QtGui.QMessageBox.information(None, "Mod installation failed", "<b>This mod could not be installed (please "
-                                                                           "report this map or bug).</b>", 0x0400)
+            QtGui.QMessageBox.information(None, "Mod installation failed",
+                                          "<b>This mod could not be installed (please report this map or bug).</b>",
+                                          QtGui.QMessageBox.Ok)
         return False
 
 
