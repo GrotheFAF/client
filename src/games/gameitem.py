@@ -248,6 +248,7 @@ class GameItem(QtGui.QListWidgetItem):
 
                 self.setIcon(icon)
 
+            # Extra teams + observer info
             if len(teams) > 1:
                 # list of team sizes
                 team_list = []
@@ -255,13 +256,15 @@ class GameItem(QtGui.QListWidgetItem):
                     team_list.append(str(len(team)))
 
                 team_str = "<font size='-1'> in </font>" + " vs ".join(team_list)
-                if len(observers) > 0:
-                    team_str += "<font size='-1'> + " + str(len(observers)) + " O.</font>"
-            else:
-                if len(observers) > 0:
-                    team_str = "<font size='-1'> " + str(len(observers)) + " O.</font>"
-                else:
+            elif len(teams) == 1:  # only one team
+                if len(observers) > 0:  # only extra info if also observer
+                    team_str = "<font size='-1'> in </font>" + str(len(teams[0]))
+                else:  # all in one team no observer -> no extra info
                     team_str = ""
+            else:  # no team
+                team_str = ""
+            if len(observers) > 0:
+                team_str += "<font size='-1'> + " + str(len(observers)) + " O.</font>"
 
             if self.host_id == -1:  # user offline (?)
                 self.host += " <font color='darkred'>(offline)</font>"
