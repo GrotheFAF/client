@@ -3,7 +3,7 @@ import random
 
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import Qt
-
+import time
 import util
 from games.gameitem import GameItem, GameItemDelegate
 from games.moditem import ModItem, mod_invisible
@@ -77,6 +77,8 @@ class GamesWidget(FormClass, BaseClass):
 
         self.gameList.setItemDelegate(GameItemDelegate(self))
         self.gameList.itemDoubleClicked.connect(self.game_doubleclicked)
+        self.gameList.itemSelectionChanged.connect(self.game_selection_changed)
+        self.selected_game = None
         self.gameList.sortBy = self.sort_games_index  # Default Sorting is By Players count
 
         self.sortGamesComboBox.addItems(['By Players', 'By avg. Player Rating', 'By Map', 'By Host', 'By Age'])
@@ -168,6 +170,7 @@ class GamesWidget(FormClass, BaseClass):
         self.rankedPlay.clicked.connect(self.start_subrandom_ranked_search)
         self.rankedPlay.show()
         self.labelRankedHint.show()
+        self.labelGameInfo.hide()
         for faction, icon in self._ranked_icons.items():
             try:
                 icon.clicked.disconnect()
@@ -190,10 +193,10 @@ class GamesWidget(FormClass, BaseClass):
         uid = message["uid"]
 
         if uid not in self.games:
-            # if message['state'] == 'playing':  # already started games
-            #    if time.time() - message['launched_at'] > 5*60+10:  # ignore older games
-            #        self.games_ignored_counter += 1  # test
-            #        return
+            if message['state'] == 'playing':  # game already started before client start
+                if time.time() - message['launched_at'] > 12*3600:  # ignore stale games (>12 hours)
+                    self.games_ignored_counter += 1  # test
+                    return
 
             self.games[uid] = GameItem(uid)
             self.gameList.addItem(self.games[uid])
@@ -203,7 +206,17 @@ class GamesWidget(FormClass, BaseClass):
             if message['state'] == 'open' and not message['password_protected']:
                 client.instance.notificationSystem.on_event(ns.Notifications.NEW_GAME, message)
         else:
+            # if there is a game selected and the message-game was the selected
+            if self.selected_game and self.selected_game.uid == uid:
+                if self.games[uid].state == "open" and message['state'] == "playing":  # game started
+                    self.selected_game = None  # clear selected
+                    self.labelGameInfo.hide()  # hide GameInfo
+
             self.games[uid].update(message)
+
+            # if there is a game selected and the message-game was the selected
+            if self.selected_game and self.selected_game.uid == uid:
+                self.game_selection_changed()  # update GameInfo of selected game
 
         # Hide private games
         if self.hideGamesWithPw.isChecked() and message['state'] == 'open' and message['password_protected']:
@@ -215,6 +228,8 @@ class GamesWidget(FormClass, BaseClass):
                 self.gameList.takeItem(self.gameList.row(self.games[uid]))
                 del self.games[uid]
                 self.gameitem_counter -= 1  # test
+            else:  # an ignored game get closed after >12 hours?
+                self.games_ignored_counter -= 1  # test
 
     def update_playbutton(self):
         if self.searching:
@@ -294,6 +309,19 @@ class GamesWidget(FormClass, BaseClass):
                     client.instance.join_game(uid=item.uid, password=passw)
             else:
                 client.instance.join_game(uid=item.uid)
+
+    @QtCore.pyqtSlot(QtGui.QListWidget)
+    def game_selection_changed(self):
+        if self.gameList.selectedItems():
+            for game_item in self.gameList.selectedItems():
+                self.selected_game = game_item
+            info_str = self.selected_game.toolTip()  # yeah I know, dirty dirty dirty
+            self.labelGameInfo.setText(info_str.replace("width='135'", "width='94'").replace('acing="5"', 'acing="0"').
+                                       replace("size='+5'", "size='+2'"))
+            self.labelGameInfo.show()
+        else:
+            self.selected_game = None
+            self.labelGameInfo.hide()
 
     @QtCore.pyqtSlot(QtGui.QListWidgetItem)
     def hostgame_clicked(self, item):

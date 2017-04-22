@@ -403,6 +403,14 @@ QLabel#titleLabel
     font-weight:bold;
 }
 
+QLabel#labelGameInfo
+{
+    color:silver;
+    border: 1px solid #353535;
+    border-radius: 3px;
+    background-color: #505050;
+}
+
 QGroupBox
 {
     margin: 5px;

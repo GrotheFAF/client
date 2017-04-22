@@ -278,11 +278,11 @@ class ReplayItem(QtGui.QTreeWidgetItem):
 
     def generate_player_html(self, i, player):
         if i == 2 and len(self.teams) == 2:
-            alignment = "right"
+            align = "right"
         else:
-            alignment = "left"
+            align = "left"
 
-        label = "<td align='%s' valign='middle' width='130'>%s (%s)</td>" % (alignment, player["name"], player["rating"])
+        label = "<td align='%s' valign='middle' width='130'>%s (%s)</td>" % (align, player["name"], player["rating"])
 
         icon_url = os.path.join(util.COMMON_DIR, "replays/%s.png" % self.retrieve_faction(player, self.mod))
 
@@ -293,7 +293,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
         else:  # no score for ladder
             score = "<td align='center' valign='middle' width='20'> </td>"
 
-        return alignment, icon, label, score
+        return align, icon, label, score
 
     @staticmethod
     def retrieve_faction(player, mod):
