@@ -32,12 +32,12 @@ class IRCPlayer(Player):
 
 
 class Formatters(object):
-    FORMATTER_ANNOUNCEMENT   = unicode(util.readfile("chat/formatters/announcement.qthtml"))
-    FORMATTER_MESSAGE        = unicode(util.readfile("chat/formatters/message.qthtml"))
-    FORMATTER_MESSAGE_AVATAR = unicode(util.readfile("chat/formatters/messageAvatar.qthtml"))
-    FORMATTER_ACTION         = unicode(util.readfile("chat/formatters/action.qthtml"))
-    FORMATTER_ACTION_AVATAR  = unicode(util.readfile("chat/formatters/actionAvatar.qthtml"))
-    FORMATTER_RAW            = unicode(util.readfile("chat/formatters/raw.qthtml"))
+    FORMATTER_ANNOUNCEMENT   = u'' + util.readfile("chat/formatters/announcement.qthtml")
+    FORMATTER_MESSAGE        = u'' + util.readfile("chat/formatters/message.qthtml")
+    FORMATTER_MESSAGE_AVATAR = u'' + util.readfile("chat/formatters/messageAvatar.qthtml")
+    FORMATTER_ACTION         = u'' + util.readfile("chat/formatters/action.qthtml")
+    FORMATTER_ACTION_AVATAR  = u'' + util.readfile("chat/formatters/actionAvatar.qthtml")
+    FORMATTER_RAW            = u'' + util.readfile("chat/formatters/raw.qthtml")
     NICKLIST_COLUMNS         = json.loads(util.readfile("chat/formatters/nicklist_columns.json"))
 
 

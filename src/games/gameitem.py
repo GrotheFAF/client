@@ -5,7 +5,7 @@ import os
 from games.moditem import mod_invisible
 import traceback
 import client
-
+import time
 import logging
 logger = logging.getLogger(__name__)
 
@@ -65,9 +65,9 @@ class GameItem(QtGui.QListWidgetItem):
     ICONSIZE = 110
     PADDING = 10
 
-    FORMATTER_FAF = unicode(util.readfile("games/formatters/faf.qthtml"))
-    FORMATTER_MOD = unicode(util.readfile("games/formatters/mod.qthtml"))
-    FORMATTER_TOOL = unicode(util.readfile("games/formatters/tool.qthtml"))
+    FORMATTER_FAF = u'' + util.readfile("games/formatters/faf.qthtml")
+    FORMATTER_MOD = u'' + util.readfile("games/formatters/mod.qthtml")
+    FORMATTER_TOOL = u'' + util.readfile("games/formatters/tool.qthtml")
 
     def __init__(self, uid, *args):
         QtGui.QListWidgetItem.__init__(self, *args)
@@ -83,6 +83,7 @@ class GameItem(QtGui.QListWidgetItem):
         self.mods = None
         self.moddisplayname = None
         self.state = None
+        self.launched_at = None
         self.options = []
         self.players = []
 
@@ -99,6 +100,7 @@ class GameItem(QtGui.QListWidgetItem):
             url.setPath(str(self.uid) + "/" + str(player_id) + ".SCFAreplay")
             url.addQueryItem("map", self.mapname)
             url.addQueryItem("mod", self.mod)
+            url.addQueryItem("uid", str(self.uid))
             return url
         elif self.state == "open":
             url = QtCore.QUrl()
@@ -113,6 +115,9 @@ class GameItem(QtGui.QListWidgetItem):
 
     @QtCore.pyqtSlot()
     def announce_replay(self):  # <- update - timer
+
+        client.instance.usersUpdated.emit(list(self.players))  # red cross to white cross
+
         if not client.instance.players.is_friend(self.host_id):
             return
 
@@ -216,13 +221,13 @@ class GameItem(QtGui.QListWidgetItem):
         self.players = []  # list of all players in all teams (without observers)
         teams = []  # list of teams of list of players in team (without observers)
         observers = []  # list of observers
-        for team_index, team in teams_map.iteritems():
+        for team_index in teams_map:
             if team_index == u'-1' or team_index == u'null':  # observers (we hope)
-                for name in team:
+                for name in teams_map[team_index]:
                     observers.append(name)
             else:  # everything else - faf, ffa and other mods
                 real_team = []
-                for name in team:
+                for name in teams_map[team_index]:
                     if name in client.instance.players:
                         self.players.append(client.instance.players[name])
                         real_team.append(client.instance.players[name])
@@ -286,7 +291,11 @@ class GameItem(QtGui.QListWidgetItem):
         # Spawn announcers: IF we had a gamestate change, show replay and hosting announcements
         if old_state != self.state:
             if self.state == "playing":  # The delay is there because we have a 5 minutes delay in the livereplay server
-                QtCore.QTimer().singleShot(5*60000, self.announce_replay)
+                self.launched_at = message['launched_at']
+                if time.time() - self.launched_at > 5*60:  # most games after client start
+                    self.announce_replay()
+                else:
+                    QtCore.QTimer().singleShot(5*60100 - 1000*(time.time() - self.launched_at), self.announce_replay)
             elif self.state == "open":  # The 3.5s delay is there because the host needs time to choose a map
                 QtCore.QTimer().singleShot(35000, self.announce_hosting)
 
@@ -302,10 +311,7 @@ class GameItem(QtGui.QListWidgetItem):
     def edit_tooltip(self, teams, observers):
 
         teams_list = []
-        i = 0
-        for team in teams:
-
-            i += 1
+        for i, team in enumerate(teams, start=1):
             players_list = ["<td><table>"]
             for player in team:
 
@@ -356,7 +362,8 @@ class GameItem(QtGui.QListWidgetItem):
 
     def __lt__(self, other):
         """ Comparison operator used for item list sorting """
-        if not client.instance: return True  # If not initialized...
+        if not client.instance:
+            return True  # If not initialized...
 
         # Friend games are on top
         if self.host_id == -1:
