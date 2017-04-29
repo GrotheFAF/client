@@ -164,7 +164,7 @@ def get_mod_info_from_zip(zfile):
                     continue
                 if filename == "mod_info.lua":
                     modinfofile = luaparser.LuaParser("mod_info.lua")
-                    modinfofile.iszip = True
+                    modinfofile.is_zip = True
                     modinfofile.zip = zip
                     r = get_mod_info(modinfofile)
     if r is None:

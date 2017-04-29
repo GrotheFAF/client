@@ -3,7 +3,7 @@ from PyQt4 import QtCore, QtGui
 import util
 from config import Settings
 
-FormClass, BaseClass = util.loadUiType("client/login.ui")
+FormClass, BaseClass = util.load_ui_type("client/login.ui")
 
 class LoginWidget(FormClass, BaseClass):
     finished = QtCore.pyqtSignal(str, str)

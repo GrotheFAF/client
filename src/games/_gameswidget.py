@@ -208,7 +208,7 @@ class GamesWidget(FormClass, BaseClass):
         else:
             # if there is a game selected and the message-game was the selected
             if self.selected_game and self.selected_game.uid == uid:
-                if self.games[uid].state == "open" and message['state'] == "playing":  # game started
+                if self.games[uid].state == "open" and message['state'] != "open":  # game started or host closed
                     self.selected_game = None  # clear selected
                     self.labelGameInfo.hide()  # hide GameInfo
 
@@ -319,7 +319,7 @@ class GamesWidget(FormClass, BaseClass):
             self.labelGameInfo.setText(info_str.replace("width='135'", "width='94'").replace('acing="5"', 'acing="0"').
                                        replace("size='+5'", "size='+2'"))
             self.labelGameInfo.show()
-        else:
+        else:  # we get here on client shutdown
             self.selected_game = None
             self.labelGameInfo.hide()
 

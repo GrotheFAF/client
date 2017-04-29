@@ -793,7 +793,7 @@ class ClientWindow(FormClass, BaseClass):
 
     @QtCore.pyqtSlot()
     def link_show_logs(self):
-        util.showDirInFileBrowser(util.LOG_DIR)
+        util.show_dir_in_file_browser(util.LOG_DIR)
 
     @QtCore.pyqtSlot()
     def connectivity_dialog(self):

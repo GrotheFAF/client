@@ -1,6 +1,5 @@
 import sys
 import os
-import subprocess
 import getpass
 import codecs
 
@@ -592,17 +591,19 @@ def wait(until):
 
     return not progress.wasCanceled()
 
-def showDirInFileBrowser(location):
+
+def show_dir_in_file_browser(location):
     QDesktopServices.openUrl(QUrl.fromLocalFile(location))
 
-def showFileInFileBrowser(location):
+
+def show_file_in_file_browser(location):
     if sys.platform == 'win32':
         # Open the directory and highlight the picked file
         _command = (u'explorer  /select, "%s"' % location).encode(sys.getfilesystemencoding())
         subprocess.Popen(_command)
     else:
         # No highlighting on cross-platform, sorry!
-        showDirInFileBrowser(os.path.dirname(location))
+        show_dir_in_file_browser(os.path.dirname(location))
 
 html_escape_table = {
     "&": "&amp;",

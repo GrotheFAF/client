@@ -68,7 +68,8 @@ class MapVault(QtCore.QObject):
         frame = self.ui.page().mainFrame()
         frame.addToJavaScriptWindowObject("webVault", self)
 
-    def __prepare_positions(self, positions, map_size):
+    @staticmethod
+    def __prepare_positions(positions, map_size):
         img_size = [256, 256]
         size = [int(map_size['0']), int(map_size['1'])]
         off_x = 0
@@ -198,4 +199,4 @@ class MapVault(QtCore.QObject):
                 QtGui.QMessageBox.Yes,
                 QtGui.QMessageBox.No)
             if show == QtGui.QMessageBox.Yes:
-                util.showDirInFileBrowser(maps.folder_for_map(name))
+                util.show_dir_in_file_browser(maps.folder_for_map(name))

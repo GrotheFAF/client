@@ -40,10 +40,10 @@ import os
 
 class LuaParser:
 
-    def __init__(self, luaPath):
-        self.iszip = False
+    def __init__(self, lua_path):
+        self.is_zip = False
         self.zip = None
-        self.__path = luaPath
+        self.__path = lua_path
         self.__keyFilter = re.compile("[\[\],'\"]")
         self.__valFilter = re.compile("[\[\]]")
         self.__searchResult = dict()
@@ -225,7 +225,7 @@ class LuaParser:
         
     def __parse_lua(self):
         # open file
-        if not self.iszip:
+        if not self.is_zip:
             f = open(self.__path, "r")
         else:
             if self.zip.testzip() is None:
