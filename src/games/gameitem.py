@@ -345,12 +345,12 @@ class GameItem(QtGui.QListWidgetItem):
         teams_str = "<td valign='middle' height='100%'><font color='black' size='+5'>VS</font></td>".join(teams_list)
 
         if len(observers) != 0:
-            observers_str = "Observers : " + ", ".join(observers) + "<br />"
+            observers_str = "Observers : " + ", ".join(observers)
         else:
             observers_str = ""
 
         if self.mods:
-            mods_str = "<br />With: " + "<br />".join(self.mods.values())
+            mods_str = "<br />With mod: " + "<br />".join(self.mods.values())
         else:
             mods_str = ""
 

@@ -369,7 +369,7 @@ QScrollBar::add-page, QScrollBar::sub-page
 }
 
 
-QCheckBox#hideGamesWithPw
+QCheckBox#hideGamesWithPw,#showWideGameInfo
 {
     color:white;
     background-color: #111111;
@@ -403,7 +403,7 @@ QLabel#titleLabel
     font-weight:bold;
 }
 
-QLabel#labelGameInfo
+QLabel#labelGameInfo,#labelWideGameInfo
 {
     color:silver;
     border: 1px solid #353535;

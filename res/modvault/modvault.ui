@@ -59,6 +59,9 @@
            <height>16777215</height>
           </size>
          </property>
+         <property name="placeholderText">
+          <string>enter just one key word</string>
+         </property>
         </widget>
        </item>
        <item>

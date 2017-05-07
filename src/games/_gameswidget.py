@@ -24,6 +24,7 @@ FormClass, BaseClass = util.load_ui_type("games/games.ui")
 class GamesWidget(FormClass, BaseClass):
 
     hide_private_games = Settings.persisted_property("play/hidePrivateGames", default_value=False, key_type=bool)
+    show_wide_game_info = Settings.persisted_property("play/showWideGameInfo", default_value=False, key_type=bool)
     sort_games_index = Settings.persisted_property("play/sortGames", default_value=0, key_type=int)  # by player count
     sub_factions = Settings.persisted_property("play/subFactions", default_value=[False, False, False, False])
 
@@ -78,7 +79,6 @@ class GamesWidget(FormClass, BaseClass):
         self.gameList.setItemDelegate(GameItemDelegate(self))
         self.gameList.itemDoubleClicked.connect(self.game_doubleclicked)
         self.gameList.itemSelectionChanged.connect(self.game_selection_changed)
-        self.selected_game = None
         self.gameList.sortBy = self.sort_games_index  # Default Sorting is By Players count
 
         self.sortGamesComboBox.addItems(['By Players', 'By avg. Player Rating', 'By Map', 'By Host', 'By Age'])
@@ -87,6 +87,9 @@ class GamesWidget(FormClass, BaseClass):
 
         self.hideGamesWithPw.stateChanged.connect(self.toggle_private_games)
         self.hideGamesWithPw.setChecked(self.hide_private_games)
+
+        self.showWideGameInfo.stateChanged.connect(self.toggle_wide_game_info)
+        self.showWideGameInfo.setChecked(self.show_wide_game_info)
 
         self.modList.itemDoubleClicked.connect(self.hostgame_clicked)
 
@@ -123,6 +126,15 @@ class GamesWidget(FormClass, BaseClass):
         for game in [self.games[game] for game in self.games
                      if self.games[game].state == 'open' and self.games[game].password_protected]:
             game.setHidden(state == Qt.Checked)
+
+    @QtCore.pyqtSlot(int)
+    def toggle_wide_game_info(self, state):
+        if self.show_wide_game_info:
+            self.labelWideGameInfo.hide()
+        else:
+            self.labelGameInfo.hide()
+        self.show_wide_game_info = state
+        self.game_selection_changed()
 
     def select_faction(self, enabled, faction=0):
         if len(self.sub_factions) < faction:
@@ -171,6 +183,7 @@ class GamesWidget(FormClass, BaseClass):
         self.rankedPlay.show()
         self.labelRankedHint.show()
         self.labelGameInfo.hide()
+        self.labelWideGameInfo.hide()
         for faction, icon in self._ranked_icons.items():
             try:
                 icon.clicked.disconnect()
@@ -178,7 +191,7 @@ class GamesWidget(FormClass, BaseClass):
                 pass
 
             icon.setChecked(self.sub_factions[faction.value-1])
-            icon.clicked.connect(partial(self.select_faction, factionID=faction.value))
+            icon.clicked.connect(partial(self.select_faction, faction=faction.value))
 
     @QtCore.pyqtSlot()
     def clear_games(self):
@@ -206,17 +219,15 @@ class GamesWidget(FormClass, BaseClass):
             if message['state'] == 'open' and not message['password_protected']:
                 client.instance.notificationSystem.on_event(ns.Notifications.NEW_GAME, message)
         else:
-            # if there is a game selected and the message-game was the selected
-            if self.selected_game and self.selected_game.uid == uid:
-                if self.games[uid].state == "open" and message['state'] != "open":  # game started or host closed
-                    self.selected_game = None  # clear selected
-                    self.labelGameInfo.hide()  # hide GameInfo
 
             self.games[uid].update(message)
 
             # if there is a game selected and the message-game was the selected
-            if self.selected_game and self.selected_game.uid == uid:
-                self.game_selection_changed()  # update GameInfo of selected game
+            if self.gameList.currentItem() and self.gameList.currentItem().uid == uid:
+                    if message['state'] != "open":  # game started or host closed
+                        self.gameList.setCurrentItem(None)  # clear currentItem (& selected) -> game_selection_changed
+                    else:
+                        self.update_selected_game_info()  # update GameInfo of selected game
 
         # Hide private games
         if self.hideGamesWithPw.isChecked() and message['state'] == 'open' and message['password_protected']:
@@ -312,16 +323,30 @@ class GamesWidget(FormClass, BaseClass):
 
     @QtCore.pyqtSlot(QtGui.QListWidget)
     def game_selection_changed(self):
-        if self.gameList.selectedItems():
-            for game_item in self.gameList.selectedItems():
-                self.selected_game = game_item
-            info_str = self.selected_game.toolTip()  # yeah I know, dirty dirty dirty
-            self.labelGameInfo.setText(info_str.replace("width='135'", "width='94'").replace('acing="5"', 'acing="0"').
-                                       replace("size='+5'", "size='+2'"))
-            self.labelGameInfo.show()
-        else:  # we get here on client shutdown
-            self.selected_game = None
-            self.labelGameInfo.hide()
+        if self.gameList.currentItem():
+            if self.show_wide_game_info:
+                self.labelWideGameInfo.show()
+            else:
+                self.labelGameInfo.show()
+            self.update_selected_game_info()
+        else:
+            if self.show_wide_game_info:
+                self.labelWideGameInfo.hide()
+            else:
+                self.labelGameInfo.hide()
+
+    def update_selected_game_info(self):
+        info_str = self.gameList.currentItem().toolTip()  # yeah I know, dirty dirty dirty
+        if self.show_wide_game_info:  # below GameListWidget
+            self.labelWideGameInfo.setText("<font color='white' size='+1'><b>&nbsp;" +
+                                           self.gameList.currentItem().title + "</b></font>" +
+                                           "<font color='silver' size='-1'>&nbsp; on map</font>&nbsp;<font color="
+                                           "'GoldenRod'><b>" + self.gameList.currentItem().mapdisplayname +
+                                           "</b></font>" + info_str)
+        else:  # on the left below mods
+            self.labelGameInfo.setText("<font color='white'><b>&nbsp;" + self.gameList.currentItem().title +
+                                       "</b></font>" + info_str.replace("width='135'", "width='94'").
+                                       replace('acing="5"', 'acing="0"').replace("size='+5'", "size='+2'"))
 
     @QtCore.pyqtSlot(QtGui.QListWidgetItem)
     def hostgame_clicked(self, item):

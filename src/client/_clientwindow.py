@@ -865,7 +865,7 @@ class ClientWindow(FormClass, BaseClass):
         self.actionSetAutoLogin.setChecked(self.remember) # FIXME - option updating is silly
 
     def get_creds_and_login(self):
-        "Try to autologin, or show login widget if we fail or can't do that."
+        # Try to autologin, or show login widget if we fail or can't do that.
         if self._autorelogin and self.password and self.login:
             if self.send_login(self.login, self.password):
                 return
@@ -891,17 +891,16 @@ class ClientWindow(FormClass, BaseClass):
         self.disconnect()
 
     def send_login(self, login, password):
-        "Send login data once we have the creds."
-        self._autorelogin = False # Fresh credentials
+        # Send login data once we have the creds.
+        self._autorelogin = False  # Fresh credentials
         if config.is_beta():    # Replace for develop here to not clobber the real pass
             password = util.password_hash("foo")
-        self.uniqueId = util.uniqueID(self.login, self.session)
+        self.uniqueId = util.unique_id(self.login, self.session)
         if not self.uniqueId:
-            QtGui.QMessageBox.critical(self,
-                "Failed to calculate UID",
-                "Failed to calculate your unique ID"
-                " (a part of our smurf prevention system).</br>"
-                "Please report this to the tech support forum!")
+            QtGui.QMessageBox.critical(self, "Failed to calculate UID",
+                                       "Failed to calculate your unique ID"
+                                       " (a part of our smurf prevention system).</br>"
+                                       "Please report this to the tech support forum!", "Very Sad!")
             return False
         self.lobby_connection.send(dict(command="hello",
                        login=login,
@@ -909,7 +908,6 @@ class ClientWindow(FormClass, BaseClass):
                        unique_id=self.uniqueId,
                        session=self.session))
         return True
-
 
     @staticmethod
     def get_color(name):
@@ -1005,9 +1003,7 @@ class ClientWindow(FormClass, BaseClass):
                 logger.info("Couldn't load urlquery value 'mods'")
             if fa.check.game(self):
                 uid, mod, map = url.queryItemValue('uid'), url.queryItemValue('mod'), url.queryItemValue('map')
-                if fa.check.check(mod,
-                                  map,
-                                  sim_mods=add_mods):
+                if fa.check.check(mod, map, sim_mods=add_mods):
                     self.join_game(uid)
 
     @QtCore.pyqtSlot()

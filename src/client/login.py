@@ -5,20 +5,21 @@ from config import Settings
 
 FormClass, BaseClass = util.load_ui_type("client/login.ui")
 
+
 class LoginWidget(FormClass, BaseClass):
     finished = QtCore.pyqtSignal(str, str)
     remember = QtCore.pyqtSignal(bool)
 
-    def __init__(self, startLogin = None, remember = False):
+    def __init__(self, start_login=None, remember=False):
         # TODO - init with the parent to inherit the stylesheet
         # once we make some of our own css to go with it
         BaseClass.__init__(self)
         self.setupUi(self)
-        util.setStyleSheet(self, "client/login.css")
-        self.splash.setPixmap(util.pixmap("client/login_watermark.png"))
+        util.set_stylesheet(self, "client/login.css")
+        self.splash.setPixmap(util.pix_map("client/login_watermark.png"))
 
-        if startLogin:
-            self.loginField.setText(startLogin)
+        if start_login:
+            self.loginField.setText(start_login)
         self.rememberCheckbox.setChecked(remember)
 
     @QtCore.pyqtSlot()
