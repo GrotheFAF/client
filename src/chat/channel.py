@@ -50,6 +50,20 @@ class Channel(FormClass, BaseClass):
 
         self.setupUi(self)
 
+        #self.filterIdle.setIcon(util.icon("chat/status/none.png"))
+        self.filterHost.setIcon(util.icon("chat/status/host.png"))
+        self.filterLobby.setIcon(util.icon("chat/status/lobby.png"))
+        self.filterPlaying5.setIcon(util.icon("chat/status/playing_delay.png"))
+        self.filterPlaying.setIcon(util.icon("chat/status/playing.png"))
+        self.filterStrange.setIcon(util.icon("chat/status/status_unclear.png"))
+
+        self.filterIdle.clicked.connect(self.status_filter_nicks)
+        self.filterHost.clicked.connect(self.status_filter_nicks)
+        self.filterLobby.clicked.connect(self.status_filter_nicks)
+        self.filterPlaying5.clicked.connect(self.status_filter_nicks)
+        self.filterPlaying.clicked.connect(self.status_filter_nicks)
+        self.filterStrange.clicked.connect(self.status_filter_nicks)
+
         # Special HTML formatter used to layout the chat lines written by people
         self.lobby = lobby
         self.chatters = {}
@@ -131,6 +145,36 @@ class Channel(FormClass, BaseClass):
         if self.isVisible():
             self.chatArea.setPlainText("")
             self.last_timestamp = 0
+
+    @QtCore.pyqtSlot()
+    def status_filter_chatter(self, chatter):
+        if self.chatters[chatter].is_filtered(self.nickFilter.text().lower()):  # visible by nick filter
+            if chatter == client.instance.me.login:  # don't filter me
+                self.chatters[chatter].set_visible(True)
+            elif self.filterIdle.isChecked() or self.filterHost.isChecked() or \
+               self.filterLobby.isChecked() or self.filterPlaying5.isChecked() or \
+               self.filterPlaying.isChecked() or self.filterStrange.isChecked():
+                if self.chatters[chatter].status == "idle":
+                    self.chatters[chatter].set_visible(self.filterIdle.isChecked())
+                elif self.chatters[chatter].status == "host":
+                    self.chatters[chatter].set_visible(self.filterHost.isChecked())
+                elif self.chatters[chatter].status == "lobby":
+                    self.chatters[chatter].set_visible(self.filterLobby.isChecked())
+                elif self.chatters[chatter].status == "playing5":
+                    self.chatters[chatter].set_visible(self.filterPlaying5.isChecked())
+                elif self.chatters[chatter].status == "playing":
+                    self.chatters[chatter].set_visible(self.filterPlaying.isChecked())
+                elif self.chatters[chatter].status == "strange":
+                    self.chatters[chatter].set_visible(self.filterStrange.isChecked())
+            else:  # no filter checked
+                self.chatters[chatter].set_visible(True)
+        else:  # hidden by nick filter
+            self.chatters[chatter].set_visible(False)
+
+    @QtCore.pyqtSlot()
+    def status_filter_nicks(self):
+        for chatter in self.chatters.keys():
+            self.status_filter_chatter(chatter)
 
     @QtCore.pyqtSlot()
     def filter_nicks(self):
@@ -358,6 +402,7 @@ class Channel(FormClass, BaseClass):
                 name = user
             if name in self.chatters:
                 self.chatters[name].update()
+                self.status_filter_chatter(name)
 
         self.update_user_count()
 
@@ -391,6 +436,8 @@ class Channel(FormClass, BaseClass):
                     self.chatters[name].elevation = None
                     self.chatters[name].update()
 
+            self.status_filter_chatter(name)
+
     def add_chatter(self, user_name, user_id=-1, elevation='', hostname='', join=False):
         """
         Adds an user to this chat channel, and assigns an appropriate icon depending on friendship and FAF player status
@@ -400,7 +447,7 @@ class Channel(FormClass, BaseClass):
             self.chatters[user_name] = item
 
         self.chatters[user_name].update()
-
+        self.status_filter_chatter(user_name)
         self.update_user_count()
 
         if join and client.instance.joinsparts:

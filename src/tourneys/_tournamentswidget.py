@@ -20,8 +20,8 @@ class TournamentsWidget(FormClass, BaseClass):
         client.instance.tourneyTab.layout().addWidget(self)
         
         # tournament server
-        self.tourneyServer = secondaryServer.SecondaryServer("Tournament", 11001, self)
-        self.tourneyServer.set_invisible()
+        #self.tourneyServer = secondaryServer.SecondaryServer("Tournament", 11001, self)
+        #self.tourneyServer.set_invisible()
 
         # Dictionary containing our actual tournaments.
         self.tourneys = {}
@@ -35,12 +35,12 @@ class TournamentsWidget(FormClass, BaseClass):
         # Special stylesheet
         util.set_stylesheet(self, "tournaments/formatters/style.css")
 
-        self.updateTimer = QtCore.QTimer(self)
-        self.updateTimer.timeout.connect(self.update_tournaments)
-        self.updateTimer.start(600000)
+        #self.updateTimer = QtCore.QTimer(self)
+        #self.updateTimer.timeout.connect(self.update_tournaments)
+        #self.updateTimer.start(600000)
 
     def showEvent(self, event):  # Qt QShowEvent ?
-        self.update_tournaments()
+        #self.update_tournaments()
         return BaseClass.showEvent(self, event)
 
     def update_tournaments(self):

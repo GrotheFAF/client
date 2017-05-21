@@ -206,7 +206,7 @@ QSpinBox#minRating, QLineEdit#mapName, QLineEdit#playerName, QComboBox#modList
 }
 
 /* Text controls */
-QTextEdit, QPlainTextEdit, QSpinBox, QLineEdit, QComboBox, QListWidget, QTableWidget, QTreeWidget, QFrame#rankedFrame
+QTextEdit, QPlainTextEdit, QSpinBox, QLineEdit, QComboBox, QListWidget, QTableWidget, QTreeWidget, QFrame#rankedFrame, QLabel#statusFilter
 {
     border-style:solid;
     border-width:1px;
@@ -238,7 +238,7 @@ QTableWidget::item:selected, QListWidget::item:previously-selected
 }
 
 
-QLineEdit
+QLineEdit, QLabel#statusFilter
 {
     color:orange;
 }

@@ -188,7 +188,7 @@ class StatsWidget(BaseClass, FormClass):
     def updating(self):
         # Don't display things when we're not logged in
         # FIXME - one day we'll have more obvious points of entry
-        if self.client.state != client.ClientState.LOGGED_IN:
+        if client.instance.state != client.ClientState.LOGGED_IN:
             return
 
         client.instance.statsServer.send(dict(command="stats", type="ladder_maps", mapid=0))  # from old HardlySofly commit +.statsServer
