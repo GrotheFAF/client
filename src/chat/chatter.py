@@ -183,7 +183,10 @@ class Chatter(QtGui.QTableWidgetItem):
                 game = client.instance.games.games[int(url.queryItemValue("uid"))]
                 game_str = "  " + game.mod + "  on  '" + game.mapdisplayname + "'  (" + str(game.uid) + ") "
                 if url.scheme() == "fafgame":
-                    game_str = " Game Lobby:  '" + game.title + "'" + game_str
+                    if game.password_protected:
+                        game_str = " (private) Game Lobby:  '" + game.title + "'" + game_str
+                    else:
+                        game_str = " Game Lobby:  '" + game.title + "'" + game_str
                     if game.host == self.name:
                         self.status = "host"
                         self.statusItem.setIcon(util.icon("chat/status/host.png"))
