@@ -3,4 +3,4 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from _statswidget import StatsWidget
+from ._statswidget import StatsWidget

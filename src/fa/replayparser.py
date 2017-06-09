@@ -22,6 +22,10 @@ class ReplayParser:
                 break
             else:
                 line = line + char[0]
+        try:
+            line = line.decode('utf-8')
+        except UnicodeDecodeError:
+            line = ''
         return offset, line
 
     def get_version(self):

@@ -127,9 +127,9 @@ setup(
     name=product_name,
     description='Forged Alliance Forever - Lobby Client',
     long_description='FA Forever is a community project that allows you to play \
-Supreme Commander and Supreme Commander: Forged Alliance online \
-with people across the globe. Provides new game play modes, including cooperative play, \
-ranked ladder play, and featured mods.',
+                     Supreme Commander and Supreme Commander: Forged Alliance online \
+                     with people across the globe. Provides new game play modes, including cooperative play, \
+                     ranked ladder play, and featured mods.',
     author='FA Forever Community',
     maintainer='Sheeo',
     url='http://www.faforever.com',

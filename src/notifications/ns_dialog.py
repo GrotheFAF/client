@@ -2,7 +2,7 @@ from PyQt4 import QtCore, QtGui
 import util
 import time
 import client
-from ns_settings import NotificationPosition
+from .ns_settings import NotificationPosition
 
 """
 The UI popup of the notification system
@@ -44,7 +44,7 @@ class NotificationDialog(FormClass, BaseClass):
         self.labelImage.setPixmap(pixmap)
 
         self.labelTime.setText(time.strftime("%H:%M:%S", time.gmtime()))
-        QtCore.QTimer.singleShot(lifetime * 1000, self, QtCore.SLOT('hide()'))
+        QtCore.QTimer.singleShot(lifetime * 1000, self.hide)
         if sound:
             util.sound("chat/sfx/query.wav")
 

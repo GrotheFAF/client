@@ -28,7 +28,7 @@ def parse_irc_source(src):
     return username, user_id, elevation, hostname
 
 
-from _chatwidget import ChatWidget
+from ._chatwidget import ChatWidget
 
 # CAVEAT: DO NOT REMOVE! These are promoted widgets and py2exe wouldn't include them otherwise
 from chat.chatlineedit import ChatLineEdit

@@ -66,7 +66,7 @@ class TutorialItem(QtGui.QListWidgetItem):
     WIDTH = ICONSIZE + TEXTWIDTH
     # DATA_PLAYERS = 32
     
-    FORMATTER_TUTORIAL = unicode(util.readfile("tutorials/formatters/tutorials.qthtml"))
+    FORMATTER_TUTORIAL = str(util.readfile("tutorials/formatters/tutorials.qthtml"))
 
     def __init__(self, uid, *args):
         QtGui.QListWidgetItem.__init__(self, *args)

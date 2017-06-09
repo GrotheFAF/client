@@ -2,4 +2,4 @@ import logging
 logger = logging.getLogger(__name__)
 
 # For use by other modules
-from _gameswidget import GamesWidget
+from ._gameswidget import GamesWidget

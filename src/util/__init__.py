@@ -94,7 +94,7 @@ if not os.path.exists(PREFSFILENAME):
 DOWNLOADED_RES_PIX = {}
 DOWNLOADING_RES_PIX = {}
 
-PERSONAL_DIR = unicode(QDesktopServices.storageLocation(QDesktopServices.DocumentsLocation))
+PERSONAL_DIR = str(QDesktopServices.storageLocation(QDesktopServices.DocumentsLocation))
 logger.info('PERSONAL_DIR initial: ' + PERSONAL_DIR)
 try:
     PERSONAL_DIR = PERSONAL_DIR.decode('ascii')
@@ -432,13 +432,13 @@ def readlines(filename, themed=True):
     if themed:
         if __themedir and os.path.isfile(os.path.join(__themedir, filename)):
             result = open(os.path.join(__themedir, filename))
-            logger.debug(u"Read themed file: " + filename)
+            logger.debug("Read themed file: " + filename)
         else:
             result = open(os.path.join(COMMON_DIR, filename))
-            logger.debug(u"Read common file: " + filename)
+            logger.debug("Read common file: " + filename)
     else:
         result = open(filename)
-        logger.debug(u"Read unthemed file: " + filename)
+        logger.debug("Read unthemed file: " + filename)
 
     lines = result.readlines()
     result.close()
@@ -458,11 +458,11 @@ def reload_stylesheets():
 def read_stylesheet(filename):
     if __themedir and os.path.isfile(os.path.join(__themedir, filename)):
         result = open(os.path.join(__themedir, filename)).read().replace("%THEMEPATH%", __themedir.replace("\\", "/"))
-        logger.info(u"Read themed stylesheet: " + filename)
+        logger.info("Read themed stylesheet: " + filename)
     else:
         base_dir = os.path.join(COMMON_DIR, os.path.dirname(filename))
         result = open(os.path.join(COMMON_DIR, filename)).read().replace("%THEMEPATH%", base_dir.replace("\\", "/"))
-        logger.info(u"Read common stylesheet: " + filename)
+        logger.info("Read common stylesheet: " + filename)
 
     return result
 
@@ -488,13 +488,13 @@ def readfile(filename, themed=True):
     if themed:
         if __themedir and os.path.isfile(os.path.join(__themedir, filename)):
             result = codecs.open(os.path.join(__themedir, filename), encoding='utf-8')
-            logger.debug(u"Read themed file: " + filename)
+            logger.debug("Read themed file: " + filename)
         else:
             result = codecs.open(os.path.join(COMMON_DIR, filename), encoding='utf-8')
-            logger.debug(u"Read common file: " + filename)
+            logger.debug("Read common file: " + filename)
     else:
         result = codecs.open(filename, encoding='utf-8')
-        logger.debug(u"Read unthemed file: " + filename)
+        logger.debug("Read unthemed file: " + filename)
 
     data = result.read()
     result.close()
@@ -599,7 +599,7 @@ def show_dir_in_file_browser(location):
 def show_file_in_file_browser(location):
     if sys.platform == 'win32':
         # Open the directory and highlight the picked file
-        _command = (u'explorer  /select, "%s"' % location).encode(sys.getfilesystemencoding())
+        _command = ('explorer  /select, "%s"' % location).encode(sys.getfilesystemencoding())
         subprocess.Popen(_command)
     else:
         # No highlighting on cross-platform, sorry!
@@ -647,10 +647,10 @@ def irc_escape(text, a_style=""):
     for fragment in strings:
         match = url_re.match(fragment)
         if match:
-            if u"://" in fragment:  # slight hack to get those protocol-less URLs on board. Better: With groups!
-                rpl = u'<a href="{0}" style="{1}">{0}</a>'.format(fragment, a_style)
+            if "://" in fragment:  # slight hack to get those protocol-less URLs on board. Better: With groups!
+                rpl = '<a href="{0}" style="{1}">{0}</a>'.format(fragment, a_style)
             else:
-                rpl = u'<a href="http://{0}" style="{1}">{0}</a>'.format(fragment, a_style)
+                rpl = '<a href="http://{0}" style="{1}">{0}</a>'.format(fragment, a_style)
 
             fragment = fragment.replace(match.group(0), rpl)
 
@@ -662,7 +662,7 @@ def password_hash(password):
 
 def md5text(text):
     m = hashlib.md5()
-    m.update(text)
+    m.update(text.encode("utf-8"))
     return m.hexdigest()
 
 
@@ -743,4 +743,4 @@ def datetostr(d):
 def now():
     return _dateDummy.now()
 
-from crash import CrashDialog
+from .crash import CrashDialog

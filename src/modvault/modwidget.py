@@ -144,7 +144,7 @@ class CommentItemDelegate(QtGui.QStyledItemDelegate):
 
 
 class CommentItem(QtGui.QListWidgetItem):
-    FORMATTER_COMMENT = unicode(util.readfile("modvault/comment.qthtml"))
+    FORMATTER_COMMENT = util.readfile("modvault/comment.qthtml")
 
     def __init__(self, uid, *args):
         QtGui.QListWidgetItem.__init__(self, *args)

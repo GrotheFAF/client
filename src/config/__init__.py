@@ -75,15 +75,15 @@ def set_data_path_permissions():
     """
     Set the owner of C:\ProgramData\FAForever recursively to the current user
     """
-    if not admin.isUserAdmin():
+    if not admin.is_user_admin():
         win32api.MessageBox(0, "FA Forever needs to fix folder permissions due to user change. Please confirm the "
                                "following two admin prompts.", "User changed")
     if sys.platform == 'win32' and ('CI' not in os.environ):
         data_path = Settings.get('client/data_path')
         if os.path.exists(data_path):
             my_user = win32api.GetUserNameEx(win32con.NameSamCompatible)
-            admin.runAsAdmin(["icacls", data_path, "/setowner", my_user, "/T"])
-            admin.runAsAdmin(["icacls", data_path, "/reset", "/T"])
+            admin.run_as_admin(["icacls", data_path, "/setowner", my_user, "/T"])
+            admin.run_as_admin(["icacls", data_path, "/reset", "/T"])
 
 
 def check_data_path_permissions():
@@ -103,15 +103,15 @@ def check_data_path_permissions():
 
                 if my_user != data_path_owner:
                     set_data_path_permissions()
-            except Exception, e:
+            except Exception as e:
                 # we encountered error 1332 in win32security.LookupAccountSid here: http://forums.faforever.com/viewtopic.php?f=3&t=13728
                 # https://msdn.microsoft.com/en-us/library/windows/desktop/aa379166(v=vs.85).aspx states:
                 # "It also occurs for SIDs that have no corresponding account name, such as a logon SID that identifies a logon session."
                 # so let's just fix permissions on every exception for now and wait for someone stuck in a permission-loop
                 win32api.MessageBox(0,
                                     "FA Forever ran into an exception checking the data folder permissions: '{}'\n"
-                                    "If you get this popup more than one time, please report a screenshot of this popup to tech support forum. "
-                                    "Full stacktrace:\n{}".format(e, traceback.format_exc()),
+                                    "If you get this popup more than one time, please report a screenshot of this popup"
+                                    " to tech support forum. Full stacktrace:\n{}".format(e, traceback.format_exc()),
                                     "Permission check exception")
                 set_data_path_permissions()
 
@@ -132,7 +132,7 @@ def make_dirs():
         if not os.path.isdir(path):
             try:
                 os.makedirs(path)
-            except IOError, e:
+            except IOError as e:
                 set_data_path_permissions()
                 os.makedirs(path)
 
@@ -161,9 +161,9 @@ if environment == 'production':
 elif environment == 'development':
     from develop import defaults
 
-for k, v in defaults.iteritems():
+for k, v in defaults.items():
     if isinstance(v, str):
-        defaults[k] = v.format(host = Settings.get('host'))
+        defaults[k] = v.format(host=Settings.get('host'))
 
 # Setup normal rotating log handler
 make_dirs()
@@ -172,7 +172,7 @@ log_file = os.path.join(Settings.get('client/logs/path'), 'forever.log')
 try:
     with open(log_file, "a") as f:
         pass
-except IOError, e:
+except IOError as e:
     set_data_path_permissions()
 rotate = RotatingFileHandler(os.path.join(Settings.get('client/logs/path'), 'forever.log'),
                              maxBytes=int(Settings.get('client/logs/max_size')),
@@ -184,7 +184,7 @@ buffering_handler = MemoryHandler(int(Settings.get('client/logs/buffer_size')), 
 logging.getLogger().addHandler(buffering_handler)
 logging.getLogger().setLevel(Settings.get('client/logs/level', key_type=int))
 
-if environment == 'development':
+if Settings.get('client/logs/console', False):
     # Setup logging output to console
     devh = logging.StreamHandler()
     devh.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s %(name)-30s %(message)s'))

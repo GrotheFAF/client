@@ -52,7 +52,7 @@ class CoopMapItemDelegate(QtGui.QStyledItemDelegate):
 
 class CoopMapItem(QtGui.QTreeWidgetItem):
 
-    FORMATTER_COOP = unicode(util.readfile("coop/formatters/coop.qthtml"))
+    FORMATTER_COOP = util.readfile("coop/formatters/coop.qthtml")
 
     def __init__(self, uid, *args):
         QtGui.QTreeWidgetItem.__init__(self, *args)

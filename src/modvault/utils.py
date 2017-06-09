@@ -47,12 +47,12 @@ class ModInfo(object):
             s = str(self.version).rstrip("0")
             self.totalname = "%s v%s" % (self.name, s)
         else:
-            raise TypeError, "version is not an int or float"
+            raise TypeError("version is not an int or float")
 
     def to_dict(self):
         out = {}
-        for k, v in self.__dict__.items():
-            if isinstance(v, (unicode, str, int, float)) and not k[0] == '_':
+        for k, v in list(self.__dict__.items()):
+            if isinstance(v, (str, int, float)) and not k[0] == '_':
                 out[k] = v
         return out
 
@@ -220,7 +220,7 @@ def get_active_mods(uimods=None, temporary=True):  # returns a list of ModInfo's
             if l.error:
                 logger.info("Error in reading the game.prefs file")
                 return []
-            uids = [uid for uid, b in modlist.items() if b == 'true']
+            uids = [uid for uid, b in list(modlist.items()) if b == 'true']
             # logger.debug("Active mods detected: %s" % str(uids))
         else:
             uids = selected_mods[:]
@@ -307,7 +307,7 @@ def update_mod_info(mod, info):  # should probably not be used.
     else:
         f.close()
 
-    for k, v in info.items():
+    for k, v in list(info.items()):
         if type(v) in (bool, int):
             val = str(v).lower()
         if type(v) in (unicode, str):
@@ -357,7 +357,7 @@ def generate_thumbnail(sourcename, destname):
 
 
 def download_mod(item):  # most of this function is stolen from fa.maps.download_map
-    if isinstance(item, basestring):
+    if isinstance(item, str):
         link = MODVAULT_DOWNLOAD_ROOT + urllib2.quote(item)
         logger.debug("Getting mod from: " + link)
     else:
@@ -422,7 +422,7 @@ def download_mod(item):  # most of this function is stolen from fa.maps.download
 
     except:
         logger.warn("Mod download or extraction failed for: " + link)        
-        if sys.exc_type is urllib2.HTTPError:
+        if sys.exc_info()[0] is urllib2.HTTPError:
             logger.warning("ModVault download failed with HTTPError, mod probably not in vault (or broken).")
             QtGui.QMessageBox.information(None, "Mod not downloadable",
                                           "<b>This mod was not found in the vault (or is broken).</b><br/>"

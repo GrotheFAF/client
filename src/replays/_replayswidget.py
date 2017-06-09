@@ -161,7 +161,7 @@ class ReplaysWidget(BaseClass, FormClass):
                     item.resize()
                 else:
                     self.replayInfos.clear()
-                    item.generateInfoPlayersHtml()
+                    item.generate_info_players_html()
 
     def onlinetree_doubleclicked(self, item):
         if hasattr(item, "duration"):
@@ -192,7 +192,7 @@ class ReplaysWidget(BaseClass, FormClass):
         self.spoiler_free = state  # save state .. no magic
         if self.selected_replay:  # if something is selected in the tree to the left
             if type(self.selected_replay) == ReplayItem:  # and if it is a game
-                self.selected_replay.generateInfoPlayersHtml()  # then we redo it
+                self.selected_replay.generate_info_players_html()  # then we redo it
 
     def zero_checkbox_change(self, state):
         self.no_zero_duration = state  # save state .. no magic
@@ -263,7 +263,7 @@ class ReplaysWidget(BaseClass, FormClass):
                 bucket = buckets.setdefault(self.online_replays[uid].startDate, [])
                 bucket.append(self.online_replays[uid])
 
-        for bucket in buckets.keys():
+        for bucket in list(buckets.keys()):
             item = QtGui.QTreeWidgetItem()
             self.onlineTree.addTopLevelItem(item)
 
@@ -292,9 +292,9 @@ class ReplaysWidget(BaseClass, FormClass):
     @staticmethod
     def save_local_cache(cache_hit, cache_add):
         with open(os.path.join(util.CACHE_DIR, "local_replays_metadata"), "wt") as fh:
-            for filename, metadata in cache_hit.iteritems():
+            for filename, metadata in cache_hit.items():
                 fh.write(filename + ":" + metadata)
-            for filename, metadata in cache_add.iteritems():
+            for filename, metadata in cache_add.items():
                 fh.write(filename + ":" + metadata)
 
     def update_mytree(self, replay_dir):
@@ -315,11 +315,11 @@ class ReplaysWidget(BaseClass, FormClass):
             item = QtGui.QTreeWidgetItem()
             item.setIcon(0, util.icon("replays/open_folder.png"))
             item.setText(0, "folder up")  # sorting trick
-            item.setTextColor(0, QtGui.QColor(client.instance.get_color("default")))
+            item.setForeground(0, QtGui.QColor(client.instance.get_color("default")))
             item.setText(1, "..")
             item.filename = os.path.split(replay_dir)[0]  # save path with item
             item.setText(2, str(item.filename))
-            item.setTextColor(2, QtGui.QColor(client.instance.get_color("default")))
+            item.setForeground(2, QtGui.QColor(client.instance.get_color("default")))
             self.myTree.addTopLevelItem(item)
 
         # We put the replays into buckets by day first, then we add them to the treewidget.
@@ -337,7 +337,7 @@ class ReplaysWidget(BaseClass, FormClass):
                 item.setText(1, infile)
                 item.filename = os.path.join(replay_dir, infile)
                 item.setIcon(0, util.icon("replays/replay.png"))
-                item.setTextColor(0, QtGui.QColor(client.instance.get_color("default")))
+                item.setForeground(0, QtGui.QColor(client.instance.get_color("default")))
 
                 bucket.append(item)
 
@@ -377,14 +377,14 @@ class ReplaysWidget(BaseClass, FormClass):
                             item.setIcon(0, util.icon("games/unknown_map.png"))
                         item.setToolTip(0, fa.maps.get_display_name(item.info['mapname']))
                         item.setText(0, game_hour)
-                        item.setTextColor(0, QtGui.QColor(client.instance.get_color("default")))
+                        item.setForeground(0, QtGui.QColor(client.instance.get_color("default")))
 
                         item.setText(1, item.info['title'])
                         item.setToolTip(1, infile)
 
                         # Hacky way to quickly assemble a list of all the players, but including the observers
                         playerlist = []
-                        for _, players in item.info['teams'].items():
+                        for _, players in list(item.info['teams'].items()):
                             playerlist.extend(players)
                         item.setText(2, ", ".join(playerlist))
                         item.setToolTip(2, ", ".join(playerlist))
@@ -393,21 +393,21 @@ class ReplaysWidget(BaseClass, FormClass):
                         item.setText(3, item.info['featured_mod'])
                         item.setTextAlignment(3, QtCore.Qt.AlignCenter)
                         recorder_color = client.instance.players.get_user_color(item.info.get('recorder', ""))
-                        item.setTextColor(1, QtGui.QColor(recorder_color))
+                        item.setForeground(1, QtGui.QColor(recorder_color))
                     else:
                         bucket = buckets.setdefault("incomplete", [])
                         item.setIcon(0, util.icon("replays/replay.png"))
                         item.setText(1, infile)
                         item.setText(2, "(replay doesn't have complete metadata)")
-                        item.setTextColor(1, QtGui.QColor("yellow"))
+                        item.setForeground(1, QtGui.QColor("yellow"))
 
                 except Exception as ex:
                     bucket = buckets.setdefault("broken", [])
                     item.setIcon(0, util.icon("replays/broken.png"))
                     item.setText(1, infile)
-                    item.setTextColor(1, QtGui.QColor("red"))
+                    item.setForeground(1, QtGui.QColor("red"))
                     item.setText(2, "(replay parse error)")
-                    item.setTextColor(2, QtGui.QColor("gray"))
+                    item.setForeground(2, QtGui.QColor("gray"))
                     logger.exception("Exception parsing replay {}: {}".format(infile, ex))
 
                 bucket.append(item)
@@ -417,7 +417,7 @@ class ReplaysWidget(BaseClass, FormClass):
                 item = QtGui.QTreeWidgetItem()
                 item.setIcon(0, util.icon("replays/closed_folder.png"))
                 item.setText(0, "folder :")  # sorting trick
-                item.setTextColor(0, QtGui.QColor(client.instance.get_color("default")))
+                item.setForeground(0, QtGui.QColor(client.instance.get_color("default")))
                 item.setText(1, infile)
                 item.filename = os.path.join(replay_dir, infile)  # save path with item
                 i = len(os.listdir(item.filename))  # get number of files
@@ -430,23 +430,23 @@ class ReplaysWidget(BaseClass, FormClass):
         if len(cache_add) > 10 or len(cache) - len(cache_hit) > 10:
             self.save_local_cache(cache_hit, cache_add)
         # Now, create a top level TreeWidgetItem for every bucket, and put the bucket's contents into them
-        for bucket_key in buckets.keys():
+        for bucket_key in list(buckets.keys()):
             item = QtGui.QTreeWidgetItem()
 
             if bucket_key == "broken":
-                item.setTextColor(0, QtGui.QColor("red"))
+                item.setForeground(0, QtGui.QColor("red"))
                 item.setText(1, "(not watchable)")
-                item.setTextColor(1, QtGui.QColor(client.instance.get_color("default")))
+                item.setForeground(1, QtGui.QColor(client.instance.get_color("default")))
             elif bucket_key == "incomplete":
-                item.setTextColor(0, QtGui.QColor("yellow"))
+                item.setForeground(0, QtGui.QColor("yellow"))
                 item.setText(1, "(watchable)")
-                item.setTextColor(1, QtGui.QColor(client.instance.get_color("default")))
+                item.setForeground(1, QtGui.QColor(client.instance.get_color("default")))
             elif bucket_key == "legacy":
-                item.setTextColor(0, QtGui.QColor(client.instance.get_color("default")))
-                item.setTextColor(1, QtGui.QColor(client.instance.get_color("default")))
+                item.setForeground(0, QtGui.QColor(client.instance.get_color("default")))
+                item.setForeground(1, QtGui.QColor(client.instance.get_color("default")))
                 item.setText(1, "(old replay system)")
             else:
-                item.setTextColor(0, QtGui.QColor(client.instance.get_color("player")))
+                item.setForeground(0, QtGui.QColor(client.instance.get_color("player")))
 
             item.setIcon(0, util.icon("replays/bucket.png"))
             if len(buckets[bucket_key]) == 1:
@@ -454,7 +454,7 @@ class ReplaysWidget(BaseClass, FormClass):
             else:
                 item.setText(3, str(len(buckets[bucket_key])) + " replays")
             item.setText(0, bucket_key)
-            item.setTextColor(3, QtGui.QColor(client.instance.get_color("default")))
+            item.setForeground(3, QtGui.QColor(client.instance.get_color("default")))
 
             self.myTree.addTopLevelItem(item)  # add replay bucket
 
@@ -496,8 +496,9 @@ class ReplaysWidget(BaseClass, FormClass):
             # For debugging purposes, format our tooltip for the top level items
             # so it contains a human-readable representation of the info dictionary
             tip = ""
-            for key in info.keys():
+            for key in list(info.keys()):
                 tip += "'" + unicode(key) + "' : '" + unicode(info[key]) + "'<br/>"
+                # tip += "'" + str(key) + "' : '" + str(info[key]) + "'<br/>"  # Py3
 
             if item.toolTip(1) != tip:
                 item.setToolTip(1, tip)
@@ -509,7 +510,7 @@ class ReplaysWidget(BaseClass, FormClass):
                 icon = util.icon("games/unknown_map.png")
 
             item.setText(0, str(info['uid']) + time.strftime("  -  %Y-%m-%d - %H:%M", time.localtime(item.launched_at)))
-            item.setTextColor(0, QtGui.QColor(client.instance.get_color("default")))
+            item.setForeground(0, QtGui.QColor(client.instance.get_color("default")))
 
             if info['featured_mod'] == "coop":  # no map icons for coop
                 item.setIcon(0, util.icon("games/unknown_map.png"))
@@ -519,7 +520,7 @@ class ReplaysWidget(BaseClass, FormClass):
                 item.setText(1, info['title'])
             else:
                 item.setText(1, info['title'] + "    -    [host: " + info['host'] + "]")
-            item.setTextColor(1, QtGui.QColor(client.instance.get_color("player")))
+            item.setForeground(1, QtGui.QColor(client.instance.get_color("player")))
 
             item.setText(2, info['featured_mod'])
             item.setTextAlignment(2, QtCore.Qt.AlignCenter)
@@ -551,22 +552,22 @@ class ReplaysWidget(BaseClass, FormClass):
                     playeritem.url = url
                     if client.instance.login == name:
                         mygame = True
-                        item.setTextColor(1, QtGui.QColor(client.instance.get_color("self")))
-                        playeritem.setTextColor(0, QtGui.QColor(client.instance.get_color("self")))
+                        item.setForeground(1, QtGui.QColor(client.instance.get_color("self")))
+                        playeritem.setForeground(0, QtGui.QColor(client.instance.get_color("self")))
                         playeritem.setToolTip(0, url.toString())
                         playeritem.setIcon(0, util.icon("replays/replay.png"))
                     elif client.instance.players.is_friend(playerid):
                         if not mygame:
-                            item.setTextColor(1, QtGui.QColor(client.instance.get_color("friend")))
-                        playeritem.setTextColor(0, QtGui.QColor(client.instance.get_color("friend")))
+                            item.setForeground(1, QtGui.QColor(client.instance.get_color("friend")))
+                        playeritem.setForeground(0, QtGui.QColor(client.instance.get_color("friend")))
                         playeritem.setToolTip(0, url.toString())
                         playeritem.setIcon(0, util.icon("replays/replay.png"))
                     elif client.instance.players.is_player(playerid):
-                        playeritem.setTextColor(0, QtGui.QColor(client.instance.get_color("player")))
+                        playeritem.setForeground(0, QtGui.QColor(client.instance.get_color("player")))
                         playeritem.setToolTip(0, url.toString())
                         playeritem.setIcon(0, util.icon("replays/replay.png"))
                     else:
-                        playeritem.setTextColor(0, QtGui.QColor(client.instance.get_color("default")))
+                        playeritem.setForeground(0, QtGui.QColor(client.instance.get_color("default")))
                         playeritem.setDisabled(True)
 
                     item.addChild(playeritem)
@@ -722,7 +723,7 @@ class ReplaysWidget(BaseClass, FormClass):
         for arg in args:
             if type(arg) is int:
                 out.writeInt(arg)
-            elif isinstance(arg, basestring):
+            elif isinstance(arg, str):
                 out.writeQString(arg)
             elif type(arg) is float:
                 out.writeFloat(arg)

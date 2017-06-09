@@ -43,9 +43,9 @@ The tempAddMods function should be removed after the server can return mods in t
 """
 
 from modvault.utils import *
-from modwidget import ModWidget
-from uploadwidget import UploadModWidget
-from uimodwidget import UIModWidget
+from .modwidget import ModWidget
+from .uploadwidget import UploadModWidget
+from .uimodwidget import UIModWidget
 
 import util
 import logging
@@ -282,8 +282,8 @@ class ModItem(QtGui.QListWidgetItem):
     WIDTH = ICONSIZE + TEXTWIDTH
     # DATA_PLAYERS = 32
 
-    FORMATTER_MOD = unicode(util.readfile("modvault/modinfo.qthtml"))
-    FORMATTER_MOD_UI = unicode(util.readfile("modvault/modinfoui.qthtml"))
+    FORMATTER_MOD = util.readfile("modvault/modinfo.qthtml")
+    FORMATTER_MOD_UI = util.readfile("modvault/modinfoui.qthtml")
 
     def __init__(self, parent, uid, *args):
         QtGui.QListWidgetItem.__init__(self, *args)

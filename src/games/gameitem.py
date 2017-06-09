@@ -65,9 +65,9 @@ class GameItem(QtGui.QListWidgetItem):
     ICONSIZE = 110
     PADDING = 10
 
-    FORMATTER_FAF = u'' + util.readfile("games/formatters/faf.qthtml")
-    FORMATTER_MOD = u'' + util.readfile("games/formatters/mod.qthtml")
-    FORMATTER_TOOL = u'' + util.readfile("games/formatters/tool.qthtml")
+    FORMATTER_FAF = util.readfile("games/formatters/faf.qthtml")
+    FORMATTER_MOD = util.readfile("games/formatters/mod.qthtml")
+    FORMATTER_TOOL = util.readfile("games/formatters/tool.qthtml")
 
     def __init__(self, uid, *args):
         QtGui.QListWidgetItem.__init__(self, *args)
@@ -213,7 +213,7 @@ class GameItem(QtGui.QListWidgetItem):
         teams_map = dict.copy(message['teams'])
 
         # Used to differentiate between newly added / removed and previously present players
-        old_players = set(map(lambda p: p.login, self.players))
+        old_players = set([p.login for p in self.players])
 
         # Following the convention used by the game, a team value of 1 represents "No team". Let's
         # desugar those into "real" teams now (and convert the dict to a list)
@@ -304,7 +304,7 @@ class GameItem(QtGui.QListWidgetItem):
             client.instance.urls[player.login] = self.url(player.id)
 
         # Determine which players are affected by this game's state change            
-        new_players = set(map(lambda p: p.login, self.players))
+        new_players = set([p.login for p in self.players])
         affected_players = old_players | new_players
         client.instance.usersUpdated.emit(list(affected_players))
 
@@ -350,7 +350,7 @@ class GameItem(QtGui.QListWidgetItem):
             observers_str = ""
 
         if self.mods:
-            mods_str = "<br />With mod: " + "<br />".join(self.mods.values())
+            mods_str = "<br />With mod: " + "<br />".join(list(self.mods.values()))
         else:
             mods_str = ""
 
@@ -403,4 +403,4 @@ class GameItem(QtGui.QListWidgetItem):
 
     @property
     def average_rating(self):
-        return sum(map(lambda p: p.rating_estimate(), self.players)) / max(len(self.players), 1)
+        return sum([p.rating_estimate() for p in self.players]) / max(len(self.players), 1)

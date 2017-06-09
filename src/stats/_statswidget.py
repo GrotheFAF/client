@@ -47,8 +47,8 @@ class StatsWidget(BaseClass, FormClass):
         self.currentLeague = 0
         self.currentDivision = 0
 
-        self.FORMATTER_LADDER = unicode(util.readfile("stats/formatters/ladder.qthtml"))
-        self.FORMATTER_LADDER_HEADER = unicode(util.readfile("stats/formatters/ladder_header.qthtml"))
+        self.FORMATTER_LADDER = util.readfile("stats/formatters/ladder.qthtml")
+        self.FORMATTER_LADDER_HEADER = util.readfile("stats/formatters/ladder_header.qthtml")
 
         util.set_stylesheet(self.leagues, "stats/formatters/style.css")
     

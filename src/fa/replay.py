@@ -26,13 +26,13 @@ def replay(source, detach=False):
         mod = None
         mapname = None
         # Convert strings to URLs
-        if isinstance(source, basestring):
+        if isinstance(source, str):
             if os.path.isfile(source):
                 if source.endswith(".fafreplay"):  # the new way of doing things
                     replay_file = open(source, "rt")
                     info = json.loads(replay_file.readline())
 
-                    binary = QtCore.qUncompress(QtCore.QByteArray.fromBase64(replay_file.read()))
+                    binary = QtCore.qUncompress(QtCore.QByteArray.fromBase64(replay_file.read().encode('utf-8')))
                     logger.info("Extracted " + str(binary.size()) + " bytes of binary data from .fafreplay.")
                     replay_file.close()
 

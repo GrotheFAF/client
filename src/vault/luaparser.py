@@ -274,7 +274,7 @@ class LuaParser:
     def parse(self, lua_search, def_values=dict()):
         self.__searchPattern.update(lua_search)
         self.__defaultValues.update(def_values)
-        self.__foundItemsCount = {}.fromkeys(self.__searchPattern.keys(), 0)
+        self.__foundItemsCount = {}.fromkeys(list(self.__searchPattern.keys()), 0)
         self.__parsedData = self.__parse_lua()
         self.__check_errors()
         return self.__searchResult

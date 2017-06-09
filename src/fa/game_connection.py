@@ -62,8 +62,8 @@ class GPGNetConnection(QObject):
 
             data_str = ds.readRawData(field_size).decode('utf-8')
             fixed_str = data_str.replace("/t", "\t").replace("/n", "\n")
-
             return unicode(fixed_str)
+            # return str(fixed_str) Py3
         else:
             raise Exception("Unknown GameConnection Field Type: %d" % field_type)
 

@@ -14,7 +14,7 @@ class LadderMapStat(FormClass, BaseClass):
     This class list all the maps given by the server, and ask for more details when selected.
     """
     def __init__(self, parent, *args, **kwargs):
-        FormClass.__init__(self, *args, **kwargs)
+        FormClass.__init__(self)
         BaseClass.__init__(self, *args, **kwargs)
 
         self.setupUi(self)

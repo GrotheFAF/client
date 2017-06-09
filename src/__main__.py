@@ -98,7 +98,7 @@ if __name__ == '__main__':
         import platform
         import ctypes
         if platform.release() != "XP":  # legacy special :-)
-            if config.admin.isUserAdmin():
+            if config.admin.is_user_admin():
                 adminuser_error_dialog()
 
         if getattr(ctypes.windll.shell32, "SetCurrentProcessExplicitAppUserModelID", None) is not None:

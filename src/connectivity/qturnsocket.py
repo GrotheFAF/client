@@ -71,7 +71,7 @@ class QTurnSocket(QUdpSocket):
         self.bindings = {}
         self.initial_port = port
         self._data_cb = data_cb
-        self.turn_host, self.turn_port = config.Settings.get('turn/host', key_type=unicode, default='dev.faforever.com'), \
+        self.turn_host, self.turn_port = config.Settings.get('turn/host', key_type=str, default='dev.faforever.com'), \
             config.Settings.get('turn/port', key_type=int, default=3478)
         self._logger.info("Turn socket initialized: {}".format(self.turn_host))
         self.turn_address = None
@@ -103,7 +103,8 @@ class QTurnSocket(QUdpSocket):
     def bind_address(self, addr):
         self._session.bind(addr)
 
-    def channel_bound(self, (host, port), channel):
+    def channel_bound(self, addr, channel):
+        (host, port) = addr
         self._logger.info("Bound channel {} to {}".format(channel, (host, port)))
         self.bindings[channel] = (host, int(port))
 
@@ -133,7 +134,7 @@ class QTurnSocket(QUdpSocket):
         self.writeDatagram(data, self.turn_address, self.turn_port)
 
     def sendto(self, data, address):
-        if address in self.bindings.values():
+        if address in list(self.bindings.values()):
             self._logger.debug("Sending to {} through relay".format(address))
             self._session.send_to(data, address)
         else:
@@ -141,7 +142,8 @@ class QTurnSocket(QUdpSocket):
             self._logger.debug("Sending to {} directly".format(address))
             self.writeDatagram(data, QHostAddress(host), port)
 
-    def handle_data(self, (host, port), data):
+    def handle_data(self, addr, data):
+        (host, port) = addr
         self._logger.debug("{}:{}/UDP<<".format(host, port))
         if self._session and self._session.is_stun_message(data):
             self._logger.debug("Handling using turn session")
@@ -154,4 +156,6 @@ class QTurnSocket(QUdpSocket):
     def _ready_read(self):
         while self.hasPendingDatagrams():
             data, host, port = self.readDatagram(self.pendingDatagramSize())
-            self.handle_data((host.toString(), int(port)), data)
+            # host.toString() is expressed as IPv6 otherwise e.g. ::ffff:91.64.56.230
+            ipv4_address_string = QHostAddress(host.toIPv4Address()).toString()
+            self.handle_data((ipv4_address_string, int(port)), data)

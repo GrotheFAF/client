@@ -12,7 +12,6 @@ import stat
 import subprocess
 import time
 import shutil
-from types import FloatType, IntType, ListType
 import logging
 import urllib2
 import sys
@@ -41,7 +40,7 @@ FormClass, BaseClass = util.load_ui_type("fa/updater/updater.ui")
 
 class UpdaterProgressDialog(FormClass, BaseClass):
     def __init__(self, parent):
-        FormClass.__init__(self, parent)
+        FormClass.__init__(self)
         BaseClass.__init__(self, parent)
         self.setupUi(self)
         self.logPlainTextEdit.setVisible(False)
@@ -72,7 +71,7 @@ def clear_log():
 
 def log(string):
     logger.debug(string)
-    debugLog.append(unicode(string))
+    debugLog.append(str(string))
 
 
 def dump_plain_text():
@@ -84,15 +83,15 @@ def dump_html():
 
 
 # A set of exceptions we use to see what goes wrong during asynchronous data transfer waits
-class UpdaterCancellation(StandardError):
+class UpdaterCancellation(Exception):
     pass
 
 
-class UpdaterFailure(StandardError):
+class UpdaterFailure(Exception):
     pass
 
 
-class UpdaterTimeout(StandardError):
+class UpdaterTimeout(Exception):
     pass
 
 
@@ -379,11 +378,11 @@ class Updater(QtCore.QObject):
         self.progress.setLabelText("Preparing binFAF...")
 
         # now we check if we've got a binFAF folder
-        fa_bindir = os.path.join(config.Settings.get("ForgedAlliance/app/path"), 'bin')
+        fa_bin_dir = os.path.join(config.Settings.get("ForgedAlliance/app/path"), 'bin')
         faf_dir = util.BIN_DIR
 
         # Try to copy without overwriting, but fill in any missing files, otherwise it might miss some files to update
-        root_src_dir = fa_bindir
+        root_src_dir = fa_bin_dir
         root_dst_dir = faf_dir
 
         for src_dir, _, files in os.walk(root_src_dir):
@@ -424,13 +423,13 @@ class Updater(QtCore.QObject):
                     self.update_files("bin", self.featured_mod)
                     self.update_files("gamedata", self.featured_mod + "Gamedata")
 
-        except UpdaterTimeout, e:
+        except UpdaterTimeout as e:
             log("TIMEOUT: {}".format(e))
             self.result = self.RESULT_FAILURE
-        except UpdaterCancellation, e:
+        except UpdaterCancellation as e:
             log("CANCELLED: {}".format(e))
             self.result = self.RESULT_CANCEL
-        except Exception, e:
+        except Exception as e:
             log("EXCEPTION: {}".format(e))
             self.result = self.RESULT_FAILURE
         else:
@@ -681,13 +680,13 @@ class Updater(QtCore.QObject):
         out.writeQString(action)
 
         for arg in args:
-            if type(arg) is IntType:
+            if type(arg) is int:
                 out.writeInt(arg)
-            elif isinstance(arg, basestring):
+            elif isinstance(arg, str):
                 out.writeQString(arg)
-            elif type(arg) is FloatType:
+            elif type(arg) is float:
                 out.writeFloat(arg)
-            elif type(arg) is ListType:
+            elif type(arg) is list:
                 out.writeQVariantList(arg)
             else:
                 log("Uninterpreted Data Type: " + str(type(arg)) + " of value: " + str(arg))

@@ -237,21 +237,21 @@ class Chatter(QtGui.QTableWidgetItem):
             self.rankItem.setIcon(util.icon("chat/rank/newplayer.png"))
 
     def set_color(self):
-        if client.instance.id == self.id and self.elevation in chat.OPERATOR_COLORS.keys():
-            self.setTextColor(QtGui.QColor(chat.get_color("self_mod")))
+        if client.instance.id == self.id and self.elevation in list(chat.OPERATOR_COLORS.keys()):
+            self.setForeground(QtGui.QColor(chat.get_color("self_mod")))
             return
-        if client.instance.players.is_friend(self.id) and self.elevation in chat.OPERATOR_COLORS.keys():
-            self.setTextColor(QtGui.QColor(chat.get_color("friend_mod")))
+        if client.instance.players.is_friend(self.id) and self.elevation in list(chat.OPERATOR_COLORS.keys()):
+            self.setForeground(QtGui.QColor(chat.get_color("friend_mod")))
             return
-        if self.elevation in chat.colors.OPERATOR_COLORS.keys():
-            self.setTextColor(QtGui.QColor(chat.colors.OPERATOR_COLORS[self.elevation]))
+        if self.elevation in list(chat.colors.OPERATOR_COLORS.keys()):
+            self.setForeground(QtGui.QColor(chat.colors.OPERATOR_COLORS[self.elevation]))
             return
 
         if self.id != -1:
-            self.setTextColor(QtGui.QColor(client.instance.players.get_user_color(self.id)))
+            self.setForeground(QtGui.QColor(client.instance.players.get_user_color(self.id)))
             return
 
-        self.setTextColor(QtGui.QColor(chat.get_color("default")))
+        self.setForeground(QtGui.QColor(chat.get_color("default")))
 
     def view_aliases(self):
         QtGui.QDesktopServices.openUrl(QUrl("{}?name={}".format(Settings.get("USER_ALIASES_URL"), self.name)))

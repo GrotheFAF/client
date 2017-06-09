@@ -184,7 +184,7 @@ class GamesWidget(FormClass, BaseClass):
         self.labelRankedHint.show()
         self.labelGameInfo.hide()
         self.labelWideGameInfo.hide()
-        for faction, icon in self._ranked_icons.items():
+        for faction, icon in list(self._ranked_icons.items()):
             try:
                 icon.clicked.disconnect()
             except TypeError:

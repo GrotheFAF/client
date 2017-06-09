@@ -4,7 +4,7 @@ import string
 import sys
 from urllib2 import HTTPError
 from PyQt4 import QtCore, QtGui
-import cStringIO
+import cStringIO  # py3 io
 import util
 import os
 import stat
@@ -509,7 +509,7 @@ def download_map(name, silent=False):
 
     except:
         logger.warn("Map download or extraction failed for: " + url)
-        if sys.exc_type is HTTPError:
+        if sys.exc_info()[0] is HTTPError:
             logger.warning("Vault download failed with HTTPError, map probably not in vault (or broken).")
             QtGui.QMessageBox.information(
                 None,

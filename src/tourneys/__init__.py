@@ -3,4 +3,4 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from _tournamentswidget import TournamentsWidget
+from ._tournamentswidget import TournamentsWidget

@@ -36,8 +36,8 @@ class CrashDialog(FormClass, BaseClass):
         log = u""
         try:
             log += u"\n".join(readlines(LOG_FILE_FAF, False)[-128:])
-        except StandardError:
-            log += (unicode(LOG_FILE_FAF))
+        except Exception:
+            log += (str(LOG_FILE_FAF))
             log += u"empty or not readable"
             desc = "".join(["{}: {}\n".format(n, d) for n, d in desc])
         except Exception:

@@ -9,11 +9,11 @@ logger = logging.getLogger(__name__)
 
 def get_steam_path():
     try:
-        import _winreg
-        steam_key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, "Software\\Valve\\Steam", 0,
-                                    (_winreg.KEY_WOW64_64KEY + _winreg.KEY_ALL_ACCESS))
-        return _winreg.QueryValueEx(steam_key, "SteamPath")[0].replace("/", "\\")
-    except StandardError, e:
+        import winreg
+        steam_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Software\\Valve\\Steam", 0,
+                                   (winreg.KEY_WOW64_64KEY + winreg.KEY_ALL_ACCESS))
+        return winreg.QueryValueEx(steam_key, "SteamPath")[0].replace("/", "\\")
+    except Exception as e:
         return None
 
 
@@ -21,7 +21,7 @@ def write_fa_path_lua():
     """
     Writes a small lua file to disk that helps the new SupComDataPath.lua find the actual install of the game
     """
-    name = os.path.join(util.APPDATA_DIR, u"fa_path.lua")
+    name = os.path.join(util.APPDATA_DIR, "fa_path.lua")
     gamepath_fa = config.Settings.get("ForgedAlliance/app/path", key_type=str)
 
     code = 'fa_path = "' + gamepath_fa.replace("\\", "\\\\") + '"' + "\n"
@@ -31,7 +31,7 @@ def write_fa_path_lua():
         code = code + 'sc_path = "' + gamepath_sc.replace("\\", "\\\\") + '"' + "\n"
 
     with open(name, "w+") as lua:
-        lua.write(code.encode("utf-8"))
+        lua.write(code)
         lua.flush()
         os.fsync(lua.fileno())  # Ensuring the file is absolutely, positively on disk.
 
@@ -61,7 +61,7 @@ def typical_forgedalliance_paths():
     if steam_path:
         pathlist.append(os.path.join(steam_path, "SteamApps", "common", "Supreme Commander Forged Alliance"))
 
-    return filter(validate_path, pathlist)
+    return list(filter(validate_path, pathlist))
 
 
 def typical_supcom_paths():
@@ -89,13 +89,15 @@ def typical_supcom_paths():
     if steam_path:
         pathlist.append(os.path.join(steam_path, "SteamApps", "common", "Supreme Commander"))
 
-    return filter(validate_path, pathlist)
+    return list(filter(validate_path, pathlist))
 
 
 def validate_path(path):
     try:
         # Supcom only supports Ascii Paths
-        if not path.decode("ascii"):
+        try:
+            path.encode("ascii")
+        except UnicodeEncodeError:
             return False
 
         # We check whether the base path and a gamedata/lua.scd file exists.
@@ -116,5 +118,5 @@ def validate_path(path):
         return True
     except:
         _, value, _ = sys.exc_info()
-        logger.error(u"Path validation failed: " + unicode(value))
+        logger.error("Path validation failed: " + str(value))
         return False

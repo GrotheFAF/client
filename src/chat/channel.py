@@ -32,12 +32,12 @@ class IRCPlayer(Player):
 
 
 class Formatters(object):
-    FORMATTER_ANNOUNCEMENT   = u'' + util.readfile("chat/formatters/announcement.qthtml")
-    FORMATTER_MESSAGE        = u'' + util.readfile("chat/formatters/message.qthtml")
-    FORMATTER_MESSAGE_AVATAR = u'' + util.readfile("chat/formatters/messageAvatar.qthtml")
-    FORMATTER_ACTION         = u'' + util.readfile("chat/formatters/action.qthtml")
-    FORMATTER_ACTION_AVATAR  = u'' + util.readfile("chat/formatters/actionAvatar.qthtml")
-    FORMATTER_RAW            = u'' + util.readfile("chat/formatters/raw.qthtml")
+    FORMATTER_ANNOUNCEMENT   = util.readfile("chat/formatters/announcement.qthtml")
+    FORMATTER_MESSAGE        = util.readfile("chat/formatters/message.qthtml")
+    FORMATTER_MESSAGE_AVATAR = util.readfile("chat/formatters/messageAvatar.qthtml")
+    FORMATTER_ACTION         = util.readfile("chat/formatters/action.qthtml")
+    FORMATTER_ACTION_AVATAR  = util.readfile("chat/formatters/actionAvatar.qthtml")
+    FORMATTER_RAW            = util.readfile("chat/formatters/raw.qthtml")
     NICKLIST_COLUMNS         = json.loads(util.readfile("chat/formatters/nicklist_columns.json"))
 
 
@@ -128,16 +128,17 @@ class Channel(FormClass, BaseClass):
         if key_event.key() == 67:
             self.chatArea.copy()
 
-    def resizeEvent(self, size):
+    def resizeEvent(self, size):  # Qt QShowEvent
         BaseClass.resizeEvent(self, size)
-        self.setTextWidth()
+        if self.isVisible():
+            self.set_textwidth()
 
-    def setTextWidth(self):
+    def set_textwidth(self):
         self.chatArea.setLineWrapColumnOrWidth(self.chatArea.size().width() - 20)  # Hardcoded, but seems to be enough (tabstop was a bit large)
 
     def showEvent(self, event):  # Qt QShowEvent
         self.stop_blink()
-        self.setTextWidth()
+        self.set_textwidth()
         return BaseClass.showEvent(self, event)
 
     @QtCore.pyqtSlot()
@@ -178,11 +179,11 @@ class Channel(FormClass, BaseClass):
 
     @QtCore.pyqtSlot()
     def filter_nicks(self):
-        for chatter in self.chatters.keys():
+        for chatter in list(self.chatters.keys()):
             self.chatters[chatter].set_visible(self.chatters[chatter].is_filtered(self.nickFilter.text().lower()))
 
     def update_user_count(self):
-        count = len(self.chatters.keys())
+        count = len(list(self.chatters.keys()))
         self.nickFilter.setPlaceholderText(str(count) + " users... (type to filter)")
 
         if self.nickFilter.text():
@@ -274,7 +275,7 @@ class Channel(FormClass, BaseClass):
         avatar_tip = ""
         if name in self.chatters:
             chatter = self.chatters[name]
-            color = chatter.textColor().name()
+            color = chatter.foreground().color().name()
             if chatter.avatar:
                 avatar = chatter.avatar["url"]
                 avatar_tip = chatter.avatarTip or ""

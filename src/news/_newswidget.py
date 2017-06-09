@@ -43,7 +43,7 @@ FormClass, BaseClass = util.load_ui_type("news/news.ui")
 class NewsWidget(FormClass, BaseClass):
     CSS = util.read_stylesheet('news/news_webview.css')
 
-    HTML = unicode(util.readfile('news/news_webview_frame.html'))
+    HTML = util.readfile('news/news_webview_frame.html')
 
     def __init__(self, *args, **kwargs):
         BaseClass.__init__(self, *args, **kwargs)
@@ -55,7 +55,7 @@ class NewsWidget(FormClass, BaseClass):
         self.newsManager = NewsManager(self)
 
         self.newsWebView.settings().setUserStyleSheetUrl(QtCore.QUrl(
-                'data:text/css;charset=utf-8;base64,' + base64.b64encode(self.CSS)
+                'data:text/css;charset=utf-8;base64,' + base64.b64encode(self.CSS.encode('utf-8')).decode('ascii')
             ))
         # open all links in external browser
         self.newsWebView.page().setLinkDelegationPolicy(QtWebKit.QWebPage.DelegateAllLinks)

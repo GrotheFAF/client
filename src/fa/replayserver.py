@@ -57,7 +57,7 @@ class ReplayRecorder(QtCore.QObject):
         # CAVEAT: readAll() was seemingly truncating data here
         read = self.inputSocket.read(self.inputSocket.bytesAvailable())
 
-        if not isinstance(read, basestring):
+        if not isinstance(read, str):
             self.__logger.warning("Read failure on inputSocket: " + str(bytes))
             return
 
@@ -133,7 +133,9 @@ class ReplayRecorder(QtCore.QObject):
 
         replay = QtCore.QFile(filename)
         replay.open(QtCore.QIODevice.WriteOnly | QtCore.QIODevice.Text)
+        # replay.write(json.dumps(self.replayInfo).encode('utf-8'))  # py3
         replay.write(json.dumps(self.replayInfo))  # Text 'header' of replay file
+        # replay.write(b'\n')  # py3
         replay.write('\n')
         replay.write(QtCore.qCompress(self.replayData).toBase64())
         replay.close()

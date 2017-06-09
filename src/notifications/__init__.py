@@ -116,9 +116,9 @@ class Notifications:
                 mod_str = mod
                 if mods:
                     if mod == 'faf':
-                        mod_str = ", ".join(mods.values())
+                        mod_str = ", ".join(list(mods.values()))
                     else:
-                        mod_str = mod + " & " + ", ".join(mods.values())
+                        mod_str = mod + " & " + ", ".join(list(mods.values()))
                     if len(mod_str) > 20:
                         mod_str = mod_str[:15] + "..."
 

@@ -57,8 +57,8 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
         self.identified = False
 
         # IRC parameters
-        self.crucialChannels = ["#aeolus"]
-        self.optionalChannels = []
+        self.crucial_channels = ["#aeolus"]
+        self.optional_channels = []
 
         # We can't send command until the welcome message is received
         self.welcomed = False
@@ -76,7 +76,6 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
         # Hook with client's connection and autojoin mechanisms
         client.instance.authorized.connect(self.connect)
         client.instance.autoJoin.connect(self.auto_join)
-        self.channelsAvailable = []
 
         self._notifier = None
         self._timer = QTimer()
@@ -158,7 +157,7 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
         Notifies all crucial channels about the status of the client.
         """
         logger.debug("BROADCAST:" + broadcast)
-        for channel in self.crucialChannels:
+        for channel in self.crucial_channels:
             self.send_msg(channel, broadcast)
 
     def set_topic(self, chan, topic):
@@ -170,7 +169,7 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
             return True
         else:
             logger.error("IRC connection lost.")
-            for channel in self.crucialChannels:
+            for channel in self.crucial_channels:
                 if channel in self.channels:
                     self.channels[channel].print_raw("Server", "IRC is disconnected")
             return False
@@ -181,7 +180,7 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
             return True
         else:
             logger.error("IRC connection lost.")
-            for channel in self.crucialChannels:
+            for channel in self.crucial_channels:
                 if channel in self.channels:
                     self.channels[channel].print_action("IRC", "was disconnected.")
             return False
@@ -213,7 +212,7 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
                 self.connection.join(channel)
             else:
                 # Note down channels for later.
-                self.optionalChannels.append(channel)
+                self.optional_channels.append(channel)
 
     def join(self, channel):
         if channel not in self.channels:
@@ -240,8 +239,8 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
             self.connection.privmsg('NickServ', 'recover %s %s' % (client.instance.login,
                                                                    util.md5text(client.instance.password)))
         # Perform any pending autojoins (client may have emitted auto_join signals before we talked to the IRC server)
-        self.auto_join(self.optionalChannels)
-        self.auto_join(self.crucialChannels)
+        self.auto_join(self.optional_channels)
+        self.auto_join(self.crucial_channels)
 
     def nickserv_register(self):
         if hasattr(self, '_nickserv_registered'):
@@ -249,8 +248,8 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
         self.connection.privmsg('NickServ', 'register %s %s' % (util.md5text(client.instance.password),
                                                                 '{}@users.faforever.com'.format(client.instance.me.login)))
         self._nickserv_registered = True
-        self.auto_join(self.optionalChannels)
-        self.auto_join(self.crucialChannels)
+        self.auto_join(self.optional_channels)
+        self.auto_join(self.crucial_channels)
 
     def on_version(self, c, e):
         self.connection.privmsg(e.source(), "Forged Alliance Forever " + util.VERSION_STRING)
@@ -278,32 +277,33 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
         self.log_event(e)
 
     def on_join(self, c, e):
-        channel = e.target()
+        ch_name = e.target()
 
         # If we're joining, we need to open the channel for us first.
-        if channel not in self.channels:
-            newch = Channel(self, channel)
-            if channel.lower() in self.crucialChannels:
-                self.addChannel(channel, newch, 1)  # CAVEAT: This is assumes a server tab exists.
-                client.instance.localBroadcast.connect(newch.print_raw)
-                newch.print_announcement("Welcome to Forged Alliance Forever!", "red", "+3")
-                newch.print_announcement("Check out the wiki: http://wiki.faforever.com for help with common issues.", "white", "+1")
-                newch.print_announcement("", "black", "+1")
-                newch.print_announcement("", "black", "+1")
+        if ch_name not in self.channels:
+            new_channel = Channel(self, ch_name)
+            if ch_name.lower() in self.crucial_channels:
+                self.addChannel(ch_name, new_channel, 1)  # CAVEAT: This is assumes a server tab exists.
+                client.instance.localBroadcast.connect(new_channel.print_raw)
+                new_channel.print_announcement("Welcome to Forged Alliance Forever!", "red", "+3")
+                new_channel.print_announcement("Check out the wiki: http://wiki.faforever.com for help with common "
+                                               "issues.", "white", "+1")
+                new_channel.print_announcement("", "black", "+1")
+                new_channel.print_announcement("", "black", "+1")
             else:
-                self.addChannel(channel, newch)
+                self.addChannel(ch_name, new_channel)
 
             # Make the crucial channels not closeable, and make the last one the active one
-            if channel.lower() in self.crucialChannels:
-                self.setCurrentWidget(self.channels[channel])
+            if ch_name.lower() in self.crucial_channels:
+                self.setCurrentWidget(self.channels[ch_name])
                 self.tabBar().setTabButton(self.currentIndex(), QtGui.QTabBar.RightSide, None)
 
         name, uid, elevation, hostname = parse_irc_source(e.source())
-        self.channels[channel].add_chatter(name, uid, elevation, hostname, True)
+        self.channels[ch_name].add_chatter(name, uid, elevation, hostname, True)
 
-        if channel.lower() in self.crucialChannels and name != client.instance.login:
+        if ch_name.lower() in self.crucial_channels and name != client.instance.login:
             # TODO: search better solution, that html in nick & channel no rendered
-            client.instance.notificationSystem.on_event(ns.Notifications.USER_ONLINE, {'user': uid, 'channel': channel})
+            client.instance.notificationSystem.on_event(ns.Notifications.USER_ONLINE, {'user': uid, 'channel': ch_name})
 
     def on_part(self, c, e):
         channel = e.target()
@@ -395,12 +395,12 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
             self.channels[target].print_msg(source, message)
         elif source == "Global":
             for channel in self.channels:
-                if channel not in self.crucialChannels:
+                if channel not in self.crucial_channels:
                     continue
                 self.channels[channel].print_announcement(message, "yellow", "+2")
         elif source == "AeonCommander":
             for channel in self.channels:
-                if channel not in self.crucialChannels:
+                if channel not in self.crucial_channels:
                     continue
                 self.channels[channel].print_msg(source, message)
         else:

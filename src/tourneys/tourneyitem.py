@@ -47,7 +47,7 @@ class QWebPageChrome(QtWebKit.QWebPage):
 
 
 class TourneyItem(QtGui.QListWidgetItem):
-    FORMATTER_SWISS_OPEN = unicode(util.readfile("tournaments/formatters/open.qthtml"))
+    FORMATTER_SWISS_OPEN = util.readfile("tournaments/formatters/open.qthtml")
 
     def __init__(self, parent, uid, *args):
         QtGui.QListWidgetItem.__init__(self, *args)

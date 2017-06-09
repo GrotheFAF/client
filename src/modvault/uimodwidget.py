@@ -9,7 +9,7 @@ FormClass, BaseClass = util.load_ui_type("modvault/uimod.ui")
 
 
 class UIModWidget(FormClass, BaseClass):
-    FORMATTER_UIMOD = unicode(util.readfile("modvault/uimod.qthtml"))
+    FORMATTER_UIMOD = util.readfile("modvault/uimod.qthtml")
 
     def __init__(self, *args, **kwargs):
         BaseClass.__init__(self, *args, **kwargs)

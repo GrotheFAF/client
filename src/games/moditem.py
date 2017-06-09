@@ -36,7 +36,7 @@ class ModItem(QtGui.QListWidgetItem):
         else:
             color = client.instance.get_color("player")
             
-        self.setTextColor(QtGui.QColor(color))
+        self.setForeground(QtGui.QColor(color))
         self.setText(self.name)
 
     def __eq__(self, other):
