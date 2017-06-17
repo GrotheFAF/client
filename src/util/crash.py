@@ -33,12 +33,6 @@ class CrashDialog(FormClass, BaseClass):
             desc.append(("FA Path: ", fa_path))
             desc.append(("Home Directory", PERSONAL_DIR))
 
-        log = u""
-        try:
-            log += u"\n".join(readlines(LOG_FILE_FAF, False)[-128:])
-        except Exception:
-            log += (str(LOG_FILE_FAF))
-            log += u"empty or not readable"
             desc = "".join(["{}: {}\n".format(n, d) for n, d in desc])
         except Exception:
             desc = "(Exception raised while writing runtime info)\n"
@@ -49,5 +43,6 @@ class CrashDialog(FormClass, BaseClass):
         self.continueButton.clicked.connect(self.accept)
         self.quitButton.clicked.connect(self.reject)
 
-    def tech_support(self):
+    @staticmethod
+    def tech_support():
         QDesktopServices().openUrl(QUrl(Settings.get("SUPPORT_URL")))

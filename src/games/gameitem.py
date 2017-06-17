@@ -52,18 +52,14 @@ class GameItemDelegate(QtGui.QStyledItemDelegate):
         painter.restore()
 
     def sizeHint(self, option, index, *args, **kwargs):
-        self.initStyleOption(option, index)
-
-        html = QtGui.QTextDocument()
-        html.setHtml(option.text)
-        html.setTextWidth(GameItem.TEXTWIDTH)
-        return QtCore.QSize(GameItem.ICONSIZE + GameItem.TEXTWIDTH + GameItem.PADDING, GameItem.ICONSIZE)  
+        TEXTWIDTH = 255
+        ICONSIZE = 110
+        PADDING = 10
+        # Gameitem has fixed size
+        return QtCore.QSize(ICONSIZE + TEXTWIDTH + PADDING, ICONSIZE)
 
 
 class GameItem(QtGui.QListWidgetItem):
-    TEXTWIDTH = 255
-    ICONSIZE = 110
-    PADDING = 10
 
     FORMATTER_FAF = util.readfile("games/formatters/faf.qthtml")
     FORMATTER_MOD = util.readfile("games/formatters/mod.qthtml")

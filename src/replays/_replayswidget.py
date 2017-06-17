@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 LIVEREPLAY_DELAY = 5  # livereplay delay in minutes
 LIVEREPLAY_DELAY_TIME = LIVEREPLAY_DELAY * 60  # livereplay delay for time() (in seconds)
-LIVEREPLAY_DELAY_QTIMER = LIVEREPLAY_DELAY * 60000  # livereplay delay for Qtimer (in milliseconds)
 
 from replays.replayitem import ReplayItem, ReplayItemDelegate
 
@@ -29,24 +28,26 @@ FormClass, BaseClass = util.load_ui_type("replays/replays.ui")
 class LiveReplayItem(QtGui.QTreeWidgetItem):
     def __init__(self, time):
         QtGui.QTreeWidgetItem.__init__(self)
-        self.time = time
+        self.launched_at = time
 
     def __lt__(self, other):
-        return self.time < other.time
+        return self.launched_at < other.launched_at
 
     def __le__(self, other):
-        return self.time <= other.time
+        return self.launched_at <= other.launched_at
 
     def __gt__(self, other):
-        return self.time > other.time
+        return self.launched_at > other.launched_at
 
     def __ge__(self, other):
-        return self.time >= other.time
+        return self.launched_at >= other.launched_at
 
 
 class ReplaysWidget(BaseClass, FormClass):
     SOCKET = 11002
     HOST = "lobby.faforever.com"
+
+    FORMATTER_REPLAY = util.readfile("replays/formatters/replay.qthtml")
 
     # connect to save/restore persistence settings for checkboxes & search parameters
     automatic = Settings.persisted_property("replay/automatic", default_value=False, key_type=bool)
@@ -119,7 +120,6 @@ class ReplaysWidget(BaseClass, FormClass):
 
     def search_vault(self):
         """ search for some replays """
-        self.searchInfoLabel.setText("Searching...")
         self.searching = True
         self.connect_to_replayvault()
         self.send(dict(command="search", rating=self.minRating.value(), map=self.mapName.text(),
@@ -129,7 +129,6 @@ class ReplaysWidget(BaseClass, FormClass):
     def reload_view(self):
         if not self.searching:  # something else is already in the pipe from search_vault
             if self.automatic or self.online_replays == {}:  # refresh on Tap change or only the first time
-                self.searchInfoLabel.setText("Searching...")
                 self.connect_to_replayvault()
                 self.send(dict(command="list"))
 
@@ -148,20 +147,17 @@ class ReplaysWidget(BaseClass, FormClass):
     def onlinetree_clicked(self, item):
         if QtGui.QApplication.mouseButtons() == QtCore.Qt.RightButton:
             if type(item.parent) == ReplaysWidget:
-                item.pressed(item)
+                item.pressed()
         else:
             self.selected_replay = item
-            if hasattr(item, "moreInfo"):
-                if item.moreInfo is False:
+            if hasattr(item, "detail_info"):  # check we are not clicking on a date-item
+                if not item.detail_info:
                     self.connect_to_replayvault()
                     self.send(dict(command="info_replay", uid=item.uid))
-                elif item.spoiled != self.spoilerCheckbox.isChecked():
-                    self.replayInfos.clear()
-                    self.replayInfos.setHtml(item.replayInfo)
-                    item.resize()
                 else:
-                    self.replayInfos.clear()
                     item.generate_info_players_html()
+            else:  # we clear it
+                self.replayInfos.clear()
 
     def onlinetree_doubleclicked(self, item):
         if hasattr(item, "duration"):
@@ -193,12 +189,13 @@ class ReplaysWidget(BaseClass, FormClass):
         if self.selected_replay:  # if something is selected in the tree to the left
             if type(self.selected_replay) == ReplayItem:  # and if it is a game
                 self.selected_replay.generate_info_players_html()  # then we redo it
+            else:  # we clear it
+                self.replayInfos.clear()
 
     def zero_checkbox_change(self, state):
         self.no_zero_duration = state  # save state .. no magic
 
     def reset_refresh_pressed(self):  # reset search parameter and reload recent Replays List
-        self.searchInfoLabel.setText("Searching...")
         self.connect_to_replayvault()
         self.send(dict(command="list"))
         self.playerName.setText("")
@@ -209,43 +206,26 @@ class ReplaysWidget(BaseClass, FormClass):
     def replay_vault(self, message):
         action = message["action"]
         self.searchInfoLabel.clear()
-        if action == "list_recents":
-            self.online_replays = {}
-            replays_msg = message["replays"]
-            for replay_msg in replays_msg:
-                uid = replay_msg["id"]
-
-                if uid not in self.online_replays:
-                    self.online_replays[uid] = ReplayItem(uid, self)
-                    self.online_replays[uid].update(replay_msg)
-                else:
-                    self.online_replays[uid].update(replay_msg)
-
-            self.update_onlinetree()
-            self.replayInfos.clear()
-            self.RefreshResetButton.setText("Refresh Recent List")
-
-        elif action == "info_replay":
+        if action == "info_replay":
             uid = message["uid"]
             if uid in self.online_replays:
                 self.online_replays[uid].info_players(message["players"])
-
-        elif action == "search_result":
-            self.searching = False
+        elif action in ("list_recents", "search_result"):
             self.online_replays = {}
             replays_msg = message["replays"]
             for replay_msg in replays_msg:
                 uid = replay_msg["id"]
-
                 if uid not in self.online_replays:
                     self.online_replays[uid] = ReplayItem(uid, self)
-                    self.online_replays[uid].update(replay_msg)
-                else:
-                    self.online_replays[uid].update(replay_msg)
+                self.online_replays[uid].update(replay_msg, self.FORMATTER_REPLAY)
 
             self.update_onlinetree()
             self.replayInfos.clear()
-            self.RefreshResetButton.setText("Reset Search to Recent")
+            if action == "list_recents":
+                self.RefreshResetButton.setText("Refresh Recent List")
+            elif action == "search_result":
+                self.searching = False
+                self.RefreshResetButton.setText("Reset Search to Recent")
 
     def showEvent(self, event):  # QtGui.QShowEvent
         self.update_mytree(self.mytree_current_path)
@@ -263,15 +243,15 @@ class ReplaysWidget(BaseClass, FormClass):
                 bucket = buckets.setdefault(self.online_replays[uid].startDate, [])
                 bucket.append(self.online_replays[uid])
 
-        for bucket in list(buckets.keys()):
+        for bucket_key in list(buckets.keys()):
             item = QtGui.QTreeWidgetItem()
             self.onlineTree.addTopLevelItem(item)
 
             item.setIcon(0, util.icon("replays/bucket.png"))
-            item.setText(0, "<font color='white'>" + bucket+"</font>")
-            item.setText(1, "<font color='white'>" + str(len(buckets[bucket])) + " replays</font>")
+            item.setText(0, "<font color='white'>" + bucket_key + "</font>")
+            item.setText(1, "<font color='white'>" + str(len(buckets[bucket_key])) + " replays</font>")
 
-            for online_replay in buckets[bucket]:
+            for online_replay in buckets[bucket_key]:
                 item.addChild(online_replay)
                 online_replay.setFirstColumnSpanned(True)
                 online_replay.setIcon(0, online_replay.icon)
@@ -481,24 +461,22 @@ class ReplaysWidget(BaseClass, FormClass):
             else:
                 # Creating a fresh item
                 item = LiveReplayItem(info.get('launched_at', time.time()))
-                item.launched_at = info.get('launched_at', time.time())
                 self.games[info['uid']] = item
 
                 self.liveTree.insertTopLevelItem(0, item)
 
-                if time.time() - item.launched_at < LIVEREPLAY_DELAY_TIME:
+                if LIVEREPLAY_DELAY_TIME > time.time() - item.launched_at:
                     item.setHidden(True)
                     # to get the delay right on client start, subtract the already passed game time
-                    delay_time = LIVEREPLAY_DELAY_QTIMER - int(1000*(time.time() - item.launched_at))
-                    QtCore.QTimer().singleShot(delay_time, self.display_replay)
+                    delay_time = LIVEREPLAY_DELAY_TIME - (time.time() - item.launched_at)
+                    QtCore.QTimer().singleShot(delay_time*1000, self.display_replay)
                     # The delay is there because we have a delay in the livereplay server
 
             # For debugging purposes, format our tooltip for the top level items
             # so it contains a human-readable representation of the info dictionary
             tip = ""
             for key in list(info.keys()):
-                tip += "'" + unicode(key) + "' : '" + unicode(info[key]) + "'<br/>"
-                # tip += "'" + str(key) + "' : '" + str(info[key]) + "'<br/>"  # Py3
+                tip += "'" + str(key) + "' : '" + str(info[key]) + "'<br/>"
 
             if item.toolTip(1) != tip:
                 item.setToolTip(1, tip)
@@ -663,6 +641,7 @@ class ReplaysWidget(BaseClass, FormClass):
 
     def connect_to_replayvault(self):
         """ connect to the replay vault server """
+        self.searchInfoLabel.setText("Searching...")
 
         if self.replayVaultSocket.state() != QtNetwork.QAbstractSocket.ConnectedState and \
            self.replayVaultSocket.state() != QtNetwork.QAbstractSocket.ConnectingState:
@@ -740,6 +719,7 @@ class ReplaysWidget(BaseClass, FormClass):
         self.replayVaultSocket.write(block)
 
     def handle_server_error(self, socket_error):
+        self.searchInfoLabel.setText("Server Error")
         if socket_error == QtNetwork.QAbstractSocket.RemoteHostClosedError:
             logger.info("Replay Server down: The server is down for maintenance, please try later.")
 

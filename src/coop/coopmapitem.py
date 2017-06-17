@@ -8,51 +8,35 @@ class CoopMapItemDelegate(QtGui.QStyledItemDelegate):
         QtGui.QStyledItemDelegate.__init__(self, *args, **kwargs)
         
     def paint(self, painter, option, index, *args, **kwargs):
-        self.initStyleOption(option, index)
-                
         painter.save()
-        
-        html = QtGui.QTextDocument()
-        text_option = QtGui.QTextOption()
-        text_option.setWrapMode(QtGui.QTextOption.WordWrap)
-        html.setDefaultTextOption(text_option)
 
+        self.initStyleOption(option, index)
+        html = QtGui.QTextDocument()
         html.setTextWidth(option.rect.width())
         html.setHtml(option.text)
 
-#        icon = QtGui.QIcon(option.icon)
-#        iconsize = icon.actualSize(option.rect.size())
-#        
-#        # clear icon and text before letting the control draw itself because we're rendering these parts ourselves
-#        option.icon = QtGui.QIcon()        
-        option.text = ""  
+        # clear text before letting the control draw itself because we're rendering these parts ourselves
+        option.text = ""
         option.widget.style().drawControl(QtGui.QStyle.CE_ItemViewItem, option, painter, option.widget)
-#        
-#        # Icon
-#        icon.paint(painter, option.rect.adjusted(5-2, -2, 0, 0), QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
-#
-#        # Description
+
+        # Description
         painter.translate(option.rect.left(), option.rect.top())
         clip = QtCore.QRectF(0, 0, option.rect.width(), option.rect.height())
         html.drawContents(painter, clip)
-  
+
         painter.restore()
 
     def sizeHint(self, option, index, *args, **kwargs):
         self.initStyleOption(option, index)
         html = QtGui.QTextDocument()
-        text_option = QtGui.QTextOption()
-        text_option.setWrapMode(QtGui.QTextOption.WordWrap)
-        html.setTextWidth(option.rect.width())
-        html.setDefaultTextOption(text_option)
+        # width: coopList = 400 -> title = 388/373, campaigns = 368/353  (-15 = scrollbar)
+        html.setTextWidth(self.parent().coopList.width())
         html.setHtml(option.text)
 
-        return QtCore.QSize(int(html.size().width()) + 10, int(html.size().height() + 10))        
+        return QtCore.QSize(int(html.size().width()), int(html.size().height()))
 
 
 class CoopMapItem(QtGui.QTreeWidgetItem):
-
-    FORMATTER_COOP = util.readfile("coop/formatters/coop.qthtml")
 
     def __init__(self, uid, *args):
         QtGui.QTreeWidgetItem.__init__(self, *args)
@@ -66,7 +50,7 @@ class CoopMapItem(QtGui.QTreeWidgetItem):
         self.mod = None
         self.setHidden(True)
 
-    def update(self, message):
+    def update(self, message, formatter):
         """
         Updates this item from the message dictionary supplied
         """
@@ -81,17 +65,11 @@ class CoopMapItem(QtGui.QTreeWidgetItem):
 #            client.instance.downloader.download_map(self.mapname, self, True)
 #            self.icon = util.icon("games/unknown_map.png")        
 #        self.setIcon(0, self.icon)
-        self.viewtext = self.FORMATTER_COOP.format(name=self.name, description=self.description)
+        self.viewtext = formatter.format(name=self.name, description=self.description)
 
-    def display(self, column):
-        if column == 0:
-            return self.viewtext
-        if column == 1:
-            return self.viewtext   
- 
     def data(self, column, role):
         if role == QtCore.Qt.DisplayRole:
-            return self.display(column)  
+            return self.viewtext
         elif role == QtCore.Qt.UserRole:
             return self
         return super(CoopMapItem, self).data(column, role)

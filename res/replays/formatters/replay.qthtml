@@ -1,10 +1,10 @@
-<table border="0" cellpadding="0" cellspacing="0" height = "60" width= "550">
+<table border="0" cellpadding="0" cellspacing="0" height = "60" width= "535">
 <tr>
 <td width = "50" valign="middle">
 <font color="silver" size="-1">start time</font><br />
 <font color="white" size="+1">{time}</font>
 </td>
-<td width = "250">
+<td width = "275">
 <font color="white" size="+1"><b>{name}</b></font><br/>
 <font color="silver" size="-1">on map </font><font color="GoldenRod"><b>{map}</b></font><br/>
 <font color="silver"><b>mod : </b></font><font color="white"><b>{mod}</b></font>

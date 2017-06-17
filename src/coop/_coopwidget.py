@@ -20,6 +20,9 @@ FormClass, BaseClass = util.load_ui_type("coop/coop.ui")
 
 
 class CoopWidget(FormClass, BaseClass):
+
+    FORMATTER_COOP = util.readfile("coop/formatters/coop.qthtml")
+
     def __init__(self, *args, **kwargs):
         
         BaseClass.__init__(self, *args, **kwargs)        
@@ -219,8 +222,8 @@ class CoopWidget(FormClass, BaseClass):
                 root_item = self.cooptypes[type_coop]
 
             item_coop = CoopMapItem(uid)
-            item_coop.update(message)
-            
+            item_coop.update(message, self.FORMATTER_COOP)
+
             root_item.addChild(item_coop)
 
             self.coop[uid] = item_coop
@@ -238,9 +241,7 @@ class CoopWidget(FormClass, BaseClass):
             if uid not in self.games:
                 self.games[uid] = GameItem(uid)
                 self.gameList.addItem(self.games[uid])
-                self.games[uid].update(message)
-            else:
-                self.games[uid].update(message)
+            self.games[uid].update(message)
 
             if message['state'] == "open":
                 # force the display.

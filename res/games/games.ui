@@ -32,6 +32,9 @@
       <number>0</number>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="spacing">
+       <number>5</number>
+      </property>
       <property name="margin">
        <number>0</number>
       </property>
@@ -435,6 +438,16 @@ p, li { white-space: pre-wrap; }
        </widget>
       </item>
       <item>
+       <widget class="QLabel" name="labelModHint">
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Try it: FAF manages mods for you, quick and easy. Mouse over each icon for a short summary of its content &amp;amp; rules. Double-click to host a game.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QListWidget" name="modList">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -484,16 +497,6 @@ p, li { white-space: pre-wrap; }
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="labelModHint">
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Try it: FAF manages mods for you, quick and easy. Mouse over each icon for a short summary of its content &amp;amp; rules. Double-click to host a game.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="wordWrap">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QLabel" name="labelGameInfo">
         <property name="maximumSize">
          <size>
@@ -537,6 +540,9 @@ p, li { white-space: pre-wrap; }
       <number>0</number>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="spacing">
+       <number>5</number>
+      </property>
       <property name="margin">
        <number>0</number>
       </property>
@@ -552,6 +558,34 @@ p, li { white-space: pre-wrap; }
          <number>0</number>
         </property>
         <layout class="QHBoxLayout" name="gameListHeaderLayout">
+         <property name="margin">
+          <number>5</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="labelJoinGame">
+           <property name="palette">
+            <palette>
+             <active/>
+             <inactive/>
+             <disabled/>
+            </palette>
+           </property>
+           <property name="font">
+            <font>
+             <family>Segoe UI</family>
+             <pointsize>12</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="layoutDirection">
+            <enum>Qt::LeftToRight</enum>
+           </property>
+           <property name="text">
+            <string>Custom Games</string>
+           </property>
+          </widget>
+         </item>
          <item>
           <widget class="QLabel" name="labelSortGames">
            <property name="sizePolicy">
@@ -570,7 +604,7 @@ p, li { white-space: pre-wrap; }
            <property name="font">
             <font>
              <family>Segoe UI</family>
-             <pointsize>12</pointsize>
+             <pointsize>8</pointsize>
              <weight>75</weight>
              <bold>true</bold>
             </font>
@@ -613,31 +647,6 @@ p, li { white-space: pre-wrap; }
            </property>
            <property name="text">
             <string>Wide Game Info</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="labelJoinGame">
-           <property name="palette">
-            <palette>
-             <active/>
-             <inactive/>
-             <disabled/>
-            </palette>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>12</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Custom Games</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
