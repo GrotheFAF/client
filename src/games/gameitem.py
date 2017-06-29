@@ -52,11 +52,11 @@ class GameItemDelegate(QtGui.QStyledItemDelegate):
         painter.restore()
 
     def sizeHint(self, option, index, *args, **kwargs):
-        TEXTWIDTH = 255
-        ICONSIZE = 110
-        PADDING = 10
+        text_width = 275
+        icon_size = 110
+        padding = 10
         # Gameitem has fixed size
-        return QtCore.QSize(ICONSIZE + TEXTWIDTH + PADDING, ICONSIZE)
+        return QtCore.QSize(icon_size + text_width + padding, icon_size)
 
 
 class GameItem(QtGui.QListWidgetItem):
@@ -276,11 +276,13 @@ class GameItem(QtGui.QListWidgetItem):
             if self.mod == "faf" or self.mod == "coop":
                 self.setText(self.FORMATTER_FAF.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
                                                        title=self.title, host=self.host, players=num_players,
-                                                       teams=team_str, avgrating=self.average_rating))
+                                                       teams=team_str, avgrating=self.average_rating,
+                                                       devrating=self.deviation_rating))
             else:
                 self.setText(self.FORMATTER_MOD.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
                                                        title=self.title, host=self.host, players=num_players,
-                                                       teams=team_str, mod=self.mod, avgrating=self.average_rating))
+                                                       teams=team_str, mod=self.mod, avgrating=self.average_rating,
+                                                       devrating=self.deviation_rating))
         elif self.state != "playing":
             self.state = "funky"
 
@@ -400,3 +402,7 @@ class GameItem(QtGui.QListWidgetItem):
     @property
     def average_rating(self):
         return sum([p.rating_estimate() for p in self.players]) / max(len(self.players), 1)
+
+    @property
+    def deviation_rating(self):
+        return int((sum([(self.average_rating - p.rating_estimate())**2 for p in self.players]) / max(len(self.players), 1))**0.5)

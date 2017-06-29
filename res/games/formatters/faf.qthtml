@@ -1,6 +1,6 @@
 <font color="white" size="+2"><b>{title}</b></font><br/>
 <font color="silver" size="-1">on map</font>&nbsp;<font color="GoldenRod"><b>{mapdisplayname}</b></font>
-<table border="0" cellpadding="0" cellspacing="0" width= "250">
+<table border="0" cellpadding="0" cellspacing="0" width= "270">
 <tbody>
 <tr>
 <td>
@@ -10,7 +10,8 @@
 </td>
 <td align="right">
 <b><font color="silver" size="-1">Avg. Rating</font><br/>
-<font color="silver" size="+1">{avgrating}</font></b>
+<font color="silver" size="+2">{avgrating}</font></b><br/>
+<font color="silver" size="-1">(σ {devrating})</font><br/>
 </td>
 </tr>
 </tbody>

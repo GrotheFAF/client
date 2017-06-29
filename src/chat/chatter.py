@@ -419,7 +419,7 @@ class Chatter(QtGui.QTableWidgetItem):
         client.instance.replays.playerName.setText(self.name)
         client.instance.replays.mapName.setText("")
         client.instance.replays.modList.setCurrentIndex(0)  # "All"
-        client.instance.replays.minRating.setValue(0)
+        client.instance.replays.minRating.setValue(0)  # TODO client issue #762 rating < 0
         client.instance.replays.search_vault()
         client.instance.mainTabs.setCurrentIndex(client.instance.mainTabs.indexOf(client.instance.replaysTab))
 
