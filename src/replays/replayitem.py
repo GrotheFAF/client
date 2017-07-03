@@ -119,11 +119,15 @@ class ReplayItem(QtGui.QTreeWidgetItem):
         self.mod = message["mod"]
 
         # Map preview code
-        self.mapdisplayname = maps.get_display_name(self.mapname)
+        if self.mapname:
+            self.mapdisplayname = maps.get_display_name(self.mapname)
 
-        self.icon = maps.preview(self.mapname)
-        if not self.icon:
-            client.instance.downloader.download_map(self.mapname, self, True)
+            self.icon = maps.preview(self.mapname)
+            if not self.icon:
+                client.instance.downloader.download_map(self.mapname, self, True)
+                self.icon = util.icon("games/unknown_map.png")
+        else:
+            self.mapdisplayname = "{unknown}"
             self.icon = util.icon("games/unknown_map.png")
 
         if self.mod in mods:

@@ -167,7 +167,7 @@ class StatsWidget(BaseClass, FormClass):
             if self.currentLeague in self.pagesDivisionsResults:
                 if self.currentDivision in self.pagesDivisionsResults[self.currentLeague]:
                     self.create_results(message["values"], self.pagesDivisionsResults[self.currentLeague][self.currentDivision])
-                    
+
         elif type_stat == "league_table":
             self.currentLeague = message["league"]
             tab = self.currentLeague - 1
