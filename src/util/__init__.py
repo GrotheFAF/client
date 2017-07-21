@@ -521,6 +521,7 @@ def __download_preview_from_web(unitname):
         fp.flush()
         os.fsync(fp.fileno())  # probably works fine without the flush and fsync
         fp.close()
+    return img  # Grothe: line wasn't there - but shouldn't it give something back to make it work in icon_unit?
 
 
 def icon_unit(unitname):

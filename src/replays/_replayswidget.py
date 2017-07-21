@@ -160,26 +160,22 @@ class ReplaysWidget(BaseClass, FormClass):
                 self.replayInfos.clear()
 
     def onlinetree_doubleclicked(self, item):
-        if hasattr(item, "duration"):
+        if hasattr(item, "duration") and hasattr(item, "url"):
             if "playing" in item.duration and "?playing?" not in item.duration:  # live game will not be in vault
-                if not item.live_delay:  # live game under 5min
-                    if item.mod == "ladder1v1":
-                        name = item.name[:item.name.find(" ")]  # "name vs name"
-                    else:
-                        for team in item.teams:  # find a player...
-                            for player in item.teams[team]:
-                                name = player["name"]
-                                if name != "":
-                                    if name in client.instance.urls:  # player still online
-                                        break
-                            if name != "":
-                                if name in client.instance.urls:  # player still online
-                                    break
-                    if name in client.instance.urls:  # if player still online
-                        replay(client.instance.urls[name])  # join live game
+                if item.uid in client.instance.games.games:  # still running
+                    game = client.instance.games.games[item.uid]
+                    for player in game.players:  # find a player ...
+                        if player.login in client.instance.urls:  # ... still online/in game
+                            if time.time() - game.launched_at > LIVEREPLAY_DELAY_TIME:  # live game over 5min
+                                replay(client.instance.urls[player.login])  # join live game
+                            return
+                else:  # game ended - so start replay
+                    if QtGui.QMessageBox.question(client.instance, "Live Game ended", "Want to try the Replay?",
+                                                  QtGui.QMessageBox.Yes,
+                                                  QtGui.QMessageBox.No) == QtGui.QMessageBox.Yes:
+                        self.replayDownload.get(QNetworkRequest(QtCore.QUrl(item.url)))
             else:  # start replay
-                if hasattr(item, "url"):
-                    self.replayDownload.get(QNetworkRequest(QtCore.QUrl(item.url)))
+                self.replayDownload.get(QNetworkRequest(QtCore.QUrl(item.url)))
 
     def automatic_checkbox_change(self, state):
         self.automatic = state  # save state .. no magic

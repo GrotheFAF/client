@@ -148,14 +148,12 @@ class GameItem(QtGui.QListWidgetItem):
         if not client.instance.opengames:
             return
 
+        in_str = ' in <a style="color:' + client.instance.get_color("url") + '" href="' + self.url().toString() + '">'\
+                 + self.title + '</a> (on "' + self.mapdisplayname + '")'
         if self.mod == "faf":
-            client.instance.forward_local_broadcast(self.host, 'is hosting <a style="color:' +
-                                                    client.instance.get_color("url") + '" href="' + url.toString()
-                                                    + '">' + self.title + '</a> (on "' + self.mapdisplayname + '")')
+            client.instance.forward_local_broadcast(self.host, 'is hosting' + in_str)
         else:
-            client.instance.forward_local_broadcast(self.host, 'is hosting ' + self.mod + ' <a style="color:' +
-                                                    client.instance.get_color("url") + '" href="' + url.toString()
-                                                    + '">' + self.title + '</a> (on "' + self.mapdisplayname + '")')
+            client.instance.forward_local_broadcast(self.host, 'is hosting ' + self.mod + in_str)
 
     def update(self, message, old_client=None):
         """
@@ -294,7 +292,7 @@ class GameItem(QtGui.QListWidgetItem):
                     self.announce_replay()
                 else:
                     QtCore.QTimer().singleShot(5*60100 - 1000*(time.time() - self.launched_at), self.announce_replay)
-            elif self.state == "open":  # The 3.5s delay is there because the host needs time to choose a map
+            elif self.state == "open":  # The 35s delay is there because the host needs time to set up
                 QtCore.QTimer().singleShot(35000, self.announce_hosting)
 
         # Update player URLs
@@ -405,4 +403,5 @@ class GameItem(QtGui.QListWidgetItem):
 
     @property
     def deviation_rating(self):
-        return int((sum([(self.average_rating - p.rating_estimate())**2 for p in self.players]) / max(len(self.players), 1))**0.5)
+        return int((sum([(self.average_rating - p.rating_estimate())**2 for p in self.players]) /
+                    max(len(self.players), 1))**0.5)

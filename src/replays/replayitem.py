@@ -280,7 +280,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
             self.parent.replayInfos.clear()
 
     def generate_player_html(self, i, player, spoiled):
-        place = ["F", "R", "B", "A"]
+        place = ["F", "R", "B", "A"]  # Start positions on Seton's Clutch
         if i == 2 and len(self.teams) == 2:
             align = "right"
         else:
@@ -292,7 +292,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
 
         icon = "<td width='40'><img src='file:///%s' width='40' height='20'></td>" % icon_url
 
-        if spoiled and not self.mod == "ladder1v1":
+        if spoiled:  # and not self.mod == "ladder1v1":
             if self.mapname == "scmp_009":  # Seton's Clutch - add positions
                 if align == "right":
                     score = "<td align='left' valign='middle' width='25'>%s %s</td>" % (
