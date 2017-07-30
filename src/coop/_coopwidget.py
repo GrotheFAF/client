@@ -199,7 +199,7 @@ class CoopWidget(FormClass, BaseClass):
         
         # A simple Hosting dialog.
         if fa.check.check("coop"):
-            hostgamewidget = HostGameWidget(self, item, iscoop=True)
+            hostgamewidget = HostGameWidget(self, item, is_coop=True)
             hostgamewidget.exec_()
 
     @QtCore.pyqtSlot(dict)

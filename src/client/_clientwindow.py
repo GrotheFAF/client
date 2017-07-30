@@ -861,7 +861,7 @@ class ClientWindow(FormClass, BaseClass):
 
     def set_remember(self, remember):
         self.remember = remember
-        self.actionSetAutoLogin.setChecked(self.remember) # FIXME - option updating is silly
+        self.actionSetAutoLogin.setChecked(self.remember)  # FIXME - option updating is silly
 
     def get_creds_and_login(self):
         # Try to autologin, or show login widget if we fail or can't do that.

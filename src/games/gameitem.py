@@ -3,7 +3,6 @@ from fa import maps
 import util
 import os
 from games.moditem import mod_invisible
-import traceback
 import client
 import time
 import logging
@@ -112,57 +111,82 @@ class GameItem(QtGui.QListWidgetItem):
     @QtCore.pyqtSlot()
     def announce_replay(self):  # <- update - timer
 
-        client.instance.usersUpdated.emit(list(self.players))  # red cross to white cross
-
-        if not client.instance.players.is_friend(self.host_id):
-            return
-
         if not self.state == "playing":  # game already over
             return
+
+        client.instance.usersUpdated.emit(list(self.players))  # red cross to white cross
 
         # User does not want to see this in chat
         if not client.instance.livereplays:
             return
 
-        in_str = ' in <a style="color:' + client.instance.get_color("url") + '" href="' + self.url().toString() + '">'\
-                 + self.title + '</a> (on "' + self.mapdisplayname + '")'
-        if self.mod == "faf":
-            client.instance.forward_local_broadcast(self.host, 'is playing live' + in_str)
-        else:
-            client.instance.forward_local_broadcast(self.host, 'is playing ' + self.mod + in_str)
+        for player in self.players:
+            if client.instance.players.is_friend(player.id):
+                in_str = ' in <a style="color:' + client.instance.get_color("url") + '" href="' + \
+                         client.instance.urls[player.login].toString() + '">' + self.title + '</a> on "' + \
+                         self.mapdisplayname + '"'
+                if self.mod != "faf":
+                    in_str = ' ' + self.mod + in_str
+                client.instance.forward_local_broadcast(player.login, 'is playing' + in_str)
 
     @QtCore.pyqtSlot()
     def announce_hosting(self):  # <- update
-        if not client.instance.players.is_friend(self.host_id) or self.isHidden():
+        if not client.instance.players.is_friend(self.host_id):
             return
 
-        if not self.state == "open":
+        if not self.state == "open":  # game has started or hosting aborted
             return
 
-        url = self.url()
-
-        # Join url for single sword
-        client.instance.urls[self.host] = url
-
-        # No visible message if not requested   
+        # User does not want to see this in chat
         if not client.instance.opengames:
             return
 
-        in_str = ' in <a style="color:' + client.instance.get_color("url") + '" href="' + self.url().toString() + '">'\
-                 + self.title + '</a> (on "' + self.mapdisplayname + '")'
-        if self.mod == "faf":
-            client.instance.forward_local_broadcast(self.host, 'is hosting' + in_str)
-        else:
-            client.instance.forward_local_broadcast(self.host, 'is hosting ' + self.mod + in_str)
+        if self.host in client.instance.urls:
+            name = self.host
+        elif len(self.players) > 0:
+            name = self.players[0].login
+        else:  # no player in game online
+            return
 
-    def update(self, message, old_client=None):
+        in_str = ' <a style="color:' + client.instance.get_color("url") + '" href="' + \
+                 client.instance.urls[name].toString() + '">' + self.title + '</a> on "' + \
+                 self.mapdisplayname + '"'
+        if self.mod != "faf":
+            in_str = ' ' + self.mod + in_str
+        client.instance.forward_local_broadcast(self.host, 'is hosting' + in_str)
+
+    @QtCore.pyqtSlot()
+    def announce_joining(self, name=None):  # <- update
+        if not self.state == "open":  # game has started or hosting aborted
+            return
+
+        # User does not want to see this in chat
+        if not client.instance.opengames:
+            return
+
+        if name:
+            if not client.instance.players.is_friend(name):
+                return
+
+            in_str = ' <a style="color:' + client.instance.get_color("url") + '" href="' + \
+                     client.instance.urls[name].toString() + '">' + self.title + '</a> on "' + self.mapdisplayname + '"'
+            if self.mod != "faf":
+                in_str = ' ' + self.mod + in_str
+            client.instance.forward_local_broadcast(name, 'joined' + in_str)
+        else:  # at client start all players who are friends ... of course
+            for player in self.players:
+                if client.instance.players.is_friend(player.login):
+                    in_str = ' <a style="color:' + client.instance.get_color("url") + '" href="' + \
+                         client.instance.urls[player.login].toString() + '">' + self.title + '</a> on "' + \
+                         self.mapdisplayname + '"'
+                    if self.mod != "faf":
+                        in_str = ' ' + self.mod + in_str
+                    client.instance.forward_local_broadcast(player.login, 'joined' + in_str)
+
+    def update(self, message):
         """
         Updates this item from the message dictionary supplied
         """
-
-        if old_client:
-            logger.error('GameItem.update called with 3 args')
-            logger.error(traceback.format_stack())
 
         self.title = message['title']  # can be renamed in Lobby (now)
 
@@ -173,7 +197,7 @@ class GameItem(QtGui.QListWidgetItem):
         elif self.host != message['host']:  # somethings funny (offline)
             self.host = message['host']
 
-        if 'host_id' in message:
+        if 'host_id' in message:  # then we would take that (but that never happens...)
             self.host_id = message['host_id']
         elif self.host_id == -1:  # fresh game
             self.host_id = client.instance.players.get_id(self.host)
@@ -266,19 +290,21 @@ class GameItem(QtGui.QListWidgetItem):
                 team_str += "<font size='-1'> + " + str(len(observers)) + " O.</font>"
 
             if self.host_id == -1:  # user offline (?)
-                self.host += " <font color='darkred'>(offline)</font>"
+                ol = " <font color='darkred'>(offline)</font>"
+            else:
+                ol = ""
             color = client.instance.players.get_user_color(self.host_id)
 
             self.edit_tooltip(teams, observers)
 
             if self.mod == "faf" or self.mod == "coop":
                 self.setText(self.FORMATTER_FAF.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
-                                                       title=self.title, host=self.host, players=num_players,
+                                                       title=self.title, host=self.host + ol, players=num_players,
                                                        teams=team_str, avgrating=self.average_rating,
                                                        devrating=self.deviation_rating))
             else:
                 self.setText(self.FORMATTER_MOD.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
-                                                       title=self.title, host=self.host, players=num_players,
+                                                       title=self.title, host=self.host + ol, players=num_players,
                                                        teams=team_str, mod=self.mod, avgrating=self.average_rating,
                                                        devrating=self.deviation_rating))
         elif self.state != "playing":
@@ -289,15 +315,20 @@ class GameItem(QtGui.QListWidgetItem):
             if self.state == "playing":  # The delay is there because we have a 5 minutes delay in the livereplay server
                 self.launched_at = message['launched_at']
                 if time.time() - self.launched_at > 5*60:  # most games after client start
-                    self.announce_replay()
+                    QtCore.QTimer().singleShot(4000, self.announce_replay)
                 else:
-                    QtCore.QTimer().singleShot(5*60100 - 1000*(time.time() - self.launched_at), self.announce_replay)
-            elif self.state == "open":  # The 35s delay is there because the host needs time to set up
-                QtCore.QTimer().singleShot(35000, self.announce_hosting)
+                    QtCore.QTimer().singleShot(1000*(5*60 - (time.time() - self.launched_at)), self.announce_replay)
+            elif self.state == "open":  # The 5s delay is there because the host needs time to set up
+                QtCore.QTimer().singleShot(3000, self.announce_hosting)
 
         # Update player URLs
         for player in self.players:
             client.instance.urls[player.login] = self.url(player.id)
+            if old_state and player.login != self.host and player.login not in old_players:
+                self.announce_joining(player.login)
+
+        if not old_state:  # announce all on client start
+            QtCore.QTimer().singleShot(3500, self.announce_joining)
 
         # Determine which players are affected by this game's state change            
         new_players = set([p.login for p in self.players])

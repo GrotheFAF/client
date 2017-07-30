@@ -90,13 +90,13 @@ class Chatter(QtGui.QTableWidgetItem):
 
     def __lt__(self, other):
         """ Comparison operator used for item list sorting """
-        first_status = self.get_user_rank(self)
-        second_status = self.get_user_rank(other)
-
         if self.name == client.instance.login:
             return True
         if other.name == client.instance.login:
             return False
+
+        first_status = self.get_user_rank(self)
+        second_status = self.get_user_rank(other)
 
         # if not same rank sort
         if first_status != second_status:
@@ -105,16 +105,16 @@ class Chatter(QtGui.QTableWidgetItem):
         # Default: Alphabetical
         return self.name.lower() < other.name.lower()
 
-    def get_user_rank(self, other_chatter):
+    def get_user_rank(self, user):
         # TODO: Add subdivision for admin?
 
-        if other_chatter.elevation:
+        if user.elevation:
             return self.RANK_ELEVATION
-        if client.instance.players.is_friend(other_chatter.id):
+        if client.instance.players.is_friend(user.id):
             return self.RANK_FRIEND - (2 if client.instance.friendsontop else 0)
-        if client.instance.players.is_foe(other_chatter.id):
+        if client.instance.players.is_foe(user.id):
             return self.RANK_FOE
-        if client.instance.players.is_player(other_chatter.id):
+        if client.instance.players.is_player(user.id):
             return self.RANK_USER
 
         return self.RANK_NONPLAYER

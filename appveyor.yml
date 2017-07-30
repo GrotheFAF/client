@@ -7,7 +7,7 @@ environment:
       secure: Np481CGoJvTGB8O5rZTRswUZagGv7WtWT/TXTABQ184xUbL5vj9NoCtmtNRK6YxF
     UID_VERSION: v4.0.4
   matrix:
-    - PYTHON: "C:\\Miniconda"
+    - PYTHON: "C:\\Python27"
       PYWHEEL_INFIX: "cp27"
 
 init:
@@ -16,8 +16,7 @@ init:
 install:
   # dump version
   - git describe --tags --always
-  # use conda for installing pyqt
-  - "%PYTHON%\\Scripts\\conda install --quiet -y pyqt=4.11.4 pywin32"
+  - "%PYTHON%\\Scripts\\pip install https://github.com/FAForever/python-wheels/releases/download/2.0.0/pywin32-221-%PYWHEEL_INFIX%-%PYWHEEL_INFIX%m-win32.whl"
   # copy required dlls for packaging in setup.py
   - "xcopy %PYTHON%\\Library\\plugins\\imageformats .\\imageformats /I"
   - "xcopy %PYTHON%\\Library\\bin\\libeay32.dll ."

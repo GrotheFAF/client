@@ -15,12 +15,12 @@ FormClass, BaseClass = util.load_ui_type("games/host.ui")
 
 
 class HostGameWidget(FormClass, BaseClass):
-    def __init__(self, parent, item, iscoop=False, *args, **kwargs):
+    def __init__(self, parent, item, is_coop=False, *args, **kwargs):
         BaseClass.__init__(self, *args, **kwargs)
 
         self.setupUi(self)
         self.parent = parent
-        self.iscoop = iscoop
+        self.is_coop = is_coop
         self.featured_mod = item.mod
 
         self.setStyleSheet(client.instance.styleSheet())
@@ -30,7 +30,7 @@ class HostGameWidget(FormClass, BaseClass):
         self.password = util.settings.value("password", "password")
         self.title = util.settings.value("gamename", (client.instance.login or "") + "'s game")
         self.friends_only = util.settings.value("friends_only", False, type=bool)
-        if self.iscoop:
+        if self.is_coop:
             self.mapname = fa.maps.link2name(item.mapUrl)
         else:
             self.mapname = util.settings.value("gamemap", "scmp_007")
@@ -42,7 +42,7 @@ class HostGameWidget(FormClass, BaseClass):
         self.game = GameItem(0)
         self.gamePreview.setItemDelegate(GameItemDelegate(self))
         self.gamePreview.addItem(self.game)
-        
+
         self.message = {
             "title": self.title,
             "host": client.instance.login,  # We will want to send our ID here at some point
@@ -54,14 +54,14 @@ class HostGameWidget(FormClass, BaseClass):
 
         self.game.update(self.message)
         self.game.setHidden(False)
-        
+
         i = 0
         index = 0
-        if not self.iscoop:
-            allmaps = dict()
+        if not self.is_coop:
+            all_maps = dict()
             for map_key in list(maps.maps.keys()) + maps.get_user_maps():
-                allmaps[map_key] = maps.get_display_name(map_key)
-            for (map_key, name) in sorted(iter(allmaps.items()), key=lambda x: x[1]):
+                all_maps[map_key] = maps.get_display_name(map_key)
+            for (map_key, name) in sorted(iter(all_maps.items()), key=lambda x: x[1]):
                 if map_key == self.mapname:
                     index = i
                 self.mapList.addItem(name, map_key)
@@ -92,7 +92,7 @@ class HostGameWidget(FormClass, BaseClass):
         self.hostButton.released.connect(self.hosting)
         self.titleEdit.textChanged.connect(self.update_text)
         # self.modList.itemClicked.connect(self.modclicked)
-        
+
     def update_text(self, text):
         self.message['title'] = text
         self.game.update(self.message)
@@ -119,7 +119,7 @@ class HostGameWidget(FormClass, BaseClass):
         # Ensure all mods are up-to-date, and abort if the update process fails.
         if not fa.check.check(self.featured_mod):
             return
-        if self.iscoop and not fa.check.map(self.mapname, force=True):
+        if self.is_coop and not fa.check.map(self.mapname, force=True):
             return
 
         modnames = [str(moditem.text()) for moditem in self.modList.selectedItems()]
@@ -143,7 +143,7 @@ class HostGameWidget(FormClass, BaseClass):
 
     def save_last_hosted_settings(self):
         util.settings.beginGroup("fa.games")
-        if not self.iscoop:
+        if not self.is_coop:
             util.settings.setValue("gamemap", self.mapname)
         if self.title != "Nobody's game":
             util.settings.setValue("gamename", self.title)
