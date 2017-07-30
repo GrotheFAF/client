@@ -286,50 +286,22 @@ class Chatter(QtGui.QTableWidgetItem):
     def pressed(self, item):
         menu = QtGui.QMenu(self.parent)
 
-        # Actions for stats
-        action_select_avatar = QtGui.QAction("Select Avatar", menu)
-
-        # Action for aliases link
-        action_view_aliases = QtGui.QAction("View Aliases", menu)
-
-        # Actions for Games and Replays
-        action_replay = QtGui.QAction("View Live Replay", menu)
-        action_vault_replay = QtGui.QAction("View Replays in Vault", menu)
-        action_join = QtGui.QAction("Join in Game", menu)
-
-        # Default is all disabled, we figure out what we can do after this
-        action_replay.setDisabled(True)
-        action_join.setDisabled(True)
-
-        # Don't allow self to be invited to a game, or join one
-        if client.instance.login != self.name:
-            if self.name in client.instance.urls:
-                url = client.instance.urls[self.name]
-                if url.scheme() == "fafgame":
-                    action_join.setEnabled(True)
-                elif url.scheme() == "faflive":
-                    action_replay.setEnabled(True)
-
-        # Triggers
-        action_view_aliases.triggered.connect(self.view_aliases)
-        action_select_avatar.triggered.connect(self.select_avatar)
-        action_replay.triggered.connect(self.view_replay)
-        action_vault_replay.triggered.connect(self.view_vault_replay)
-        action_join.triggered.connect(self.join_in_game)
-
         # only for us. Either way, it will display our avatar, not anyone avatar.
         if client.instance.login == self.name:
+            action_select_avatar = QtGui.QAction("Select Avatar", menu)
+            action_select_avatar.triggered.connect(self.select_avatar)  # Trigger
             menu.addAction(action_select_avatar)
-            menu.addSeparator()
 
         # power menu
         if client.instance.power > 1:
             # admin and mod menus
+            menu.addSeparator()
             action_add_avatar = QtGui.QAction("Assign avatar", menu)
+            action_add_avatar.triggered.connect(self.add_avatar)  # Triggers
             menu.addAction(action_add_avatar)
-            action_add_avatar.triggered.connect(self.add_avatar)
 
             if client.instance.power == 2:
+                menu.addSeparator()
                 action_inspect_in_mordor = QtGui.QAction("Send the Orcs", menu)
                 menu.addAction(action_inspect_in_mordor)
 
@@ -341,7 +313,7 @@ class Chatter(QtGui.QTableWidgetItem):
                     else:
                         QtGui.QDesktopServices.openUrl(QUrl("{}/users/{}".format(route, self.name)))
 
-                action_inspect_in_mordor.triggered.connect(send_the_orcs)
+                action_inspect_in_mordor.triggered.connect(send_the_orcs)  # Triggers
 
                 action_close_fa = QtGui.QAction("Close Game", menu)
                 menu.addAction(action_close_fa)
@@ -351,58 +323,66 @@ class Chatter(QtGui.QTableWidgetItem):
                 menu.addAction(action_close_lobby)
                 action_close_lobby.triggered.connect(lambda: client.instance.close_lobby(self.name))
 
+        # Aliases link
+        menu.addSeparator()
+        action_view_aliases = QtGui.QAction("View Aliases", menu)
+        action_view_aliases.triggered.connect(self.view_aliases)  # Triggers
+        menu.addAction(action_view_aliases)  # Adding to menu
+
+        # Joining live or hosted game
+        if client.instance.login != self.name:  # Don't allow self to be invited to a game, or join one
+            if self.name in client.instance.urls:
+                menu.addSeparator()
+                url = client.instance.urls[self.name]
+                if url.scheme() == "fafgame":
+                    action_join = QtGui.QAction("Join hosted Game", menu)
+                    action_join.triggered.connect(self.join_in_game)  # Triggers
+                    menu.addAction(action_join)
+                elif url.scheme() == "faflive":
+                    game = client.instance.games.games[int(url.queryItemValue("uid"))]
+                    time_running = time.time() - game.launched_at
+                    if time_running > 5 * 60:
+                        if time_running > 60 * 60:
+                            time_format = '%H:%M:%S'
+                        else:
+                            time_format = '%M:%S'
+                        duration_str = time.strftime(time_format, time.gmtime(time_running))
+                        action_replay = QtGui.QAction("View Live Replay (runs " + duration_str + ")", menu)
+                    else:
+                        duration_str = time.strftime('%M:%S', time.gmtime(5*60 - time_running))
+                        action_replay = QtGui.QAction("Wait " + duration_str + " to view Live Replay", menu)
+                    action_replay.triggered.connect(self.view_replay)  # Triggers
+                    menu.addAction(action_replay)
+
+        # replays in vault
+        if self.id != -1:  # no irc user
             menu.addSeparator()
+            action_vault_replay = QtGui.QAction("View Replays in Vault", menu)
+            action_vault_replay.triggered.connect(self.view_vault_replay)  # Triggers
+            menu.addAction(action_vault_replay)
 
-        # Adding to menu
-        menu.addAction(action_view_aliases)
-        menu.addSeparator()
-        menu.addAction(action_replay)
-        menu.addAction(action_vault_replay)
-        menu.addSeparator()
-        menu.addAction(action_join)
-
-        # Actions for the Friends List
-        action_add_friend = QtGui.QAction("Add friend", menu)
-        action_rem_friend = QtGui.QAction("Remove friend", menu)
-
-        # Actions for the Foes List
-        action_add_foe = QtGui.QAction("Add foe", menu)
-        action_rem_foe = QtGui.QAction("Remove foe", menu)
-
-        # Don't allow self to be added or removed from friends or foes
+        # Friends and Foe Lists
         if client.instance.me.id == self.id:
-            action_add_friend.setDisabled(1)
-            action_rem_friend.setDisabled(1)
-            action_add_foe.setDisabled(1)
-            action_rem_foe.setDisabled(1)
-
-        # Enable / Disable actions according to friend status
-        if client.instance.players.is_friend(self.id):
-            action_add_friend.setDisabled(1)
-            action_rem_foe.setDisabled(1)
-            action_add_foe.setDisabled(1)
-        else:
-            action_rem_friend.setDisabled(1)
-
-        if client.instance.players.is_foe(self.id):
-            action_add_foe.setDisabled(1)
-            action_add_friend.setDisabled(1)
-            action_rem_friend.setDisabled(1)
-        else:
-            action_rem_foe.setDisabled(1)
-
-        # Triggers
-        action_add_friend.triggered.connect(lambda: client.instance.add_friend(self.id))
-        action_rem_friend.triggered.connect(lambda: client.instance.rem_friend(self.id))
-        action_add_foe.triggered.connect(lambda: client.instance.add_foe(self.id))
-        action_rem_foe.triggered.connect(lambda: client.instance.rem_foe(self.id))
-
-        # Adding to menu
-        menu.addAction(action_add_friend)
-        menu.addAction(action_rem_friend)
-        menu.addSeparator()
-        menu.addAction(action_add_foe)
-        menu.addAction(action_rem_foe)
+            pass
+        elif client.instance.players.is_friend(self.id):
+            menu.addSeparator()
+            action_rem_friend = QtGui.QAction("Remove friend", menu)
+            action_rem_friend.triggered.connect(lambda: client.instance.rem_friend(self.id))  # Triggers
+            menu.addAction(action_rem_friend)
+        elif client.instance.players.is_foe(self.id):
+            menu.addSeparator()
+            action_rem_foe = QtGui.QAction("Remove foe", menu)
+            action_rem_foe.triggered.connect(lambda: client.instance.rem_foe(self.id))  # Triggers
+            menu.addAction(action_rem_foe)
+        elif self.id != -1:  # no irc user
+            menu.addSeparator()
+            action_add_friend = QtGui.QAction("Add friend", menu)
+            action_add_friend.triggered.connect(lambda: client.instance.add_friend(self.id))  # Triggers
+            menu.addAction(action_add_friend)
+            if self.get_user_rank(self) > 0:  # 0 = Mod
+                action_add_foe = QtGui.QAction("Add foe", menu)
+                action_add_foe.triggered.connect(lambda: client.instance.add_foe(self.id))  # Triggers
+                menu.addAction(action_add_foe)
 
         # Finally: Show the popup
         menu.popup(QtGui.QCursor.pos())
