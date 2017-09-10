@@ -454,6 +454,7 @@
      <addaction name="actionShowMapsDir"/>
      <addaction name="actionShowModsDir"/>
      <addaction name="actionShowReplaysDir"/>
+     <addaction name="actionShowThemesDir"/>
      <addaction name="actionShowGamePrefs"/>
     </widget>
     <addaction name="menuSettings"/>
@@ -747,6 +748,11 @@
   <action name="actionShowGamePrefs">
    <property name="text">
     <string>Show game.prefs</string>
+   </property>
+  </action>
+  <action name="actionShowThemesDir">
+   <property name="text">
+    <string>Show themes folder</string>
    </property>
   </action>
  </widget>

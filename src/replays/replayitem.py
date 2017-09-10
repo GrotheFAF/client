@@ -120,7 +120,7 @@ class ReplayItem(QtGui.QTreeWidgetItem):
 
         # Map preview code
         if self.mapname:
-            self.mapdisplayname = maps.get_display_name(self.mapname)
+            self.mapdisplayname = str(maps.get_display_name(self.mapname))
 
             self.icon = maps.preview(self.mapname)
             if not self.icon:

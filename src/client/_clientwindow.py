@@ -525,7 +525,7 @@ class ClientWindow(FormClass, BaseClass):
         self.modvault = modvault.ModVault()
         self.replays = replays.ReplaysWidget(self.lobby_dispatch)
         self.tutorials = tutorials.TutorialsWidget()
-        self.Coop = coop.CoopWidget()
+        self.coop = coop.CoopWidget()
         self.notificationSystem = ns.Notifications()
 
         # set menu states
@@ -709,6 +709,7 @@ class ClientWindow(FormClass, BaseClass):
         self.actionShowMapsDir.triggered.connect(lambda: util.show_dir_in_file_browser(get_user_maps_folder()))
         self.actionShowModsDir.triggered.connect(lambda: util.show_dir_in_file_browser(MODFOLDER))
         self.actionShowReplaysDir.triggered.connect(lambda: util.show_dir_in_file_browser(util.REPLAY_DIR))
+        self.actionShowThemesDir.triggered.connect(lambda: util.show_dir_in_file_browser(util.THEME_DIR))
         # if game.prefs doesn't exist: show_dir -> empty folder / show_file -> 'file doesn't exist' message
         self.actionShowGamePrefs.triggered.connect(lambda: util.show_dir_in_file_browser(util.LOCALFOLDER))
         # self.actionShowGamePrefs.triggered.connect(lambda: util.show_file_in_file_browser(util.PREFSFILENAME))

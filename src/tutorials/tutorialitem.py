@@ -87,7 +87,7 @@ class TutorialItem(QtGui.QListWidgetItem):
         # Map preview code
         if self.mapname != message['mapname']:
             self.mapname = message['mapname']
-            self.mapdisplayname = maps.get_display_name(self.mapname)
+            self.mapdisplayname = str(maps.get_display_name(self.mapname))
 
             icon = maps.preview(self.mapname)
             if not icon:

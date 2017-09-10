@@ -286,58 +286,44 @@ class Chatter(QtGui.QTableWidgetItem):
     def pressed(self, item):
         menu = QtGui.QMenu(self.parent)
 
+        def menu_add(action_str, action_connect, separator=False):
+            if separator:
+                menu.addSeparator()
+            action = QtGui.QAction(action_str, menu)
+            action.triggered.connect(action_connect)  # Triggers
+            menu.addAction(action)
+
         # only for us. Either way, it will display our avatar, not anyone avatar.
         if client.instance.login == self.name:
-            action_select_avatar = QtGui.QAction("Select Avatar", menu)
-            action_select_avatar.triggered.connect(self.select_avatar)  # Trigger
-            menu.addAction(action_select_avatar)
+            menu_add("Select Avatar", self.select_avatar)
 
         # power menu
         if client.instance.power > 1:
             # admin and mod menus
-            menu.addSeparator()
-            action_add_avatar = QtGui.QAction("Assign avatar", menu)
-            action_add_avatar.triggered.connect(self.add_avatar)  # Triggers
-            menu.addAction(action_add_avatar)
+            menu_add("Assign avatar", self.add_avatar, True)
 
             if client.instance.power == 2:
-                menu.addSeparator()
-                action_inspect_in_mordor = QtGui.QAction("Send the Orcs", menu)
-                menu.addAction(action_inspect_in_mordor)
 
                 def send_the_orcs():
                     route = Settings.get('mordor/host')
-
                     if self.id != -1:
                         QtGui.QDesktopServices.openUrl(QUrl("{}/users/{}".format(route, self.id)))
                     else:
                         QtGui.QDesktopServices.openUrl(QUrl("{}/users/{}".format(route, self.name)))
 
-                action_inspect_in_mordor.triggered.connect(send_the_orcs)  # Triggers
-
-                action_close_fa = QtGui.QAction("Close Game", menu)
-                menu.addAction(action_close_fa)
-                action_close_fa.triggered.connect(lambda: client.instance.close_fa(self.name))
-
-                action_close_lobby = QtGui.QAction("Close FAF Client", menu)
-                menu.addAction(action_close_lobby)
-                action_close_lobby.triggered.connect(lambda: client.instance.close_lobby(self.name))
+                menu_add("Send the Orcs", send_the_orcs, True)
+                menu_add("Close Game", lambda: client.instance.close_fa(self.name))
+                menu_add("Close FAF Client", lambda: client.instance.close_lobby(self.name))
 
         # Aliases link
-        menu.addSeparator()
-        action_view_aliases = QtGui.QAction("View Aliases", menu)
-        action_view_aliases.triggered.connect(self.view_aliases)  # Triggers
-        menu.addAction(action_view_aliases)  # Adding to menu
+        menu_add("View Aliases", self.view_aliases, True)
 
         # Joining live or hosted game
         if client.instance.login != self.name:  # Don't allow self to be invited to a game, or join one
             if self.name in client.instance.urls:
-                menu.addSeparator()
                 url = client.instance.urls[self.name]
                 if url.scheme() == "fafgame":
-                    action_join = QtGui.QAction("Join hosted Game", menu)
-                    action_join.triggered.connect(self.join_in_game)  # Triggers
-                    menu.addAction(action_join)
+                    menu_add("Join hosted Game", self.join_in_game, True)
                 elif url.scheme() == "faflive":
                     game = client.instance.games.games[int(url.queryItemValue("uid"))]
                     time_running = time.time() - game.launched_at
@@ -347,42 +333,27 @@ class Chatter(QtGui.QTableWidgetItem):
                         else:
                             time_format = '%M:%S'
                         duration_str = time.strftime(time_format, time.gmtime(time_running))
-                        action_replay = QtGui.QAction("View Live Replay (runs " + duration_str + ")", menu)
+                        action_str = "View Live Replay (runs " + duration_str + ")"
                     else:
-                        duration_str = time.strftime('%M:%S', time.gmtime(5*60 - time_running))
-                        action_replay = QtGui.QAction("Wait " + duration_str + " to view Live Replay", menu)
-                    action_replay.triggered.connect(self.view_replay)  # Triggers
-                    menu.addAction(action_replay)
+                        wait_str = time.strftime('%M:%S', time.gmtime(5*60 - time_running))
+                        action_str = "Wait " + wait_str + " to view Live Replay"
+                    menu_add(action_str, self.view_replay, True)
 
         # replays in vault
         if self.id != -1:  # no irc user
-            menu.addSeparator()
-            action_vault_replay = QtGui.QAction("View Replays in Vault", menu)
-            action_vault_replay.triggered.connect(self.view_vault_replay)  # Triggers
-            menu.addAction(action_vault_replay)
+            menu_add("View Replays in Vault", self.view_vault_replay, True)
 
         # Friends and Foe Lists
         if client.instance.me.id == self.id:
             pass
         elif client.instance.players.is_friend(self.id):
-            menu.addSeparator()
-            action_rem_friend = QtGui.QAction("Remove friend", menu)
-            action_rem_friend.triggered.connect(lambda: client.instance.rem_friend(self.id))  # Triggers
-            menu.addAction(action_rem_friend)
+            menu_add("Remove friend", lambda: client.instance.rem_friend(self.id), True)
         elif client.instance.players.is_foe(self.id):
-            menu.addSeparator()
-            action_rem_foe = QtGui.QAction("Remove foe", menu)
-            action_rem_foe.triggered.connect(lambda: client.instance.rem_foe(self.id))  # Triggers
-            menu.addAction(action_rem_foe)
+            menu_add("Remove foe", lambda: client.instance.rem_foe(self.id), True)
         elif self.id != -1:  # no irc user
-            menu.addSeparator()
-            action_add_friend = QtGui.QAction("Add friend", menu)
-            action_add_friend.triggered.connect(lambda: client.instance.add_friend(self.id))  # Triggers
-            menu.addAction(action_add_friend)
+            menu_add("Add friend", lambda: client.instance.add_friend(self.id), True)
             if self.get_user_rank(self) > 0:  # 0 = Mod
-                action_add_foe = QtGui.QAction("Add foe", menu)
-                action_add_foe.triggered.connect(lambda: client.instance.add_foe(self.id))  # Triggers
-                menu.addAction(action_add_foe)
+                menu_add("Add foe", lambda: client.instance.add_foe(self.id))
 
         # Finally: Show the popup
         menu.popup(QtGui.QCursor.pos())

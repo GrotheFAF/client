@@ -472,7 +472,10 @@ class ReplaysWidget(BaseClass, FormClass):
             # so it contains a human-readable representation of the info dictionary
             tip = ""
             for key in list(info.keys()):
-                tip += "'" + str(key) + "' : '" + str(info[key]) + "'<br/>"
+                try:
+                    tip += "'" + str(key) + "' : '" + str(info[key]) + "'<br/>"
+                except:
+                    tip += "'" + key + "' : '" + info[key] + "'<br/>"
 
             if item.toolTip(1) != tip:
                 item.setToolTip(1, tip)

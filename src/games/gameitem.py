@@ -123,7 +123,7 @@ class GameItem(QtGui.QListWidgetItem):
         for player in self.players:
             if client.instance.players.is_friend(player.id):
                 in_str = ' in <a style="color:' + client.instance.get_color("url") + '" href="' + \
-                         client.instance.urls[player.login].toString() + '">' + self.title + '</a> on "' + \
+                         client.instance.urls[str(player.login)].toString() + '">' + self.title + '</a> on "' + \
                          self.mapdisplayname + '"'
                 if self.mod != "faf":
                     in_str = ' ' + self.mod + in_str
@@ -153,7 +153,10 @@ class GameItem(QtGui.QListWidgetItem):
                  self.mapdisplayname + '"'
         if self.mod != "faf":
             in_str = ' ' + self.mod + in_str
-        client.instance.forward_local_broadcast(self.host, 'is hosting' + in_str)
+        if self.mod != "ladder1v1":
+            client.instance.forward_local_broadcast(self.host, 'is hosting' + in_str)
+        else:
+            client.instance.forward_local_broadcast(self.host, 'started' + in_str)
 
     @QtCore.pyqtSlot()
     def announce_joining(self, name=None):  # <- update
@@ -207,7 +210,7 @@ class GameItem(QtGui.QListWidgetItem):
         # Map preview code
         if self.mapname != message['mapname']:
             self.mapname = message['mapname']
-            self.mapdisplayname = maps.get_display_name(self.mapname)
+            self.mapdisplayname = str(maps.get_display_name(self.mapname))
             refresh_map_icon = True
         else:
             refresh_map_icon = False
