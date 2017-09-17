@@ -282,6 +282,11 @@ class Chatter(QtGui.QTableWidgetItem):
                     self.join_in_game()
                 elif url.scheme() == "faflive":
                     self.view_replay()
+        elif item == self.rankItem:
+            if self.id != -1:  # no irc user
+                if client.instance.players[self.name]:
+                    if int(client.instance.players[self.name].ladder_estimate()) != 0:
+                        self.view_in_leaderboards()
 
     def pressed(self, item):
         menu = QtGui.QMenu(self.parent)
@@ -317,6 +322,10 @@ class Chatter(QtGui.QTableWidgetItem):
 
         # Aliases link
         menu_add("View Aliases", self.view_aliases, True)
+        # show in Leaderboards
+        if self.id != -1 and client.instance.players[self.name]:
+            if int(client.instance.players[self.name].ladder_estimate()) != 0:
+                menu_add("View in Leaderboards", self.view_in_leaderboards)
 
         # Joining live or hosted game
         if client.instance.login != self.name:  # Don't allow self to be invited to a game, or join one
@@ -378,3 +387,16 @@ class Chatter(QtGui.QTableWidgetItem):
     def join_in_game(self):
         if self.name in client.instance.urls:
             client.instance.join_game_from_url(client.instance.urls[self.name])
+
+    @QtCore.pyqtSlot()
+    def view_in_leaderboards(self):
+        client.instance.mainTabs.setCurrentIndex(client.instance.mainTabs.indexOf(client.instance.ladderTab))
+        player = client.instance.players[self.name]
+        leaderboards = client.instance.ladder
+        if player.league is not None:
+            leaderboards.leagues.setCurrentIndex(player.league - 1)
+        else:
+            leaderboards.leagues.setCurrentIndex(5)  # -> 5 = direct to Ladder Ratings
+
+        leaderboards.webview.setUrl(QtCore.QUrl("{}/faf/leaderboards/read-leader.php?board=1v1&username={}".
+                                        format(Settings.get('content/host'), player.login)))

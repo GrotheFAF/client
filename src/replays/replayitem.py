@@ -269,15 +269,17 @@ class ReplayItem(QtGui.QTreeWidgetItem):
             else:
                 self.detail_info_html = info_html
 
+        self.parent.replayInfos.clear()
+
+        if not self:
+            return
+
         if self.isSelected():
-            self.parent.replayInfos.clear()
             self.resize()
             if spoiled:
                 self.parent.replayInfos.setHtml(self.detail_info_spoiled_html)
             else:
                 self.parent.replayInfos.setHtml(self.detail_info_html)
-        else:
-            self.parent.replayInfos.clear()
 
     def generate_player_html(self, i, player, spoiled):
         place = ["F", "R", "B", "A"]  # Start positions on Seton's Clutch
