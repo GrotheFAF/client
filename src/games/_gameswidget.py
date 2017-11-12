@@ -63,6 +63,7 @@ class GamesWidget(FormClass, BaseClass):
         self.searching = False
         self.race = None
         self.ispassworded = False
+        self.selected_game = None
 
         self.gameitem_counter = 0  # test
         self.games_ignored_counter = 0  # test
@@ -78,6 +79,7 @@ class GamesWidget(FormClass, BaseClass):
 
         self.gameList.setItemDelegate(GameItemDelegate(self))
         self.gameList.itemDoubleClicked.connect(self.game_doubleclicked)
+        self.gameList.itemClicked.connect(self.game_clicked)
         self.gameList.itemSelectionChanged.connect(self.game_selection_changed)
         self.gameList.sortBy = self.sort_games_index  # Default Sorting is By Players count
 
@@ -226,6 +228,7 @@ class GamesWidget(FormClass, BaseClass):
             if self.gameList.currentItem() and self.gameList.currentItem().uid == uid:
                     if message['state'] != "open":  # game started or host closed
                         self.gameList.setCurrentItem(None)  # clear currentItem (& selected) -> game_selection_changed
+                        self.selected_game = None
                     else:
                         self.update_selected_game_info()  # update GameInfo of selected game
 
@@ -298,6 +301,16 @@ class GamesWidget(FormClass, BaseClass):
         self.update_playbutton()
         self.searchProgress.setVisible(False)
         self.labelAutomatch.setText("1 vs 1 Automatch")
+
+    @QtCore.pyqtSlot(QtGui.QListWidgetItem)
+    def game_clicked(self, item):
+        if self.selected_game:
+            if item == self.selected_game and item.isSelected():  # clicked same game 2nd time -> deselect
+                self.gameList.setCurrentItem(None)  # clear currentItem (& selected)
+                self.selected_game = None
+                return
+
+        self.selected_game = item
 
     @QtCore.pyqtSlot(QtGui.QListWidgetItem)
     def game_doubleclicked(self, item):
