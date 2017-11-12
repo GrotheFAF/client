@@ -84,7 +84,7 @@ class ClientUpdater(QObject):
                     "</b><br/><br/><a href='{}'>See information</a>".format(' beta' if is_pre else ' release', info_url)
                     )
                 }
-        result = QtGui.QMessageBox.question(None,
+        result = QtGui.QMessageBox.question(client.instance,
                                             update_msg[self._outdated][0], update_msg[self._outdated][1],
                                             QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
         if result == QtGui.QMessageBox.Yes:

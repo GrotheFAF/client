@@ -102,7 +102,7 @@ def get_display_name(filename):
     Tries to return a pretty name for the map (for official maps, it looks up the name)
     For nonofficial maps, it tries to clean up the filename
     """
-    if str(filename) in maps:
+    if filename in maps:
         return maps[filename][0]
     else:
         # cut off ugly version numbers, replace "_" with space.

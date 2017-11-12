@@ -897,7 +897,7 @@ class ClientWindow(FormClass, BaseClass):
             password = util.password_hash("foo")
         self.uniqueId = util.unique_id(self.login, self.session)
         if not self.uniqueId:
-            QtGui.QMessageBox.critical(self, "Failed to calculate UID",
+            QtGui.QMessageBox.critical(client.instance, "Failed to calculate UID",
                                        "Failed to calculate your unique ID"
                                        " (a part of our smurf prevention system).</br>"
                                        "Please report this to the tech support forum!", "Very Sad!")

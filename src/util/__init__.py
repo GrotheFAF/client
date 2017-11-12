@@ -658,8 +658,10 @@ def irc_escape(text, a_style=""):
         result.append(fragment)
     return " ".join(result)
 
+
 def password_hash(password):
     return hashlib.sha256(password.strip().encode("utf-8")).hexdigest()
+
 
 def md5text(text):
     m = hashlib.md5()
@@ -712,7 +714,7 @@ def unique_id(user, session):
         out, err = uid_p.communicate()
         if uid_p.returncode != 0:
             logger.error("UniqueID executable error:")
-            for line in err.split('\n'):
+            for line in err.decode('utf-8').split('\n'):
                 logger.error(line)
             return None
         else:
