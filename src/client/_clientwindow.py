@@ -310,7 +310,7 @@ class ClientWindow(FormClass, BaseClass):
     @state.setter
     def state(self, value):
         self._state = value
-        client.instance.stateLabel.setText(str(self.state))  # TESTING-IO Grothe
+        client.instance.stateLabel.setText("Lobby: " + str(value)[len("ClientState."):])  # TESTING-IO Grothe
         self.state_changed.emit(value)
 
     def on_connection_state_changed(self, state):
@@ -688,6 +688,7 @@ class ClientWindow(FormClass, BaseClass):
         self.actionLinkWiki.triggered.connect(partial(self.open_url, Settings.get("WIKI_URL")))
         self.actionLinkForums.triggered.connect(partial(self.open_url, Settings.get("FORUMS_URL")))
         self.actionLinkUnitDB.triggered.connect(partial(self.open_url, Settings.get("UNITDB_URL")))
+        self.actionLinkMapPool.triggered.connect(partial(self.open_url, Settings.get("MAPPOOL_URL")))
         self.actionLinkGitHub.triggered.connect(partial(self.open_url, Settings.get("GITHUB_URL")))
 
         self.actionNsSettings.triggered.connect(lambda: self.notificationSystem.on_show_settings())

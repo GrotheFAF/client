@@ -245,13 +245,13 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>145</width>
+          <width>120</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>140</width>
+          <width>120</width>
           <height>16777215</height>
          </size>
         </property>
@@ -481,6 +481,7 @@
      <string>&amp;Links</string>
     </property>
     <addaction name="actionLinkUnitDB"/>
+    <addaction name="actionLinkMapPool"/>
     <addaction name="separator"/>
     <addaction name="actionLinkWebsite"/>
     <addaction name="actionLinkForums"/>
@@ -753,6 +754,11 @@
   <action name="actionShowThemesDir">
    <property name="text">
     <string>Show themes folder</string>
+   </property>
+  </action>
+  <action name="actionLinkMapPool">
+   <property name="text">
+    <string>Ladder Map Pool</string>
    </property>
   </action>
  </widget>

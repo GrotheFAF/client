@@ -79,7 +79,7 @@ class GameSession(QObject):
     @state.setter
     def state(self, val):
         self._state = val
-        client.instance.stateLabel.setText(str(self.state))  # TESTING-IO Grothe
+        client.instance.stateLabel.setText("GAME: " + str(val)[len("GameSessionState."):])  # TESTING-IO Grothe
 
     def listen(self):
         """
