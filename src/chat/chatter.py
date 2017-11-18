@@ -9,6 +9,7 @@ from fa.replay import replay
 import util
 import client
 from config import Settings
+import requests
 
 """
 A chatter is the representation of a person on IRC, in a channel's nick list.
@@ -253,8 +254,55 @@ class Chatter(QtGui.QTableWidgetItem):
 
         self.setForeground(QtGui.QColor(chat.get_color("default")))
 
+    def name_used_by_other(self):
+        api_link = 'https://api.faforever.com/data/player?include=names&' \
+                   'filter=(login==' + self.name + ',names.name==' + self.name + ')'
+        response = requests.get(api_link).json()
+        if response.get('errors'):
+            return ''
+        result = ''
+        if response.get('data') is not None and len(response['data']) >= 1:
+            for ply in response['data']:
+                if ply['type'] == 'player':
+                    if ply['attributes']['login'] != self.name:
+                        result += (ply['attributes']['login'] + '<br/>')
+        if len(result) > 1:
+            result = 'The name has previously been used by :<br/><br/>' + str(result)
+        else:
+            result = 'The name has never been used by anyone else.'
+        return result
+
+    def names_previously_known(self):
+        api_link = 'https://api.faforever.com/data/player?include=names&fields[player]=login,names&' \
+                   'fields[nameRecord]=name,changeTime&&filter[player]=login==' + self.name
+        response = requests.get(api_link).json()
+        if response.get('errors'):
+            return ''
+        if response.get('included') is not None and len(response['included']) >= 1:
+            nick_list = 'The player has previously been known as :'
+            nick_list += '<br/><table border="0" cellpadding="0" cellspacing="0" width= "220"><tbody>'
+            for nicks in response['included']:
+                if nicks['type'] == 'nameRecord':
+                    nick_list += '<tr><td>' + nicks['attributes']['name'] + '</td><td align="right">' + \
+                                  nicks['attributes']['changeTime'].replace('T', ' - ')[:18] + '</td></tr>'
+            nick_list += '</tbody></table><br/>'
+        else:
+            nick_list = 'The name is not currently owned by any player.'
+        return nick_list
+
     def view_aliases(self):
-        QtGui.QDesktopServices.openUrl(QUrl("{}?name={}".format(Settings.get("USER_ALIASES_URL"), self.name)))
+        # QtGui.QDesktopServices.openUrl(QUrl("{}?name={}".format(Settings.get("USER_ALIASES_URL"), self.name)))
+        api_link = 'https://api.faforever.com/data/nameRecord?include=player&fields[player]=login&' \
+                   'fields[nameRecord]=player,changeTime&filter[nameRecord]=name==' + self.name
+        response = requests.get(api_link).json()
+        if response.get('errors'):
+            return
+        result = self.name_used_by_other()
+        if len(response['data']) < 1:
+            result = 'The name ' + self.name + ' has never been used or the user has never changed its name.' + '\n\n' + result
+        else:
+            result = self.names_previously_known() + '<br/>' + result
+        QtGui.QMessageBox.about(self.parent, "Aliases : " + self.name, str(result))
 
     def select_avatar(self):
         avatar_selection = AvatarWidget(self.name, personal=True)
