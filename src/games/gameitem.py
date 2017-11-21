@@ -78,6 +78,7 @@ class GameItem(QtGui.QListWidgetItem):
         self.mods = None
         self.moddisplayname = None
         self.state = None
+        self.hosted_at = None
         self.launched_at = None
         self.options = []
         self.players = []
@@ -122,12 +123,7 @@ class GameItem(QtGui.QListWidgetItem):
 
         for player in self.players:
             if client.instance.players.is_friend(player.id):
-                in_str = ' in <a style="color:' + client.instance.get_color("url") + '" href="' + \
-                         client.instance.urls[str(player.login)].toString() + '">' + self.title + '</a> on "' + \
-                         self.mapdisplayname + '"'
-                if self.mod != "faf":
-                    in_str = ' ' + self.mod + in_str
-                client.instance.forward_local_broadcast(player.login, 'is playing' + in_str)
+                client.instance.forward_local_broadcast(player.login, 'is playing' + self.info_str(player.login))
 
     @QtCore.pyqtSlot()
     def announce_hosting(self):  # <- update
@@ -148,11 +144,7 @@ class GameItem(QtGui.QListWidgetItem):
         else:  # no player in game online
             return
 
-        in_str = ' <a style="color:' + client.instance.get_color("url") + '" href="' + \
-                 client.instance.urls[name].toString() + '">' + self.title + '</a> on "' + \
-                 self.mapdisplayname + '"'
-        if self.mod != "faf":
-            in_str = ' ' + self.mod + in_str
+        in_str = self.info_str(name)
         if self.mod != "ladder1v1":
             client.instance.forward_local_broadcast(self.host, 'is hosting' + in_str)
         else:
@@ -168,23 +160,23 @@ class GameItem(QtGui.QListWidgetItem):
             return
 
         if name:
-            if not client.instance.players.is_friend(name):
-                return
-
-            in_str = ' <a style="color:' + client.instance.get_color("url") + '" href="' + \
-                     client.instance.urls[name].toString() + '">' + self.title + '</a> on "' + self.mapdisplayname + '"'
-            if self.mod != "faf":
-                in_str = ' ' + self.mod + in_str
-            client.instance.forward_local_broadcast(name, 'joined' + in_str)
+            if client.instance.players.is_friend(name):
+                client.instance.forward_local_broadcast(name, 'joined' + self.info_str(name))
         else:  # at client start all players who are friends ... of course
             for player in self.players:
                 if client.instance.players.is_friend(player.login):
-                    in_str = ' <a style="color:' + client.instance.get_color("url") + '" href="' + \
-                         client.instance.urls[player.login].toString() + '">' + self.title + '</a> on "' + \
-                         self.mapdisplayname + '"'
-                    if self.mod != "faf":
-                        in_str = ' ' + self.mod + in_str
-                    client.instance.forward_local_broadcast(player.login, 'joined' + in_str)
+                    client.instance.forward_local_broadcast(player.login, 'joined' + self.info_str(player.login))
+
+    def info_str(self, name):
+        if name in client.instance.urls:
+            game_url = '" href="' + client.instance.urls[name].toString() + '">'
+        else:
+            game_url = '"> (no game-url) '
+        in_str = ' in <a style="color:' + client.instance.get_color("url") + game_url + \
+                 self.title + '</a> on "' + self.mapdisplayname + '"'
+        if self.mod != "faf":
+            in_str = ' ' + self.mod + in_str
+        return in_str
 
     def update(self, message):
         """
@@ -197,6 +189,7 @@ class GameItem(QtGui.QListWidgetItem):
             self.host = message['host']
             self.password_protected = message.get('password_protected', False)
             self.mod = message['featured_mod']
+            self.hosted_at = time.time()
         elif self.host != message['host']:  # somethings funny (offline)
             self.host = message['host']
 
@@ -252,6 +245,8 @@ class GameItem(QtGui.QListWidgetItem):
                     if name in client.instance.players:
                         self.players.append(client.instance.players[name])
                         real_team.append(client.instance.players[name])
+                    else:  # not in players list
+                        real_team.append(name)
                 teams.append(real_team)
 
         if self.state == "open":  # things only needed while hosting
@@ -275,11 +270,19 @@ class GameItem(QtGui.QListWidgetItem):
                 self.setIcon(icon)
 
             # Extra teams + observer info
+            if num_players < slots:
+                pcolor = "silver"  # 'not enough people'
+            else:
+                pcolor = "limegreen"  # #32CD32
+
             if len(teams) > 1:
                 # list of team sizes
                 team_list = []
                 for team in teams:
                     team_list.append(str(len(team)))
+
+                if num_players >= slots and len(set(team_list)) > 1:  # not all teams equal
+                    pcolor = "#CDCD32"  # ~yellowgreen
 
                 team_str = "<font size='-1'> in </font>" + " vs ".join(team_list)
             elif len(teams) == 1:  # only one team
@@ -298,18 +301,20 @@ class GameItem(QtGui.QListWidgetItem):
                 ol = ""
             color = client.instance.players.get_user_color(self.host_id)
 
+            hosttime = time.strftime("%H:%M", time.localtime(self.hosted_at))
+
             self.edit_tooltip(teams, observers)
 
             if self.mod == "faf" or self.mod == "coop":
                 self.setText(self.FORMATTER_FAF.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
-                                                       title=self.title, host=self.host + ol, players=num_players,
-                                                       teams=team_str, avgrating=self.average_rating,
-                                                       devrating=self.deviation_rating))
+                                                       title=self.title, host=self.host + ol, hosttime=hosttime,
+                                                       players=num_players, pcolor=pcolor, teams=team_str,
+                                                       avgrating=self.average_rating, devrating=self.deviation_rating))
             else:
                 self.setText(self.FORMATTER_MOD.format(color=color, mapslots=slots, mapdisplayname=self.mapdisplayname,
-                                                       title=self.title, host=self.host + ol, players=num_players,
-                                                       teams=team_str, mod=self.mod, avgrating=self.average_rating,
-                                                       devrating=self.deviation_rating))
+                                                       title=self.title, host=self.host + ol, hosttime=hosttime,
+                                                       players=num_players, pcolor=pcolor, teams=team_str, mod=self.mod,
+                                                       avgrating=self.average_rating, devrating=self.deviation_rating))
         elif self.state != "playing":
             self.state = "funky"
 
@@ -338,22 +343,44 @@ class GameItem(QtGui.QListWidgetItem):
         affected_players = old_players | new_players
         client.instance.usersUpdated.emit(list(affected_players))
 
-    def edit_tooltip(self, teams, observers):
+        # short blink to indicate change
+        if not self.isHidden():
+            text = self.text()
+            fc = '<font color="silver">'
+            if text[0:len(fc)] == fc:
+                QtCore.QTimer().singleShot(250, self.reset_highlight)
+                self.setText('<font color="white">' + text[len(fc):])
 
+    def reset_highlight(self):
+        if not self.isHidden():
+            text = self.text()
+            fc = '<font color="white">'
+            if text[0:len(fc)] == fc:
+                self.setText('<font color="silver">' + text[len(fc):])
+
+    def edit_tooltip(self, teams, observers):
         teams_list = []
         for i, team in enumerate(teams, start=1):
             players_list = ["<td><table>"]
             for player in team:
+                if type(player) == unicode:  # not in players
+                    if '#aeolus' in client.instance.chat.channels \
+                       and player in client.instance.chat.channels[u'#aeolus'].chatters:
+                        player_str = player + "  <font color='darkred'>(irc)</font>"
+                    else:
+                        player_str = player + "  <font color='darkred'>(?)</font>"
 
-                if player == client.instance.me:
-                    player_str = "<b><i>%s</b></i>" % player.login
+                    country = os.path.join(util.COMMON_DIR, "chat/countries/__.png")
                 else:
-                    player_str = player.login
+                    if player == client.instance.me:
+                        player_str = "<b><i>%s</b></i>" % player.login
+                    else:
+                        player_str = player.login
 
-                if player.rating_deviation < 200:
-                    player_str += " (%s)" % str(player.rating_estimate())
+                    if player.rating_deviation < 200:
+                        player_str += " (%s)" % str(player.rating_estimate())
 
-                country = os.path.join(util.COMMON_DIR, "chat/countries/%s.png" % (player.country or '').lower())
+                    country = os.path.join(util.COMMON_DIR, "chat/countries/%s.png" % (player.country or '__').lower())
 
                 if i == 1:
                     player_html = "<tr><td><img src='%s'></td><td align='left' " \
