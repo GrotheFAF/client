@@ -119,7 +119,7 @@ class GamesWidget(FormClass, BaseClass):
         else:
             mod_invisible[mod] = self.mods[mod]
 
-        client.instance.replays.modList.addItem(message["name"])
+        client.instance.replays_widget.modList.addItem(message["name"])
 
     @QtCore.pyqtSlot(int)
     def toggle_private_games(self, state):

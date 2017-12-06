@@ -162,8 +162,8 @@ class ReplaysWidget(BaseClass, FormClass):
     def onlinetree_doubleclicked(self, item):
         if hasattr(item, "duration") and hasattr(item, "url"):
             if "playing" in item.duration and "?playing?" not in item.duration:  # live game will not be in vault
-                if item.uid in client.instance.games.games:  # still running
-                    game = client.instance.games.games[item.uid]
+                if item.uid in client.instance.games_widget.games:  # still running
+                    game = client.instance.games_widget.games[item.uid]
                     for player in game.players:  # find a player ...
                         if player.login in client.instance.urls:  # ... still online/in game
                             if time.time() - game.launched_at > LIVEREPLAY_DELAY_TIME:  # live game over 5min

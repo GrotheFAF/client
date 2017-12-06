@@ -6,6 +6,7 @@ import time
 import urllib2
 import chat
 from fa.replay import replay
+from fa import maps
 import util
 import client
 from config import Settings
@@ -23,6 +24,7 @@ class Chatter(QtGui.QTableWidgetItem):
     AVATAR_COLUMN = 1
     RANK_COLUMN = 0
     STATUS_COLUMN = 3
+    MAP_COLUMN = 4
 
     RANK_ELEVATION = 0
     RANK_FRIEND = 1
@@ -30,13 +32,13 @@ class Chatter(QtGui.QTableWidgetItem):
     RANK_NONPLAYER = 3
     RANK_FOE = 4
 
-    def __init__(self, parent, user, lobby, *args):
+    def __init__(self, parent, user, chat_widget, *args):
         QtGui.QTableWidgetItem.__init__(self, *args)
 
         # TODO: for now, userflags and ranks aren't properly interpreted :-/
         # This is impractical if an operator reconnects too late.
         self.parent = parent
-        self.lobby = lobby
+        self.chat_widget = chat_widget
 
         self.name, self.id, self.elevation, self.hostname = user
 
@@ -68,9 +70,14 @@ class Chatter(QtGui.QTableWidgetItem):
         self.statusItem.setFlags(QtCore.Qt.ItemIsEnabled)
         self.statusItem.setTextAlignment(QtCore.Qt.AlignHCenter)
 
+        self.mapItem = QtGui.QTableWidgetItem()
+        self.mapItem.setFlags(QtCore.Qt.ItemIsEnabled)
+        self.mapItem.setTextAlignment(QtCore.Qt.AlignHCenter)
+
         self.parent.setItem(self.row(), Chatter.RANK_COLUMN, self.rankItem)
         self.parent.setItem(self.row(), Chatter.AVATAR_COLUMN, self.avatarItem)
         self.parent.setItem(self.row(), Chatter.STATUS_COLUMN, self.statusItem)
+        self.parent.setItem(self.row(), Chatter.MAP_COLUMN, self.mapItem)
 
         self.update()
 
@@ -134,7 +141,7 @@ class Chatter(QtGui.QTableWidgetItem):
                 self.avatarItem.setToolTip(self.avatarTip)
             else:
                 if util.add_current_download_avatar(url, self.name):
-                    self.lobby.nam.get(QNetworkRequest(QtCore.QUrl(url)))
+                    self.chat_widget.nam.get(QNetworkRequest(QtCore.QUrl(url)))
         else:
             # No avatar set.
             self.avatarItem.setIcon(QtGui.QIcon())
@@ -164,10 +171,9 @@ class Chatter(QtGui.QTableWidgetItem):
             self.rankItem.setToolTip("IRC User")
             return
 
-        country = player.country
-        if country is not None:
-            self.setIcon(util.icon("chat/countries/%s.png" % country.lower()))
-            self.setToolTip(country)
+        country = player.country if player.country is not None else '__'
+        self.setIcon(util.icon("chat/countries/%s.png" % country.lower()))
+        self.setToolTip(country)
 
         if player.avatar != self.avatar:
             self.avatar = player.avatar
@@ -180,47 +186,51 @@ class Chatter(QtGui.QTableWidgetItem):
         # Status icon handling
         url = client.instance.urls.get(player.login)
         if url:
-            if int(url.queryItemValue("uid")) in client.instance.games.games:
-                game = client.instance.games.games[int(url.queryItemValue("uid"))]
-                game_str = "  " + game.mod + "  on  '" + game.mapdisplayname + "'  (" + str(game.uid) + ") "
+            if int(url.queryItemValue("uid")) in client.instance.games_widget.games:
+                game = client.instance.games_widget.games[int(url.queryItemValue("uid"))]
+                game_str = "<br/>title: " + game.title + "<br/>mod: " + game.mod + "<br/>map: " + \
+                           game.mapdisplayname + "<br/>id: " + str(game.uid)
                 if url.scheme() == "fafgame":
                     if game.password_protected:
-                        game_str = " (private) Game Lobby:  '" + game.title + "'" + game_str
+                        game_str = " (private) Game Lobby:</b>" + game_str
                     else:
-                        game_str = " Game Lobby:  '" + game.title + "'" + game_str
+                        game_str = " Game Lobby:</b>" + game_str
                     if game.host == self.name:
-                        self.status = "host"
-                        self.statusItem.setIcon(util.icon("chat/status/host.png"))
-                        self.statusItem.setToolTip("Hosting" + game_str)
+                        self.status, tooltip_str = "host", "<b>Hosting"
                     else:
-                        self.status = "lobby"
-                        self.statusItem.setIcon(util.icon("chat/status/lobby.png"))
-                        self.statusItem.setToolTip("In" + game_str)
+                        self.status, tooltip_str = "lobby", "<b>In"
                 elif url.scheme() == "faflive":
                     if game.launched_at:
                         if time.time() - game.launched_at > 5 * 60:
-                            self.status = "playing"
-                            self.statusItem.setIcon(util.icon("chat/status/playing.png"))
-                            self.statusItem.setToolTip("Playing" + game_str)
+                            self.status, tooltip_str = "playing", "<b>Playing:</b>"
                         else:
-                            self.status = "playing5"
-                            self.statusItem.setIcon(util.icon("chat/status/playing_delay.png"))
-                            self.statusItem.setToolTip("Playing" + game_str + " -  LIVE DELAY (5 Min)")
+                            self.status, tooltip_str = "playing_delay", "<b>Playing:</b>" + "   LIVE DELAY (5 Min)"
                     else:
-                        self.status = "strange"
-                        self.statusItem.setIcon(util.icon("chat/status/status_unclear.png"))
-                        self.statusItem.setToolTip("Playing (missing start time) " + game_str + "<br/>" + url.toString())
+                        self.status, tooltip_str = "status_unclear", "<b>Playing (missing start time):</b>"
                 else:
-                    self.status = "idle"
+                    self.status, tooltip_str = "status_unclear", "<b>Playing maybe ...</b>"
 
             else:  # that shouldn't happen - but it does in rare cases
-                self.status = "strange"
-                self.statusItem.setIcon(util.icon("chat/status/status_unclear.png"))
-                self.statusItem.setToolTip("(has url - but no matching running game found)<br/>" + url.toString())
+                self.status, game_str = "status_unclear", ""
+                tooltip_str = "(has url - but no matching running game found)<br/>" + url.toString()
+        else:  # as idle as it gets
+            self.status, tooltip_str, game_str = "idle", "Idle", ""
+        self.statusItem.setIcon(util.icon("chat/status/%s.png" % self.status))
+        self.statusItem.setToolTip(tooltip_str + game_str)
+
+        # Map icon handling - We're in game, show the map if toggled on
+        if url and util.settings.value("chat/chatmaps", True):  # False
+            mapname = game.mapname
+            icon = maps.preview(mapname)
+            if not icon:
+                client.instance.downloader.download_map(mapname, self.mapItem)  # Calls setIcon
+            else:
+                self.mapItem.setIcon(icon)
+
+            self.mapItem.setToolTip(game.mapdisplayname)
         else:
-            self.status = "idle"
-            self.statusItem.setIcon(QtGui.QIcon())
-            self.statusItem.setToolTip("Idle")
+            self.mapItem.setIcon(QtGui.QIcon())
+            self.mapItem.setToolTip("")
 
         # Rating icon choice  (chr(0xB1) = +-)
         self.rankItem.setToolTip("Global Rating: " + str(int(player.rating_estimate())) + " ("
@@ -299,7 +309,8 @@ class Chatter(QtGui.QTableWidgetItem):
             return
         result = self.name_used_by_other()
         if len(response['data']) < 1:
-            result = 'The name ' + self.name + ' has never been used or the user has never changed its name.' + '\n\n' + result
+            result = 'The name ' + self.name + ' has never been used or the user has never changed its name.' \
+                     + '\n\n' + result
         else:
             result = self.names_previously_known() + '<br/>' + result
         QtGui.QMessageBox.about(self.parent, "Aliases : " + self.name, str(result))
@@ -321,7 +332,7 @@ class Chatter(QtGui.QTableWidgetItem):
             return
         # Chatter name clicked
         if item == self:
-            self.lobby.open_query(self.name, self.id, activate=True)  # open and activate query window
+            self.chat_widget.open_query(self.name, self.id, activate=True)  # open and activate query window
 
         elif item == self.statusItem:
             if self.name in client.instance.urls:
@@ -379,16 +390,17 @@ class Chatter(QtGui.QTableWidgetItem):
         if client.instance.login != self.name:  # Don't allow self to be invited to a game, or join one
             if self.name in client.instance.urls:
                 url = client.instance.urls[self.name]
+                game = client.instance.games_widget.games[int(url.queryItemValue("uid"))]
                 if url.scheme() == "fafgame":
-                    menu_add("Join hosted Game", self.join_in_game, True)
+                    time_running = time.time() - game.hosted_at
+                    time_format = '%M:%S' if time_running < 60 * 60 else '%H:%M:%S'
+                    duration_str = time.strftime(time_format, time.gmtime(time_running))
+                    action_str = "Join hosted Game (runs " + duration_str + ")"
+                    menu_add(action_str, self.join_in_game, True)
                 elif url.scheme() == "faflive":
-                    game = client.instance.games.games[int(url.queryItemValue("uid"))]
                     time_running = time.time() - game.launched_at
                     if time_running > 5 * 60:
-                        if time_running > 60 * 60:
-                            time_format = '%H:%M:%S'
-                        else:
-                            time_format = '%M:%S'
+                        time_format = '%M:%S' if time_running < 60 * 60 else '%H:%M:%S'
                         duration_str = time.strftime(time_format, time.gmtime(time_running))
                         action_str = "View Live Replay (runs " + duration_str + ")"
                     else:
@@ -423,12 +435,12 @@ class Chatter(QtGui.QTableWidgetItem):
     @QtCore.pyqtSlot()
     def view_vault_replay(self):
         """ see the player replays in the vault """
-        client.instance.replays.setCurrentIndex(2)  # focus on Online Fault
-        client.instance.replays.playerName.setText(self.name)
-        client.instance.replays.mapName.setText("")
-        client.instance.replays.modList.setCurrentIndex(0)  # "All"
-        client.instance.replays.minRating.setValue(0)  # TODO client issue #762 rating < 0
-        client.instance.replays.search_vault()
+        client.instance.replays_widget.setCurrentIndex(2)  # focus on Online Fault
+        client.instance.replays_widget.playerName.setText(self.name)
+        client.instance.replays_widget.mapName.setText("")
+        client.instance.replays_widget.modList.setCurrentIndex(0)  # "All"
+        client.instance.replays_widget.minRating.setValue(0)  # TODO client issue #762 rating < 0
+        client.instance.replays_widget.search_vault()
         client.instance.mainTabs.setCurrentIndex(client.instance.mainTabs.indexOf(client.instance.replaysTab))
 
     @QtCore.pyqtSlot()
@@ -440,11 +452,11 @@ class Chatter(QtGui.QTableWidgetItem):
     def view_in_leaderboards(self):
         client.instance.mainTabs.setCurrentIndex(client.instance.mainTabs.indexOf(client.instance.ladderTab))
         player = client.instance.players[self.name]
-        leaderboards = client.instance.ladder
+        leaderboards = client.instance.stats_widget
         if player.league is not None:
             leaderboards.leagues.setCurrentIndex(player.league - 1)
         else:
             leaderboards.leagues.setCurrentIndex(5)  # -> 5 = direct to Ladder Ratings
 
         leaderboards.webview.setUrl(QtCore.QUrl("{}/faf/leaderboards/read-leader.php?board=1v1&username={}".
-                                        format(Settings.get('content/host'), player.login)))
+                                                format(Settings.get('content/host'), player.login)))

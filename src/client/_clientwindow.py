@@ -511,21 +511,21 @@ class ClientWindow(FormClass, BaseClass):
         self.load_settings()
 
         # Initialize chat
-        self.chat = chat.ChatWidget(self)
+        self.chat_widget = chat.ChatWidget(self)
         # Color table used by the following method
         # CAVEAT: This will break if the theme is loaded after the client package is imported
         chat.CHAT_COLORS = json.loads(util.readfile("client/colors.json"))
 
         # build main window with the now active client
-        self.news = news.NewsWidget()
-        self.ladder = stats.StatsWidget()
-        self.games = games.GamesWidget()
-        self.tourneys = tourneys.TournamentsWidget()
-        self.vault = vault.MapVault()
-        self.modvault = modvault.ModVault()
-        self.replays = replays.ReplaysWidget(self.lobby_dispatch)
-        self.tutorials = tutorials.TutorialsWidget()
-        self.coop = coop.CoopWidget()
+        self.news_widget = news.NewsWidget()
+        self.stats_widget = stats.StatsWidget()
+        self.games_widget = games.GamesWidget()
+        self.tourneys_widget = tourneys.TournamentsWidget()
+        self.map_vault = vault.MapVault()
+        self.mod_vault = modvault.ModVault()
+        self.replays_widget = replays.ReplaysWidget(self.lobby_dispatch)
+        self.tutorials_widget = tutorials.TutorialsWidget()
+        self.coop_widget = coop.CoopWidget()
         self.notificationSystem = ns.Notifications()
 
         # set menu states
@@ -557,7 +557,7 @@ class ClientWindow(FormClass, BaseClass):
             button.setIconSize(QtCore.QSize(40, 20))
             # button.setMaximumSize(25, 25)
             button.setIcon(util.icon("replays/%s.png" % faction.to_name()))
-            button.clicked.connect(partial(self.games.start_search_ranked, faction))
+            button.clicked.connect(partial(self.games_widget.start_search_ranked, faction))
             self.warning.addWidget(button)
             return button
 
@@ -597,7 +597,7 @@ class ClientWindow(FormClass, BaseClass):
         # Used when the user explicitly demanded to stay offline.
         self.lobby_reconnecter.enabled = False
         self.lobby_connection.disconnect()
-        self.chat.disconnect()
+        self.chat_widget.disconnect()
 
     @QtCore.pyqtSlot(dict)
     def github_update(self, update):
@@ -642,7 +642,7 @@ class ClientWindow(FormClass, BaseClass):
         # Clear UPnP Mappings...
         if self.useUPnP:
             progress.setLabelText("Removing UPnP port mappings")
-            fa.upnp.removePortMappings()
+            fa.upnp.remove_port_mappings()
 
         # Terminate local ReplayServer
         if self.replayServer:
@@ -651,10 +651,10 @@ class ClientWindow(FormClass, BaseClass):
             self.replayServer = None
 
         # Clean up Chat
-        if self.chat:
+        if self.chat_widget:
             progress.setLabelText("Disconnecting from IRC")
-            self.chat.disconnect()
-            self.chat = None
+            self.chat_widget.disconnect()
+            self.chat_widget = None
 
         # Get rid of the Tray icon
         if self.tray:
@@ -745,7 +745,9 @@ class ClientWindow(FormClass, BaseClass):
 
         self.gamelogs = self.actionSaveGamelogs.isChecked()
         self.players.coloredNicknames = self.actionColoredNicknames.isChecked()
-        self.friendsontop = self.actionFriendsOnTop.isChecked()
+        if self.friendsontop != self.actionFriendsOnTop.isChecked():
+            self.friendsontop = self.actionFriendsOnTop.isChecked()
+            self.chat_widget.sort_channels()
 
         self.save_chat()
 
@@ -783,10 +785,10 @@ class ClientWindow(FormClass, BaseClass):
 
     # Clear the online users lists
     def clear_players(self):
-        oldplayers = list(self.players.keys())
+        old_players = list(self.players.keys())
         self.players = Players(self.me)
         self.urls = {}
-        self.usersUpdated.emit(oldplayers)
+        self.usersUpdated.emit(old_players)
 
     @QtCore.pyqtSlot(str)
     def open_url(self, url):
@@ -903,11 +905,8 @@ class ClientWindow(FormClass, BaseClass):
                                        " (a part of our smurf prevention system).</br>"
                                        "Please report this to the tech support forum!", "Very Sad!")
             return False
-        self.lobby_connection.send(dict(command="hello",
-                       login=login,
-                       password=password,
-                       unique_id=self.uniqueId,
-                       session=self.session))
+        self.lobby_connection.send(dict(command="hello", login=login, password=password, unique_id=self.uniqueId,
+                                        session=self.session))
         return True
 
     @staticmethod
@@ -1023,13 +1022,15 @@ class ClientWindow(FormClass, BaseClass):
 
             self.modMenu.addSeparator()
 
-            actionLobbyKick = QtGui.QAction("Close player's FAF Client...", self.modMenu)
-            actionLobbyKick.triggered.connect(lambda: util.userNameAction(self, 'Player to kick from Client (do not typo!)', lambda name: self.closeLobby(name)))
-            self.modMenu.addAction(actionLobbyKick)
+            action_lobby_kick = QtGui.QAction("Close player's FAF Client...", self.modMenu)
+            action_lobby_kick.triggered.connect(lambda: util.user_name_action(self, 'Player to kick from Client (do not typo!)',
+                                                                              lambda name: self.closeLobby(name)))
+            self.modMenu.addAction(action_lobby_kick)
 
-            actionCloseFA = QtGui.QAction("Close Player's Game...", self.modMenu)
-            actionCloseFA.triggered.connect(lambda: util.userNameAction(self, 'Player to close FA (do not typo!)', lambda name: self.closeFA(name)))
-            self.modMenu.addAction(actionCloseFA)
+            action_close_fa = QtGui.QAction("Close Player's Game...", self.modMenu)
+            action_close_fa.triggered.connect(lambda: util.user_name_action(self, 'Player to close FA (do not typo!)',
+                                                                            lambda name: self.closeFA(name)))
+            self.modMenu.addAction(action_close_fa)
 
     def request_avatars(self, personal):
         if personal:
@@ -1045,14 +1046,14 @@ class ClientWindow(FormClass, BaseClass):
     def close_fa(self, username):
         """ Close FA remotely """
         logger.info('closeFA for {}'.format(username))
-        user_id = self.players.getID(username)
+        user_id = self.players.get_id(username)
         if user_id != -1:
             self.lobby_connection.send(dict(command="admin", action="closeFA", user_id=user_id))
 
     def close_lobby(self, username):
         """ Close lobby remotely """
         logger.info('closeLobby for {}'.format(username))
-        user_id = self.players.getID(username)
+        user_id = self.players.get_id(username)
         if user_id != -1:
             self.lobby_connection.send(dict(command="admin", action="closelobby", user_id=user_id))
 
@@ -1086,7 +1087,7 @@ class ClientWindow(FormClass, BaseClass):
         self.session = str(message['session'])
         self.get_creds_and_login()
 
-    def handle_update(self, message):
+    def handle_update(self):
         # Remove geometry settings prior to updating
         # could be incompatible with an updated client.
         Settings.remove('window/geometry')
@@ -1196,7 +1197,7 @@ class ClientWindow(FormClass, BaseClass):
         # HACK: Ideally, this comes from the server, too. LATER: search_ranked message
         arguments = []
         if message["mod"] == "ladder1v1":
-            arguments.append('/' + Factions.to_name(self.games.race))
+            arguments.append('/' + Factions.to_name(self.games_widget.race))
             # Player 1v1 rating
             arguments.append('/mean')
             arguments.append(str(self.me.ladder_rating_mean))
@@ -1258,7 +1259,7 @@ class ClientWindow(FormClass, BaseClass):
         if "action" in message:
             self.matchmakerInfo.emit(message)
         elif "queues" in message:
-            if self.me.ladder_rating_deviation > 200 or self.games.searching:
+            if self.me.ladder_rating_deviation > 200 or self.games_widget.searching:
                 return
             key = 'boundary_80s' if self.me.ladder_rating_deviation < 100 else 'boundary_75s'
             show = False

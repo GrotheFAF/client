@@ -724,7 +724,7 @@ def unique_id(user, session):
         return None
 
 
-def userNameAction(parent, caption, action):
+def user_name_action(parent, caption, action):
     """ Get a username and execute action with it"""
     username, success = QInputDialog.getText(parent, 'Input Username', caption)
     if success and username != '':

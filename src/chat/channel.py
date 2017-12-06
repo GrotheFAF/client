@@ -32,25 +32,25 @@ class IRCPlayer(Player):
 
 
 class Formatters(object):
-    FORMATTER_ANNOUNCEMENT   = util.readfile("chat/formatters/announcement.qthtml")
-    FORMATTER_MESSAGE        = util.readfile("chat/formatters/message.qthtml")
+    FORMATTER_ANNOUNCEMENT = util.readfile("chat/formatters/announcement.qthtml")
+    FORMATTER_MESSAGE = util.readfile("chat/formatters/message.qthtml")
     FORMATTER_MESSAGE_AVATAR = util.readfile("chat/formatters/messageAvatar.qthtml")
-    FORMATTER_ACTION         = util.readfile("chat/formatters/action.qthtml")
-    FORMATTER_ACTION_AVATAR  = util.readfile("chat/formatters/actionAvatar.qthtml")
-    FORMATTER_RAW            = util.readfile("chat/formatters/raw.qthtml")
-    NICKLIST_COLUMNS         = json.loads(util.readfile("chat/formatters/nicklist_columns.json"))
+    FORMATTER_ACTION = util.readfile("chat/formatters/action.qthtml")
+    FORMATTER_ACTION_AVATAR = util.readfile("chat/formatters/actionAvatar.qthtml")
+    FORMATTER_RAW = util.readfile("chat/formatters/raw.qthtml")
+    NICKLIST_COLUMNS = json.loads(util.readfile("chat/formatters/nicklist_columns.json"))
 
 
 class Channel(FormClass, BaseClass):
     """
     This is an actual chat channel object, representing an IRC chat room and the users currently present.
     """
-    def __init__(self, lobby, name, private=False, *args, **kwargs):
-        BaseClass.__init__(self, lobby, *args, **kwargs)
+    def __init__(self, chat_widget, name, private=False, *args, **kwargs):
+        BaseClass.__init__(self, chat_widget, *args, **kwargs)
 
         self.setupUi(self)
 
-        #self.filterIdle.setIcon(util.icon("chat/status/none.png"))
+        # self.filterIdle.setIcon(util.icon("chat/status/none.png"))
         self.filterHost.setIcon(util.icon("chat/status/host.png"))
         self.filterLobby.setIcon(util.icon("chat/status/lobby.png"))
         self.filterPlaying5.setIcon(util.icon("chat/status/playing_delay.png"))
@@ -65,7 +65,7 @@ class Channel(FormClass, BaseClass):
         self.filterStrange.clicked.connect(self.status_filter_nicks)
 
         # Special HTML formatter used to layout the chat lines written by people
-        self.lobby = lobby
+        self.chat_widget = chat_widget
         self.chatters = {}
 
         self.last_timestamp = None
@@ -76,7 +76,7 @@ class Channel(FormClass, BaseClass):
         self.blinked = False
 
         # Table width of each chatter's name cell...
-        self.maxChatterWidth = 100  # TODO: This might / should auto-adapt
+        self.maxChatterWidth = 110  # TODO: This might / should auto-adapt
 
         # count the number of line currently in the chat
         self.lines = 0
@@ -99,6 +99,9 @@ class Channel(FormClass, BaseClass):
             self.nickList.horizontalHeader().setResizeMode(Chatter.STATUS_COLUMN, QtGui.QHeaderView.Fixed)
             self.nickList.horizontalHeader().resizeSection(Chatter.STATUS_COLUMN, Formatters.NICKLIST_COLUMNS['STATUS'])
 
+            self.nickList.horizontalHeader().setResizeMode(Chatter.MAP_COLUMN, QtGui.QHeaderView.Fixed)
+            self.resize_map_column()  # The map column can be toggled. Make sure it respects the settings
+
             self.nickList.horizontalHeader().setResizeMode(Chatter.SORT_COLUMN, QtGui.QHeaderView.Stretch)
 
             self.nickList.itemDoubleClicked.connect(self.nick_doubleclicked)
@@ -115,11 +118,14 @@ class Channel(FormClass, BaseClass):
         self.chatEdit.returnPressed.connect(self.send_line)
         self.chatEdit.set_chatters(self.chatters)
 
+    def sort_chatters(self):
+        self.nickList.sortItems(Chatter.SORT_COLUMN)
+
     def joinChannel(self, index):  # Qt ?
         """ join another channel """
         channel = self.channelsComboBox.itemText(index)
         if channel.startswith('#'):
-            self.lobby.auto_join([channel])
+            self.chat_widget.auto_join([channel])
 
     def keyReleaseEvent(self, key_event):  # Qt QShowEvent
         """
@@ -153,19 +159,19 @@ class Channel(FormClass, BaseClass):
             if chatter == client.instance.me.login:  # don't filter me
                 self.chatters[chatter].set_visible(True)
             elif self.filterIdle.isChecked() or self.filterHost.isChecked() or \
-               self.filterLobby.isChecked() or self.filterPlaying5.isChecked() or \
-               self.filterPlaying.isChecked() or self.filterStrange.isChecked():
+                    self.filterLobby.isChecked() or self.filterPlaying5.isChecked() or \
+                    self.filterPlaying.isChecked() or self.filterStrange.isChecked():
                 if self.chatters[chatter].status == "idle":
                     self.chatters[chatter].set_visible(self.filterIdle.isChecked())
                 elif self.chatters[chatter].status == "host":
                     self.chatters[chatter].set_visible(self.filterHost.isChecked())
                 elif self.chatters[chatter].status == "lobby":
                     self.chatters[chatter].set_visible(self.filterLobby.isChecked())
-                elif self.chatters[chatter].status == "playing5":
+                elif self.chatters[chatter].status == "playing_delay":
                     self.chatters[chatter].set_visible(self.filterPlaying5.isChecked())
                 elif self.chatters[chatter].status == "playing":
                     self.chatters[chatter].set_visible(self.filterPlaying.isChecked())
-                elif self.chatters[chatter].status == "strange":
+                elif self.chatters[chatter].status == "status_unclear":
                     self.chatters[chatter].set_visible(self.filterStrange.isChecked())
             else:  # no filter checked
                 self.chatters[chatter].set_visible(True)
@@ -193,15 +199,15 @@ class Channel(FormClass, BaseClass):
     def blink(self):
         if self.blinked:
             self.blinked = False
-            self.lobby.tabBar().setTabText(self.lobby.indexOf(self), self.name)
+            self.chat_widget.tabBar().setTabText(self.chat_widget.indexOf(self), self.name)
         else:
             self.blinked = True
-            self.lobby.tabBar().setTabText(self.lobby.indexOf(self), "")
+            self.chat_widget.tabBar().setTabText(self.chat_widget.indexOf(self), "")
 
     @QtCore.pyqtSlot()
     def stop_blink(self):
         self.blinker.stop()
-        self.lobby.tabBar().setTabText(self.lobby.indexOf(self), self.name)
+        self.chat_widget.tabBar().setTabText(self.chat_widget.indexOf(self), self.name)
 
     @QtCore.pyqtSlot()
     def start_blink(self):
@@ -217,7 +223,7 @@ class Channel(FormClass, BaseClass):
                     util.sound("chat/sfx/query.wav")
 
         if not self.isVisible():
-            if not self.blinker.isActive() and not self == self.lobby.currentWidget():
+            if not self.blinker.isActive() and not self == self.chat_widget.currentWidget():
                     self.start_blink()
 
     @QtCore.pyqtSlot(QtCore.QUrl)
@@ -241,7 +247,7 @@ class Channel(FormClass, BaseClass):
         self.chatArea.setTextCursor(cursor)
 
         formatter = Formatters.FORMATTER_ANNOUNCEMENT
-        line = formatter.format(size=size, color=color, text=util.irc_escape(text, self.lobby.a_style))
+        line = formatter.format(size=size, color=color, text=util.irc_escape(text, self.chat_widget.a_style))
         self.chatArea.insertHtml(line)
 
         if scroll_needed:
@@ -304,14 +310,15 @@ class Channel(FormClass, BaseClass):
                     self.chatArea.document().addResource(QtGui.QTextDocument.ImageResource,  QtCore.QUrl(avatar), pix)
                 line = formatter.format(time=self.timestamp(), avatar=avatar, avatarTip=avatar_tip, name=display_name,
                                         color=color, width=self.maxChatterWidth,
-                                        text=util.irc_escape(text, self.lobby.a_style))
+                                        text=util.irc_escape(text, self.chat_widget.a_style))
             else:
                 formatter = Formatters.FORMATTER_MESSAGE
-                line = formatter.format(time=self.timestamp(), name=display_name, color=color,
-                                        width=self.maxChatterWidth, text=util.irc_escape(text, self.lobby.a_style))
+                line = formatter.format(time=self.timestamp(), name=display_name,
+                                        color=color, width=self.maxChatterWidth,
+                                        text=util.irc_escape(text, self.chat_widget.a_style))
         else:
             line = formatter.format(time=self.timestamp(), name=display_name, color=color, width=self.maxChatterWidth,
-                                    text=util.irc_escape(text, self.lobby.a_style))
+                                    text=util.irc_escape(text, self.chat_widget.a_style))
 
         self.chatArea.insertHtml(line)
         self.lines += 1
@@ -394,6 +401,21 @@ class Channel(FormClass, BaseClass):
             chatter = self.nickList.item(item.row(), Chatter.SORT_COLUMN)
             chatter.pressed(item)
 
+    def update_chatters(self):
+        """
+        Triggers all chatters to update their status. Called when toggling map icon display in settings
+        """
+        for _, chatter in self.chatters.items():
+            chatter.update()
+
+        self.resize_map_column()
+
+    def resize_map_column(self):
+        if util.settings.value("chat/chatmaps", True):  # False
+            self.nickList.horizontalHeader().resizeSection(Chatter.MAP_COLUMN, Formatters.NICKLIST_COLUMNS['MAP'])
+        else:
+            self.nickList.horizontalHeader().resizeSection(Chatter.MAP_COLUMN, 0)
+
     @QtCore.pyqtSlot(list)
     def update_users(self, updated_users):
         for user in updated_users:
@@ -444,7 +466,7 @@ class Channel(FormClass, BaseClass):
         Adds an user to this chat channel, and assigns an appropriate icon depending on friendship and FAF player status
         """
         if user_name not in self.chatters:
-            item = Chatter(self.nickList, (user_name, user_id, elevation, hostname), self.lobby, None)
+            item = Chatter(self.nickList, (user_name, user_id, elevation, hostname), self.chat_widget, None)
             self.chatters[user_name] = item
 
         self.chatters[user_name].update()
@@ -499,23 +521,23 @@ class Channel(FormClass, BaseClass):
             # System commands
             if text.startswith("/"):
                 if text.startswith("/join "):
-                    self.lobby.join(text[6:])
+                    self.chat_widget.join(text[6:])
                 elif text.startswith("/topic "):
-                    self.lobby.set_topic(self.name, text[7:])
+                    self.chat_widget.set_topic(self.name, text[7:])
                 elif text.startswith("/msg "):
                     blobs = text.split(" ")
-                    self.lobby.send_msg(blobs[1], " ".join(blobs[2:]))
+                    self.chat_widget.send_msg(blobs[1], " ".join(blobs[2:]))
                 elif text.startswith("/me "):
-                    if self.lobby.send_action(target, text[4:]):
+                    if self.chat_widget.send_action(target, text[4:]):
                         self.print_action(client.instance.login, text[4:], True)
                     else:
                         self.print_action("IRC", "action not supported", True)
                 elif text.startswith("/seen "):
-                    if self.lobby.send_msg("nickserv", "info %s" % (text[6:])):
+                    if self.chat_widget.send_msg("nickserv", "info %s" % (text[6:])):
                         self.print_action("IRC", "info requested on %s" % (text[6:]), True)
                     else:
                         self.print_action("IRC", "not connected", True)
             else:
-                if self.lobby.send_msg(target, text):
+                if self.chat_widget.send_msg(target, text):
                     self.print_msg(client.instance.login, text, True)
         self.chatEdit.clear()

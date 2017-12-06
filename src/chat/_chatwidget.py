@@ -127,12 +127,16 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
                     self.channels[channel].chatters[player].avatarItem.setIcon(QtGui.QIcon(util.respix(reply.url().toString())))
                     self.channels[channel].chatters[player].avatarItem.setToolTip(self.channels[channel].chatters[player].avatarTip)
 
-    def addChannel(self, name, channel, index = None):
+    def add_channel(self, name, channel, index=None):
         self.channels[name] = channel
         if index is None:
             self.addTab(self.channels[name], name)
         else:
             self.insertTab(index, self.channels[name], name)
+
+    def sort_channels(self):
+        for channel in self.channels.values():
+            channel.sort_chatters()
 
     def close_channel(self, index):
         """
@@ -191,7 +195,7 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
             return False
 
         if name not in self.channels:
-            self.addChannel(name, Channel(self, name, True))
+            self.add_channel(name, Channel(self, name, True))
 
             # Add participants to private channel
             self.channels[name].add_chatter(name, user_id)
@@ -283,7 +287,7 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
         if ch_name not in self.channels:
             new_channel = Channel(self, ch_name)
             if ch_name.lower() in self.crucial_channels:
-                self.addChannel(ch_name, new_channel, 1)  # CAVEAT: This is assumes a server tab exists.
+                self.add_channel(ch_name, new_channel, 1)  # CAVEAT: This is assumes a server tab exists.
                 client.instance.localBroadcast.connect(new_channel.print_raw)
                 new_channel.print_announcement("Welcome to Forged Alliance Forever!", "red", "+3")
                 new_channel.print_announcement("Check out the wiki: http://wiki.faforever.com for help with common "
@@ -291,7 +295,7 @@ class ChatWidget(FormClass, BaseClass, SimpleIRCClient):
                 new_channel.print_announcement("", "black", "+1")
                 new_channel.print_announcement("", "black", "+1")
             else:
-                self.addChannel(ch_name, new_channel)
+                self.add_channel(ch_name, new_channel)
 
             # Make the crucial channels not closeable, and make the last one the active one
             if ch_name.lower() in self.crucial_channels:

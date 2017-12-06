@@ -364,8 +364,8 @@ class GameItem(QtGui.QListWidgetItem):
             players_list = ["<td><table>"]
             for player in team:
                 if type(player) == unicode:  # not in players
-                    if '#aeolus' in client.instance.chat.channels \
-                       and player in client.instance.chat.channels[u'#aeolus'].chatters:
+                    if '#aeolus' in client.instance.chat_widget.channels \
+                       and player in client.instance.chat_widget.channels[u'#aeolus'].chatters:
                         player_str = player + "  <font color='darkred'>(irc)</font>"
                     else:
                         player_str = player + "  <font color='darkred'>(?)</font>"
