@@ -74,6 +74,8 @@ class Chatter(QtGui.QTableWidgetItem):
         self.mapItem.setFlags(QtCore.Qt.ItemIsEnabled)
         self.mapItem.setTextAlignment(QtCore.Qt.AlignHCenter)
 
+        self.ladder_map_reveal_timer = QtCore.QTimer()
+
         self.parent.setItem(self.row(), Chatter.RANK_COLUMN, self.rankItem)
         self.parent.setItem(self.row(), Chatter.AVATAR_COLUMN, self.avatarItem)
         self.parent.setItem(self.row(), Chatter.STATUS_COLUMN, self.statusItem)
@@ -172,7 +174,7 @@ class Chatter(QtGui.QTableWidgetItem):
             return
 
         country = player.country if player.country is not None else '__'
-        self.setIcon(util.icon("chat/countries/%s.png" % country.lower()))
+        self.setIcon(util.icon("chat/countries/{}.png".format(country.lower())))
         self.setToolTip(country)
 
         if player.avatar != self.avatar:
@@ -181,15 +183,35 @@ class Chatter(QtGui.QTableWidgetItem):
 
         self.clan = player.clan
         if self.clan is not None:
-            self.setText("[%s]%s" % (self.clan, self.name))
+            self.setText("[{}]{}".format(self.clan, self.name))
 
         # Status icon handling
         url = client.instance.urls.get(player.login)
         if url:
             if int(url.queryItemValue("uid")) in client.instance.games_widget.games:
                 game = client.instance.games_widget.games[int(url.queryItemValue("uid"))]
-                game_str = "<br/>title: " + game.title + "<br/>mod: " + game.mod + "<br/>map: " + \
-                           game.mapdisplayname + "<br/>id: " + str(game.uid)
+                if game.mod == "ladder1v1":
+                    if game.state == 'open' or game.launched_at is None:
+                        ladder_map_hide = True
+                    elif game.state == 'playing':
+                        time_elapsed = time.time() - game.launched_at
+                        ladder_map_hide = time_elapsed < 30
+                        if ladder_map_hide:
+                            if not self.ladder_map_reveal_timer.isActive():
+                                time_to_reveal = 30 - time_elapsed
+                                self.ladder_map_reveal_timer.singleShot(time_to_reveal * 1000, self.update)
+                    else:
+                        ladder_map_hide = False
+                        if self.ladder_map_reveal_timer.isActive():
+                            self.ladder_map_reveal_timer.stop()
+                else:
+                    ladder_map_hide = False
+                if ladder_map_hide:
+                    g_map = "<i>[delayed reveal]</i>"
+                else:
+                    g_map = game.mapdisplayname
+                game_str = "<br/>title: {}<br/>mod: {}<br/>map: {}<br/>id: {}"\
+                           .format(game.title, game.mod, g_map, game.uid)
                 if url.scheme() == "fafgame":
                     if game.password_protected:
                         game_str = " (private) Game Lobby:</b>" + game_str
@@ -215,35 +237,37 @@ class Chatter(QtGui.QTableWidgetItem):
                 tooltip_str = "(has url - but no matching running game found)<br/>" + url.toString()
         else:  # as idle as it gets
             self.status, tooltip_str, game_str = "idle", "Idle", ""
-        self.statusItem.setIcon(util.icon("chat/status/%s.png" % self.status))
+        self.statusItem.setIcon(util.icon("chat/status/{}.png".format(self.status)))
         self.statusItem.setToolTip(tooltip_str + game_str)
 
         # Map icon handling - We're in game, show the map if toggled on
-        if url and util.settings.value("chat/chatmaps", True):  # False
-            mapname = game.mapname
-            icon = maps.preview(mapname)
-            if not icon:
-                client.instance.downloader.download_map(mapname, self.mapItem)  # Calls setIcon
+        if url and util.settings.value("chat/chatmaps", True):
+            if ladder_map_hide:
+                self.mapItem.setIcon(util.icon("chat/status/status_unclear.png"))
+                self.mapItem.setToolTip("<i>[delayed reveal]</i>")
             else:
-                self.mapItem.setIcon(icon)
+                mapname = game.mapname
+                icon = maps.preview(mapname)
+                if not icon:
+                    client.instance.downloader.download_map(mapname, self.mapItem)  # Calls setIcon
+                else:
+                    self.mapItem.setIcon(icon)
 
-            self.mapItem.setToolTip(game.mapdisplayname)
+                self.mapItem.setToolTip(game.mapdisplayname)
         else:
             self.mapItem.setIcon(QtGui.QIcon())
             self.mapItem.setToolTip("")
 
         # Rating icon choice  (chr(0xB1) = +-)
-        self.rankItem.setToolTip("Global Rating: " + str(int(player.rating_estimate())) + " ("
-                                 + str(player.number_of_games) + " Games) [" + str(int(round(player.rating_mean)))
-                                 + chr(0xB1) + str(int(round(player.rating_deviation))) + "]\n"
-                                 + "Ladder Rating: " + str(int(player.ladder_estimate())) + " ["
-                                 + str(int(round(player.ladder_rating_mean)))
-                                 + chr(0xB1) + str(int(round(player.ladder_rating_deviation))) + "]")
-
+        self.rankItem.setToolTip("Global Rating: {} ({} Games) [{}chr(0xB1){}]\nLadder Rating: {} [{}chr(0xB1){}]"
+                                 .format(int(player.rating_estimate()), player.number_of_games,
+                                         int(round(player.rating_mean)), int(round(player.rating_deviation)),
+                                         int(player.ladder_estimate()), int(round(player.ladder_rating_mean)),
+                                         int(round(player.ladder_rating_deviation))))
         if player.league:
-            self.rankItem.setToolTip("Division : " + player.league["division"] + "\nGlobal Rating: "
-                                     + str(int(player.rating_estimate())))
-            self.rankItem.setIcon(util.icon("chat/rank/%s.png" % player.league["league"]))
+            self.rankItem.setToolTip("Division : {}\nGlobal Rating: {}"
+                                     .format(player.league["division"], int(player.rating_estimate())))
+            self.rankItem.setIcon(util.icon("chat/rank/{}.png".format(player.league["league"])))
         else:
             self.rankItem.setIcon(util.icon("chat/rank/newplayer.png"))
 
@@ -265,8 +289,8 @@ class Chatter(QtGui.QTableWidgetItem):
         self.setForeground(QtGui.QColor(chat.get_color("default")))
 
     def name_used_by_other(self):
-        api_link = 'https://api.faforever.com/data/player?include=names&' \
-                   'filter=(login==' + self.name + ',names.name==' + self.name + ')'
+        api_link = 'https://api.faforever.com/data/player?include=names&filter=(login=={},names.name=={})'\
+                    .format(self.name, self.name)
         response = requests.get(api_link).json()
         if response.get('errors'):
             return ''
@@ -275,11 +299,11 @@ class Chatter(QtGui.QTableWidgetItem):
             for ply in response['data']:
                 if ply['type'] == 'player':
                     if ply['attributes']['login'] != self.name:
-                        result += (ply['attributes']['login'] + '<br/>')
+                        result += '{}<br/>'.format(ply['attributes']['login'])
         if len(result) > 1:
-            result = 'The name has previously been used by :<br/><br/>' + str(result)
+            result = 'The name has previously been used by :<br/><br/>{}'.format(result)
         else:
-            result = 'The name has never been used by anyone else.'
+            result = 'The name has never been used by anyone else.<br/>'
         return result
 
     def names_previously_known(self):
@@ -289,31 +313,32 @@ class Chatter(QtGui.QTableWidgetItem):
         if response.get('errors'):
             return ''
         if response.get('included') is not None and len(response['included']) >= 1:
-            nick_list = 'The player has previously been known as :'
-            nick_list += '<br/><table border="0" cellpadding="0" cellspacing="0" width= "220"><tbody>'
+            nick_list = 'The player has previously been known as :<br/>' \
+                        '<table border="0" cellpadding="0" cellspacing="0" width= "180"><tbody>' \
+                        '<tr><th>Name</th><th align="right">used until</th></tr>'
             for nicks in response['included']:
                 if nicks['type'] == 'nameRecord':
-                    nick_list += '<tr><td>' + nicks['attributes']['name'] + '</td><td align="right">' + \
-                                  nicks['attributes']['changeTime'].replace('T', ' - ')[:18] + '</td></tr>'
-            nick_list += '</tbody></table><br/>'
+                    nick_list += '<tr><td>{}</td><td align="right">{}</td></tr>'\
+                                 .format(nicks['attributes']['name'], nicks['attributes']['changeTime'][:10])
+            nick_list += '<tr><td>{}</td><td align="right">currently used</td></tr></tbody></table><br/>'\
+                         .format(self.name)
         else:
-            nick_list = 'The name is not currently owned by any player.'
+            nick_list = 'The name is not currently owned by any player.<br/>'
         return nick_list
 
     def view_aliases(self):
         # QtGui.QDesktopServices.openUrl(QUrl("{}?name={}".format(Settings.get("USER_ALIASES_URL"), self.name)))
         api_link = 'https://api.faforever.com/data/nameRecord?include=player&fields[player]=login&' \
-                   'fields[nameRecord]=player,changeTime&filter[nameRecord]=name==' + self.name
+                   'fields[nameRecord]=player,changeTime&filter[nameRecord]=name=={}'.format(self.name)
         response = requests.get(api_link).json()
         if response.get('errors'):
             return
         result = self.name_used_by_other()
         if len(response['data']) < 1:
-            result = 'The name ' + self.name + ' has never been used or the user has never changed its name.' \
-                     + '\n\n' + result
+            result = 'The user has never changed its name.\n\n{}'.format(result)
         else:
-            result = self.names_previously_known() + '<br/>' + result
-        QtGui.QMessageBox.about(self.parent, "Aliases : " + self.name, str(result))
+            result = self.names_previously_known() + '<br/>{}'.format(result)
+        QtGui.QMessageBox.about(self.parent, "Aliases : {}".format(self.name), str(result))
 
     def select_avatar(self):
         avatar_selection = AvatarWidget(self.name, personal=True)
